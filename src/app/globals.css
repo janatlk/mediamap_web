@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/*
+  Дизайн-система MediaMap.
+
+  Правило одно: цвет, размер и отступ берутся отсюда. Если значения нет в
+  токенах — значит решение ещё не принято, и его надо принять здесь, а не
+  дописывать произвольное число в разметке. Прежний сайт развалился именно
+  так: четырнадцать цветов текста на странице и пять почти одинаковых серых.
+
+  Контраст всех пар проверен: python scripts/check-contrast.py
+*/
+
+@theme {
+  /* --- Основа -------------------------------------------------------- */
+  /* Холодная бумага, а не белизна: длинные списки нарушений на чистом
+     белом утомляют, а тёплый крем увёл бы сайт в сторону журнала. */
+  --color-paper: #f2f4f3;
+  --color-surface: #ffffff;
+  --color-ink: #101615;
+  --color-muted: #59635f;
+
+  /* Волосяной разделитель. Декоративный — под требование 1.4.11 не подпадает. */
+  --color-line: #d5dcd9;
+  /* Рамки всего, что можно нажать или заполнить. Ровно 3.09 к бумаге. */
+  --color-border: #848d8a;
+
+  /* Единственный акцент. Только действия и активное состояние.
+     На прежнем сайте красный был ещё и цветом наведения, из-за чего
+     перестал что-либо означать. */
+  --color-signal: #b3122a;
+  --color-signal-deep: #8d0e21;
+
+  /* --- Категории нарушений ------------------------------------------- */
+  /* Четыре типа из базы. Набор намеренно тесный: один тёплый красный,
+     один холодный синий, охра и нейтраль. */
+  --color-hate: #b3122a;
+  --color-disinfo: #1f5673;
+  --color-propaganda: #8a5710;
+  --color-other: #4f5956;
+
+  /* --- Шкала тяжести -------------------------------------------------- */
+  /* Песок — охра — багрянец. Задаёт высоту и цвет области на карте. */
+  --color-sev-low: #d9c48a;
+  --color-sev-mid: #c98a2e;
+  --color-sev-high: #b3122a;
+
+  /* --- Размер текста --------------------------------------------------- */
+  /* Нижняя граница — 12px, и то лишь для моноширинных метаданных.
+     На прежней главной 57% текста было мельче 12px. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1.1rem;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.625rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 3.25rem;
+  --text-5xl: 4rem;
+  --text-5xl--line-height: 4.125rem;
+
+  /* --- Скругления ------------------------------------------------------ */
+  /* Строгая система: почти прямой угол. Прежние rounded-3xl соседствовали
+     с rounded-md на одном экране. */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+
+  /* --- Слои ------------------------------------------------------------ */
+  /* Шапка ниже всего перекрывающего. Раньше было наоборот, и крестик
+     модалки физически прятался под шапкой. */
+  --z-header: 100;
+  --z-overlay: 200;
+  --z-toast: 300;
+}
+
+/*
+  Шрифты вынесены в отдельный блок с ключевым словом inline.
+
+  Их значения ссылаются на переменные, которые создаёт next/font уже в
+  разметке. Обычный @theme завёл бы вместо этого свою переменную-посредника,
+  и она осталась бы пустой: подстановка происходит раньше, чем next/font
+  успевает объявить свои. Из-за этого весь текст рисовался системным
+  шрифтом при полностью загруженных гарнитурах.
+
+  Три роли, три гарнитуры, обе основные кириллические по происхождению —
+  для кыргызского это важно: ө, ү и ң в латинских шрифтах часто нарисованы
+  по остаточному принципу.
+*/
+@theme inline {
+  --font-display: var(--font-geologica), system-ui, sans-serif;
+  --font-sans: var(--font-golos), system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, monospace;
+}
+
+/*
+  Начертания: только 400, 500 и 700. На прежней главной было 95 элементов
+  веса 700, 53 веса 800 и 8 веса 900 против 47 обычных — когда выделено
+  всё, не выделено ничего.
+*/
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-weight: 400;
+    /* Кириллица в Golos Text выигрывает от чуть более плотного трекинга. */
+    letter-spacing: -0.003em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Фокус виден всегда и одинаково. Он часть системы, а не сброшенный
+     по умолчанию outline. */
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background-color: var(--color-ink);
+    color: var(--color-surface);
+  }
+}
+
+@layer components {
+  /* Метка над заголовком: раздел, номер, дата. Всегда моноширинная —
+     так метаданные отличаются от содержания без всякого выделения. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Тонкая линейка-разделитель раздела. */
+  .rule {
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+/*
+  Уважение к системной настройке «уменьшить движение». Карта на главной
+  вращается и реагирует на курсор — для части людей это причина головной
+  боли, а не украшение.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

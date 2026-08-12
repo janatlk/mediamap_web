@@ -1,0 +1,142 @@
+// MediaMap — схема данных.
+//
+// Отличия от прежней схемы, каждое по делу:
+//   * Marker переименован в Report. На карте это отметка, но в системе это
+//     заявка о нарушении, и весь жизненный цикл — про заявку.
+//   * Булев isApproved заменён на ReportStatus. Раньше отклонённая заявка
+//     была неотличима от ещё не рассмотренной, и заявитель не мог узнать
+//     решение.
+//   * У заявки появился publicId вида MM-2026-0142 — то, что человек
+//     называет в письме и по телефону. Внутренний id для этого не годится.
+//   * Роль получила фиксированный набор значений и проверку на входе.
+//     Раньше она приезжала прямо из тела запроса, и любой желающий мог
+//     зарегистрироваться администратором.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+// Адрес базы задаётся в prisma.config.ts и в адаптере клиента:
+// начиная с Prisma 7 в схеме его держать нельзя.
+datasource db {
+  provider = "sqlite"
+}
+
+// Перечислений здесь нет намеренно. SQLite их не поддерживает, а локальная
+// разработка идёт на нём — Postgres поднимется уже на сервере. Поэтому
+// роль, статус и тяжесть хранятся строками, а допустимые значения заданы
+// в src/lib/enums.ts и проверяются схемами zod на входе.
+// При переезде на Postgres колонки останутся теми же.
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  /// MODERATOR | ADMIN | SUPERADMIN — см. src/lib/enums.ts
+  role         String   @default("MODERATOR")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reviewed Report[] @relation("ReviewedBy")
+  sessions Session[]
+
+  @@map("users")
+}
+
+/// Сессия в базе, а не самоподписанный токен в заголовке.
+/// Позволяет отозвать доступ, не меняя пароль.
+model Session {
+  id        String   @id @default(cuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model ViolationType {
+  id     Int    @id @default(autoincrement())
+  slug   String @unique
+  nameRu String
+  nameKy String
+  /// Короткое пояснение для карточки категории.
+  descRu String
+  descKy String
+  /// Порядок в списках. Без него порядок задаётся id, а он случаен.
+  sort   Int    @default(0)
+
+  reports Report[]
+
+  @@map("violation_types")
+}
+
+model Report {
+  id       Int    @id @default(autoincrement())
+  /// Публичный номер обращения: MM-2026-0142.
+  publicId String @unique
+
+  lat Float
+  lng Float
+
+  /// Код области: chuy, osh, talas, issyk-kul, naryn, jalal-abad, batken,
+  /// bishkek, osh-city. Строкой хранить название нельзя — оно переводится.
+  regionCode String
+  city       String
+
+  mediaLink        String?
+  screenshot       String?
+  authorComment    String?
+  moderatorComment String?
+
+  /// PENDING | APPROVED | REJECTED
+  status   String  @default("PENDING")
+  /// LOW | MEDIUM | HIGH. Пусто, пока заявку не рассмотрели.
+  severity String?
+
+  violationTypeId Int
+  violationType   ViolationType @relation(fields: [violationTypeId], references: [id])
+
+  /// Кто рассмотрел. Заявки подаются анонимно, поэтому автора нет,
+  /// а рассмотревший модератор есть всегда после решения.
+  reviewedById Int?
+  reviewedBy   User?     @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([regionCode])
+  @@index([violationTypeId])
+  @@map("reports")
+}
+
+model NewsItem {
+  id          Int      @id @default(autoincrement())
+  guid        String   @unique
+  title       String
+  link        String
+  snippet     String?
+  source      String
+  publishedAt DateTime
+
+  @@index([publishedAt])
+  @@map("news")
+}
+
+/// Тексты, которые редактирует администратор.
+/// Ключ повторяет путь в словаре: home.heroTitle.
+model SiteText {
+  key      String @id
+  valueRu  String
+  valueKy  String
+  category String @default("general")
+
+  updatedAt DateTime @updatedAt
+
+  @@map("site_texts")
+}
