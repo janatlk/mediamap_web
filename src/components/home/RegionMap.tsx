@@ -5,15 +5,18 @@ import { useMemo } from "react";
 import { PROJECTED, VIEW_BOX, project } from "@/lib/projection";
 
 /**
- * Карта нарушений: контуры областей и точка на месте каждой заявки.
+ * Карта нарушений: контуры областей и точка на месте каждого сообщения.
  *
  * Заливка по областям показала бы среднее, а среднее здесь и есть то, что
- * теряется: одна область — это сотни километров, и важно, что нарушения
+ * теряется: одна область — сотни километров, и важно, что нарушения
  * собираются вокруг городов, а не размазаны ровно. Поэтому области даны
  * контуром, а данные — точками на их настоящих координатах.
  *
- * Цвет точки означает категорию нарушения и совпадает с цветом категории
- * в остальных разделах.
+ * Цвет точки означает вид нарушения и совпадает с цветом вида в разделе
+ * под картой — отдельная легенда для этого не нужна.
+ *
+ * Область выбирается и наведением, и нажатием: подсказка «наведите»
+ * невыполнима на телефоне, а с телефона заходит большая часть людей.
  */
 
 export type ReportPoint = {
@@ -26,8 +29,8 @@ export type ReportPoint = {
 type Props = {
   regions: { code: string; count: number }[];
   points: ReportPoint[];
-  hovered: string | null;
-  onHover: (code: string | null) => void;
+  active: string | null;
+  onSelect: (code: string | null) => void;
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -37,7 +40,7 @@ const TYPE_COLOR: Record<string, string> = {
   other: "var(--color-other)",
 };
 
-export default function RegionMap({ regions, points, hovered, onHover }: Props) {
+export default function RegionMap({ regions, points, active, onSelect }: Props) {
   const projected = useMemo(
     () =>
       points
@@ -51,7 +54,7 @@ export default function RegionMap({ regions, points, hovered, onHover }: Props) 
     [points],
   );
 
-  const hasCount = useMemo(
+  const counts = useMemo(
     () => new Map(regions.map((r) => [r.code, r.count])),
     [regions],
   );
@@ -64,30 +67,32 @@ export default function RegionMap({ regions, points, hovered, onHover }: Props) 
       aria-hidden="true"
     >
       {PROJECTED.map((region) => {
-        const isHovered = hovered === region.code;
-        const isEmpty = (hasCount.get(region.code) ?? 0) === 0;
+        const isActive = active === region.code;
+        const isEmpty = (counts.get(region.code) ?? 0) === 0;
 
         return (
           <path
             key={region.code}
             d={region.path}
-            fill={isHovered ? "var(--color-surface)" : "transparent"}
-            stroke={isHovered ? "var(--color-ink)" : "var(--color-border)"}
-            strokeWidth={isHovered ? 0.6 : 0.35}
+            fill={isActive ? "var(--color-surface)" : "transparent"}
+            stroke={isActive ? "var(--color-ink)" : "var(--color-border)"}
+            strokeWidth={isActive ? 0.6 : 0.35}
             strokeLinejoin="round"
-            // Область без заявок бледнее: нечего показывать — не привлекаем.
+            // Область без сообщений бледнее: нечего показывать — не зовём.
             opacity={isEmpty ? 0.45 : 1}
-            onMouseEnter={() => onHover(region.code)}
-            onMouseLeave={() => onHover(null)}
-            className="transition-[fill,stroke] duration-150"
+            onMouseEnter={() => onSelect(region.code)}
+            onMouseLeave={() => onSelect(null)}
+            // Нажатие для тех, у кого нет курсора. Повторное нажатие по
+            // той же области снимает выбор.
+            onClick={() => onSelect(isActive ? null : region.code)}
+            className="cursor-pointer transition-[fill,stroke] duration-150"
           />
         );
       })}
 
       {/* Точки лежат поверх контуров, иначе линия границы режет их пополам.
           Курсор они не перехватывают: иначе при наведении на точку область
-          под ней получала бы уход курсора и подсветка гасла. Наведение
-          принадлежит области — точки пока ничего не делают по нажатию. */}
+          под ней получала бы уход курсора и подсветка гасла. */}
       <g pointerEvents="none">
         {projected.map((point) => (
           <circle
@@ -97,7 +102,7 @@ export default function RegionMap({ regions, points, hovered, onHover }: Props) 
             r={1.5}
             fill={TYPE_COLOR[point.typeSlug] ?? TYPE_COLOR.other}
             // Обводка цветом фона отделяет соседние точки друг от друга
-            // там, где заявки скучиваются вокруг города.
+            // там, где сообщения скучиваются вокруг города.
             stroke="var(--color-paper)"
             strokeWidth={0.5}
           />
