@@ -54,11 +54,20 @@ export default function RootLayout({
   return (
     // Переменные шрифтов вешаем на html, чтобы они были видны из :root —
     // оттуда их берут и утилиты Tailwind, и базовые стили.
+    //
+    // suppressHydrationWarning стоит только на этих двух тегах и только
+    // потому, что их атрибуты у нас полностью статичны: расхождение здесь
+    // не может возникнуть из нашего кода. Зато его регулярно создают
+    // расширения браузера — переводчики, тёмные темы, менеджеры паролей
+    // дописывают свои атрибуты в html и body до подключения React.
+    // На дочерние узлы это не распространяется, настоящие расхождения
+    // внутри страницы по-прежнему будут видны.
     <html
       lang={DEFAULT_LANG}
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen">
+      <body className="min-h-screen" suppressHydrationWarning>
         {/* Первая цель при табуляции: пропустить шапку и уйти к содержанию. */}
         <a
           href="#content"
