@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
+import { loadViolationTypes, type ViolationType } from "./violations";
 import { hostFromUrl } from "@/lib/format";
 
 // Всё, что главная просит у базы. Одна функция — один вопрос,
@@ -17,13 +18,6 @@ export type CaseRow = {
   checkedAt: Date;
 };
 
-export type TypeRow = {
-  slug: string;
-  name: { ru: string; ky: string };
-  description: { ru: string; ky: string };
-  count: number;
-};
-
 export type NewsRow = {
   id: number;
   title: string;
@@ -37,21 +31,6 @@ const countCases = () => db.report.count({ where: CONFIRMED });
 
 /** Сколько новостей собрано за всё время. */
 const countNews = () => db.newsItem.count();
-
-/** Виды нарушений и сколько по каждому подтверждено. */
-async function loadTypes(): Promise<TypeRow[]> {
-  const types = await db.violationType.findMany({
-    orderBy: { sort: "asc" },
-    include: { _count: { select: { reports: { where: CONFIRMED } } } },
-  });
-
-  return types.map((type) => ({
-    slug: type.slug,
-    name: { ru: type.nameRu, ky: type.nameKy },
-    description: { ru: type.descRu, ky: type.descKy },
-    count: type._count.reports,
-  }));
-}
 
 /** Последние подтверждённые случаи. */
 async function loadCases(limit: number): Promise<CaseRow[]> {
@@ -125,7 +104,7 @@ export type HomeData = {
   caseCount: number;
   newsCount: number;
   sourceCount: number;
-  types: TypeRow[];
+  types: ViolationType[];
   cases: CaseRow[];
   news: NewsRow[];
 };
@@ -139,7 +118,7 @@ export async function getHomeData(): Promise<HomeData> {
       countCases(),
       countNews(),
       countSources(),
-      loadTypes(),
+      loadViolationTypes(),
       loadCases(CASES_ON_PAGE),
       loadNews(NEWS_ON_PAGE),
     ]);

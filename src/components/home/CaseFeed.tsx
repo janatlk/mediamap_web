@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import type { CaseRow, TypeRow } from "@/server/home-data";
+import type { CaseRow } from "@/server/home-data";
+import type { ViolationType } from "@/server/violations";
 import { formatDate, percent } from "@/lib/format";
 import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
@@ -17,7 +18,7 @@ type Props = {
   dict: Dictionary;
   lang: Lang;
   cases: CaseRow[];
-  types: TypeRow[];
+  types: ViolationType[];
   total: number;
 };
 

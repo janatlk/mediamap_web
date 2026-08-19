@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import type { TypeRow } from "@/server/home-data";
+import type { ViolationType } from "@/server/violations";
 import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import { withCount } from "@/lib/plural";
@@ -9,7 +9,7 @@ import { withCount } from "@/lib/plural";
 /** Три вида нарушений: что именно мы собираем. */
 
 
-type Props = { dict: Dictionary; lang: Lang; types: TypeRow[] };
+type Props = { dict: Dictionary; lang: Lang; types: ViolationType[] };
 
 export default function ViolationTypes({ dict, lang, types }: Props) {
   const forms = FORMS[lang];
