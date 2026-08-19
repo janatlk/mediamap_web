@@ -47,7 +47,7 @@ const isDuplicateId = (error: unknown): boolean =>
   "code" in error &&
   (error as { code?: string }).code === "P2002";
 
-const KEEP_ON_ERROR = ["typeSlug", "link", "story", "city"] as const;
+const KEEP_ON_ERROR = ["typeSlug", "link", "story", "city", "regionCode"] as const;
 
 /** Что вернуть в форму, чтобы человек не набирал всё заново. */
 const submitted = (form: FormData): Record<string, string> =>
@@ -67,6 +67,7 @@ export async function submitReport(
     link: form.get("link") ?? "",
     story: form.get("story") ?? "",
     city: form.get("city") ?? "",
+    regionCode: form.get("regionCode") ?? "",
     consent: form.get("consent") ?? "",
     trap: form.get("trap") ?? "",
   });
@@ -110,6 +111,7 @@ export async function submitReport(
     mediaLink: data.link ? data.link : null,
     authorComment: data.story,
     city: data.city ? data.city : null,
+    regionCode: data.regionCode ? data.regionCode : null,
     // Публикуется сообщение только после проверки живым человеком.
     status: REPORT_STATUS.PENDING,
 

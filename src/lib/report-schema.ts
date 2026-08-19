@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { KG_REGIONS } from "./kg-map";
+
 // Проверка сообщения о нарушении.
 //
 // Схема одна на две стороны: браузер по ней подсказывает, сервер по ней
@@ -14,6 +16,7 @@ export const ERRORS = {
   linkInvalid: "linkInvalid",
   consentRequired: "consentRequired",
   cityLong: "cityLong",
+  regionUnknown: "regionUnknown",
 } as const;
 
 const STORY_MIN = 30;
@@ -43,6 +46,21 @@ export const reportSchema = z.object({
     .max(STORY_MAX, ERRORS.storyLong),
 
   city: z.string().trim().max(CITY_MAX, ERRORS.cityLong).optional(),
+
+  /*
+    Область — необязательна, но полезнее города: по ней строится карта.
+    Спрашиваем выбором из семи, а не текстом: «Чуй», «Чуйская» и «чуйская
+    обл.» пришлось бы разбирать вручную, а карта всё равно ждёт код.
+  */
+  regionCode: z
+    .union([
+      z.literal(""),
+      z.enum(
+        KG_REGIONS.map((region) => region.code) as [string, ...string[]],
+        ERRORS.regionUnknown,
+      ),
+    ])
+    .optional(),
 
   /** Согласие на публикацию случая. Мы публикуем — значит должны спросить. */
   consent: z.literal("on", ERRORS.consentRequired),
