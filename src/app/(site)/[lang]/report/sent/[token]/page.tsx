@@ -5,7 +5,8 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import AssessmentCard from "@/components/report/AssessmentCard";
 import { REPORT_STATUS } from "@/lib/enums";
-import { getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 import { loadReceipt } from "@/server/case-data";
 import type { Verdict } from "@/server/ai-review";
 
@@ -30,7 +31,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   // Страница личная — в поиск ей нельзя.
   return {
     title: dict.reportPage.doneTitle,
@@ -46,7 +47,7 @@ export default async function SentPage({
   const { lang, token } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const page = dict.reportPage;
   const receipt = await loadReceipt(token);
 

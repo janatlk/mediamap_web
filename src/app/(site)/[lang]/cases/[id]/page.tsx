@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { formatDate } from "@/lib/format";
-import { getDictionary, isReadyLanguage, violationText } from "@/lib/i18n";
+import { isReadyLanguage, violationText } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 import { typeColor } from "@/lib/violation-types";
 import { loadCase } from "@/server/case-data";
 
@@ -23,7 +24,7 @@ export async function generateMetadata({
   const { lang, id } = await params;
   if (!isReadyLanguage(lang)) return {};
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const item = await loadCase(id);
   if (!item) return { title: dict.cases.notFound };
 
@@ -57,7 +58,7 @@ export default async function CasePage({
   const { lang, id } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const item = await loadCase(id);
 
   // Не 404, а объяснение: номер могли продиктовать с ошибкой, и человеку

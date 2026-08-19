@@ -7,7 +7,8 @@ import ViolationTypes from "@/components/home/ViolationTypes";
 import AiTeaser from "@/components/home/AiTeaser";
 import NewsList from "@/components/home/NewsList";
 import HowItWorks from "@/components/home/HowItWorks";
-import { getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 import { getHomeData } from "@/server/home-data";
 
 // Тут только порядок разделов. Разметка — в компонентах, запросы —
@@ -28,7 +29,7 @@ export default async function HomePage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const data = await getHomeData();
 
   return (

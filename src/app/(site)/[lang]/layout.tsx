@@ -4,8 +4,9 @@ import { Geologica, Golos_Text, JetBrains_Mono } from "next/font/google";
 
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
-import { READY_LANGUAGES, getDictionary, isReadyLanguage } from "@/lib/i18n";
-import "../globals.css";
+import { READY_LANGUAGES, isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
+import "../../globals.css";
 
 // Корневой макет лежит внутри [lang]: атрибут lang у html должен совпадать
 // с языком страницы, иначе скринридер читает кыргызский по русским правилам.
@@ -47,7 +48,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
 
   return {
     title: { default: `${dict.brand} — ${dict.brandTagline}`, template: `%s · ${dict.brand}` },
@@ -65,7 +66,7 @@ export default async function LangLayout({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
 
   return (
     // suppressHydrationWarning только тут: атрибуты у html и body статичные,

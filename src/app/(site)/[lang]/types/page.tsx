@@ -1,3 +1,4 @@
+import { getContent } from "@/server/content";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,7 +6,6 @@ import { ArrowRight } from "lucide-react";
 
 import {
   FORMS,
-  getDictionary,
   isReadyLanguage,
   violationText,
 } from "@/lib/i18n";
@@ -26,7 +26,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   return { title: dict.typesPage.title, description: dict.typesPage.lead };
 }
 
@@ -38,7 +38,7 @@ export default async function TypesPage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const types = await loadViolationTypes();
 
   return (

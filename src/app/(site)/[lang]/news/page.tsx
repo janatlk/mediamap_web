@@ -5,7 +5,8 @@ import { ArrowUpRight } from "lucide-react";
 
 import Pagination from "@/components/ui/Pagination";
 import { formatDate } from "@/lib/format";
-import { getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 import { loadNewsPage } from "@/server/news-data";
 
 // Лента новостей. Отбор по языку и номер страницы живут в адресе.
@@ -22,7 +23,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   return { title: dict.newsPage.title, description: dict.newsPage.lead };
 }
 
@@ -45,7 +46,7 @@ export default async function NewsPage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const query = await searchParams;
 
   const showAll = query.all === "1";

@@ -13,6 +13,12 @@ const ALL = new Set<string>(LANGUAGES.map((language) => language.code));
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Админка одноязычная: сотрудники работают на русском, второй перевод
+  // для служебных экранов городить незачем.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return NextResponse.next();
+  }
+
   // Запрос файла (favicon.ico, robots.txt, картинка) языка не имеет.
   const lastSegment = pathname.split("/").pop() ?? "";
   if (lastSegment.includes(".")) return NextResponse.next();

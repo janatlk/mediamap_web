@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-import { getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 
 // О проекте. Страница целиком из словаря — данных из базы тут нет.
 
@@ -16,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   return { title: dict.aboutPage.title, description: dict.aboutPage.lead };
 }
 
@@ -28,7 +29,7 @@ export default async function AboutPage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const about = dict.aboutPage;
 
   return (

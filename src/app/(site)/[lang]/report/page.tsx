@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import ReportForm from "@/components/report/ReportForm";
-import { getDictionary, isReadyLanguage, violationText } from "@/lib/i18n";
+import { isReadyLanguage, violationText } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 import { loadViolationTypes } from "@/server/violations";
 
 // Страница подачи сообщения. Виды тянем из базы, названия — из словаря.
@@ -16,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   return { title: dict.reportPage.title, description: dict.reportPage.lead };
 }
 
@@ -28,7 +29,7 @@ export default async function ReportPage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const types = await loadViolationTypes();
 
   return (

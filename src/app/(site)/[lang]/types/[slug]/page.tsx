@@ -1,3 +1,4 @@
+import { getContent } from "@/server/content";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,7 +6,6 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import {
   FORMS,
-  getDictionary,
   isReadyLanguage,
   violationText,
   type Dictionary,
@@ -29,7 +29,7 @@ export async function generateMetadata({
   const { lang, slug } = await params;
   if (!isReadyLanguage(lang)) return {};
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const text = violationText(dict, slug);
   if (!text) return { title: dict.typesPage.notFound };
 
@@ -79,7 +79,7 @@ export default async function TypePage({
   const { lang, slug } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const text = violationText(dict, slug);
 
   if (!text) return <NotFound dict={dict} lang={lang} />;

@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight, Mail, Phone, Send } from "lucide-react";
 
 import { CONTACTS, phoneHref } from "@/lib/contacts";
-import { getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 
 // Контакты. Три канала связи и отсылка к форме: сообщения о нарушениях
 // через переписку теряются, для них есть отдельный путь.
@@ -18,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   return { title: dict.contactsPage.title, description: dict.contactsPage.lead };
 }
 
@@ -73,7 +74,7 @@ export default async function ContactsPage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const page = dict.contactsPage;
 
   return (

@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import CaseFilter from "@/components/cases/CaseFilter";
 import CaseList from "@/components/cases/CaseList";
 import Pagination from "@/components/ui/Pagination";
-import { FORMS, getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { FORMS, isReadyLanguage } from "@/lib/i18n";
+import { getContent } from "@/server/content";
 import { withCount } from "@/lib/plural";
 import { loadCasePage } from "@/server/case-data";
 import { loadViolationTypes } from "@/server/violations";
@@ -24,7 +25,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isReadyLanguage(lang)) return {};
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   return { title: dict.cases.title, description: dict.cases.lead };
 }
 
@@ -47,7 +48,7 @@ export default async function CasesPage({
   const { lang } = await params;
   if (!isReadyLanguage(lang)) notFound();
 
-  const dict = getDictionary(lang);
+  const dict = await getContent(lang);
   const query = await searchParams;
 
   const types = await loadViolationTypes();
