@@ -3,12 +3,8 @@ import { ArrowRight } from "lucide-react";
 
 import type { Dictionary, Lang } from "@/lib/i18n";
 
-/**
- * Что происходит после сообщения — и чего проект не делает.
- *
- * Второе не менее важно: человек всё равно спросит, накажут ли обидчика, и
- * умолчание подрывает доверие сильнее, чем прямой ответ «мы не можем».
- */
+// Что будет после сообщения и чего мы не делаем. Второе не менее важно:
+// про наказание всё равно спросят, и молчать хуже, чем сказать «не можем».
 export default function HowItWorks({
   dict,
   lang,
@@ -24,8 +20,7 @@ export default function HowItWorks({
         <ol className="mt-8 grid gap-8 sm:grid-cols-3">
           {dict.home.steps.map((step, index) => (
             <li key={step.title}>
-              {/* Нумерация здесь по делу: это последовательность, и порядок
-                  шагов человеку нужен. */}
+              {/* Номера тут по делу — это последовательность. */}
               <span className="font-mono text-2xs text-muted">
                 {String(index + 1).padStart(2, "0")}
               </span>

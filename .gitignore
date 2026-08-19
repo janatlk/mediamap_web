@@ -44,4 +44,3 @@ next-env.d.ts
 dev.db
 dev.db-journal
 src/generated/
-data/gb-meta.json

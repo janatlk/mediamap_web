@@ -7,13 +7,8 @@ import { Check, ChevronDown } from "lucide-react";
 
 import { LANGUAGES, type Lang } from "@/lib/i18n";
 
-/**
- * Выбор языка.
- *
- * Пять языков в ряд кнопками не помещаются, поэтому список раскрывается.
- * Неготовые языки видно сразу — так понятно, что работа идёт, — но выбрать
- * их нельзя: обещать язык и отдать пустые строки хуже, чем сказать «скоро».
- */
+// Пять языков в ряд не влезают — поэтому список. Неготовые видно, но не
+// выбрать: пустые строки хуже честного «скоро».
 
 type Props = {
   current: Lang;
@@ -27,7 +22,7 @@ const pathWithoutLang = (pathname: string): string => {
   return rest.length ? `/${rest.join("/")}` : "";
 };
 
-/** Закрывает список по нажатию вне его и по Esc. */
+/** Закрыть по клику мимо и по Esc. */
 function useDismiss(onDismiss: () => void) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -74,7 +69,7 @@ export default function LanguageSwitcher({ current, label, soonLabel }: Props) {
 
       {isOpen ? (
         <ul
-          // Список выше шапки: иначе он уезжает под неё на узких экранах.
+          // Выше шапки, иначе на узких экранах уезжает под неё.
           className="absolute right-0 z-[200] mt-1 w-52 border border-line bg-surface py-1 shadow-lg"
         >
           {LANGUAGES.map((language) => {

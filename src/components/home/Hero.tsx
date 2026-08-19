@@ -7,8 +7,7 @@ import type { Dictionary, Lang } from "@/lib/i18n";
 export default function Hero({ dict, lang }: { dict: Dictionary; lang: Lang }) {
   return (
     <section className="mx-auto max-w-[1400px] px-4 pt-10 pb-12 sm:px-6 lg:px-10 lg:pt-16">
-      {/* Одной колонкой: заголовок и пояснение в двух колонках заставляли
-          читать зигзагом. */}
+      {/* Одной колонкой — в двух приходилось читать зигзагом. */}
       <div className="max-w-3xl">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl">{dict.home.title}</h1>
 
@@ -30,8 +29,8 @@ export default function Hero({ dict, lang }: { dict: Dictionary; lang: Lang }) {
           </Link>
         </div>
 
-        {/* Про анонимность — рядом с кнопкой, а не в глубине сайта: для
-            многих это условие, без которого они вообще не напишут. */}
+        {/* Анонимность — сразу у кнопки. Для многих это условие, без
+            которого они вообще не напишут. */}
         <p className="mt-3 text-sm text-muted">{dict.home.anonymous}</p>
 
         <p className="mt-8 text-base text-muted">{dict.home.slogan}</p>

@@ -1,14 +1,11 @@
 import { db } from "@/lib/db";
+import { REPORT_STATUS } from "@/lib/enums";
 import { hostFromUrl } from "@/lib/format";
 
-/**
- * Данные для главной страницы.
- *
- * Каждая функция отвечает за один вопрос и ничего не форматирует —
- * оформление живёт в компонентах. Собирает их всех getHomeData.
- */
+// Всё, что главная просит у базы. Одна функция — один вопрос,
+// форматирование не здесь, а в компонентах.
 
-const CONFIRMED = { status: "APPROVED" } as const;
+const CONFIRMED = { status: REPORT_STATUS.APPROVED };
 
 export type CaseRow = {
   id: number;
@@ -16,7 +13,7 @@ export type CaseRow = {
   typeName: { ru: string; ky: string };
   typeSlug: string;
   source: string | null;
-  city: string;
+  city: string | null;
   checkedAt: Date;
 };
 
@@ -41,7 +38,7 @@ const countCases = () => db.report.count({ where: CONFIRMED });
 /** Сколько новостей собрано за всё время. */
 const countNews = () => db.newsItem.count();
 
-/** Виды нарушений вместе с числом подтверждённых случаев. */
+/** Виды нарушений и сколько по каждому подтверждено. */
 async function loadTypes(): Promise<TypeRow[]> {
   const types = await db.violationType.findMany({
     orderBy: { sort: "asc" },
@@ -76,12 +73,7 @@ async function loadCases(limit: number): Promise<CaseRow[]> {
   }));
 }
 
-/**
- * Сколько разных площадок попало в наблюдение.
- *
- * Считаем по домену: три ссылки на facebook.com — это одна площадка,
- * а не три.
- */
+// Считаем по домену: три ссылки на facebook.com — одна площадка, не три.
 async function countSources(): Promise<number> {
   const rows = await db.report.findMany({
     where: CONFIRMED,
@@ -97,17 +89,11 @@ async function countSources(): Promise<number> {
 /** Есть ли в строке кириллица. */
 const isCyrillic = (text: string) => /[Ѐ-ӿ]/.test(text);
 
-/**
- * Новости на языке сайта, без повторов.
- *
- * Англоязычные ленты обновляются чаще, и сортировка по дате выносила их
- * наверх — для русско-кыргызской аудитории это стена нечитаемого текста.
- * Свои идут первыми; если их не набралось, добираем остальными, потому
- * что пустой раздел хуже раздела с чужим языком.
- *
- * Один материал приходит из разных лент под разными идентификаторами,
- * поэтому повторы отсеиваем по заголовку, а не по ссылке.
- */
+// Англоязычные ленты обновляются чаще и по дате вылезали наверх — на
+// русскоязычном сайте выходила стена нечитаемого. Сначала свои, потом
+// добираем остальными: пустой раздел хуже чужого языка.
+//
+// Повторы ловим по заголовку: у перепечаток разные ссылки и guid.
 async function loadNews(limit: number): Promise<NewsRow[]> {
   const pool = await db.newsItem.findMany({
     orderBy: { publishedAt: "desc" },

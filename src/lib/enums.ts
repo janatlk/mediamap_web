@@ -1,31 +1,36 @@
-/**
- * Наборы допустимых значений для строковых колонок.
- *
- * В схеме они строки — SQLite не умеет перечисления, а разработка идёт
- * на нём. Единственный источник правды о допустимых значениях здесь,
- * и всё, что приходит извне, проверяется по этим спискам.
- */
+// Роль, статус и тяжесть лежат в базе строками — SQLite не умеет enum,
+// а дев идёт на нём. Что считать допустимым, решается только здесь.
 
-export const ROLES = ["MODERATOR", "ADMIN", "SUPERADMIN"] as const;
-export type Role = (typeof ROLES)[number];
+export const ROLE = {
+  MODERATOR: "MODERATOR",
+  ADMIN: "ADMIN",
+  SUPERADMIN: "SUPERADMIN",
+} as const;
 
-/**
- * Роли, которые администратор вправе выдать при создании сотрудника.
- * SUPERADMIN сюда не входит намеренно: такой доступ выдаётся только
- * напрямую в базе.
- */
-export const ASSIGNABLE_ROLES = ["MODERATOR", "ADMIN"] as const;
+export type Role = (typeof ROLE)[keyof typeof ROLE];
 
-export const REPORT_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
-export type ReportStatus = (typeof REPORT_STATUSES)[number];
+/** Что админ может выдать сотруднику. SUPERADMIN — только руками в базе. */
+export const ASSIGNABLE_ROLES: Role[] = [ROLE.MODERATOR, ROLE.ADMIN];
 
-export const SEVERITIES = ["LOW", "MEDIUM", "HIGH"] as const;
-export type Severity = (typeof SEVERITIES)[number];
+export const REPORT_STATUS = {
+  /** Сообщение получено, но ещё не рассмотрено. */
+  PENDING: "PENDING",
+  /** Нарушение подтвердилось — случай публикуется. */
+  APPROVED: "APPROVED",
+  /** Проверка не подтвердила нарушение. */
+  REJECTED: "REJECTED",
+} as const;
+
+export type ReportStatus = (typeof REPORT_STATUS)[keyof typeof REPORT_STATUS];
+
+export const SEVERITY = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const;
+
+export type Severity = (typeof SEVERITY)[keyof typeof SEVERITY];
 
 /** Кому разрешено менять содержимое сайта. */
 export const canEditContent = (role: string | null | undefined): boolean =>
-  role === "ADMIN" || role === "SUPERADMIN";
-
-/** Кому разрешено рассматривать заявки. */
-export const canReviewReports = (role: string | null | undefined): boolean =>
-  ROLES.includes(role as Role);
+  role === ROLE.ADMIN || role === ROLE.SUPERADMIN;

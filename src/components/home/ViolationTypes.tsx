@@ -3,15 +3,11 @@ import { ArrowRight } from "lucide-react";
 
 import type { TypeRow } from "@/server/home-data";
 import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
+import { typeColor } from "@/lib/violation-types";
 import { withCount } from "@/lib/plural";
 
 /** Три вида нарушений: что именно мы собираем. */
 
-const TYPE_COLOR: Record<string, string> = {
-  "hate-speech": "bg-hate",
-  disinformation: "bg-disinfo",
-  "digital-fraud": "bg-propaganda",
-};
 
 type Props = { dict: Dictionary; lang: Lang; types: TypeRow[] };
 
@@ -40,7 +36,7 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
             const body = (
               <>
                 <span
-                  className={`h-1 w-10 ${TYPE_COLOR[type.slug] ?? "bg-other"}`}
+                  className={`h-1 w-10 ${typeColor(type.slug)}`}
                   aria-hidden="true"
                 />
                 <h3 className="mt-4 text-lg">{type.name[lang]}</h3>
@@ -55,8 +51,7 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
               </>
             );
 
-            // Вид без единого случая никуда не ведёт: нажатие приводило бы
-            // на пустую страницу.
+            // Пустой вид никуда не ведёт — иначе клик в пустую страницу.
             return (
               <li key={type.slug} className="bg-paper">
                 {type.count > 0 ? (

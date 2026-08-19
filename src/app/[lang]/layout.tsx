@@ -7,15 +7,11 @@ import Footer from "@/components/site/Footer";
 import { READY_LANGUAGES, getDictionary, isReadyLanguage } from "@/lib/i18n";
 import "../globals.css";
 
-/*
-  Корневой макет. Он живёт внутри [lang], потому что атрибут lang у тега
-  html обязан совпадать с языком страницы: без этого браузер и скринридер
-  читают кыргызский текст по правилам русского.
-
-  Три гарнитуры, три роли, обе основные родом из кириллических студий —
-  для кыргызского это важно: ө, ү и ң в латинских шрифтах часто нарисованы
-  по остаточному принципу.
-*/
+// Корневой макет лежит внутри [lang]: атрибут lang у html должен совпадать
+// с языком страницы, иначе скринридер читает кыргызский по русским правилам.
+//
+// Три гарнитуры на три роли. Обе основные — из кириллических студий: ө, ү и
+// ң в латинских шрифтах рисуют по остаточному принципу.
 
 const display = Geologica({
   subsets: ["cyrillic", "latin"],
@@ -72,17 +68,16 @@ export default async function LangLayout({
   const dict = getDictionary(lang);
 
   return (
-    // suppressHydrationWarning стоит только на html и body и только потому,
-    // что их атрибуты у нас полностью статичны: расхождение здесь не может
-    // прийти из нашего кода. Зато его регулярно создают расширения браузера,
-    // дописывая свои атрибуты до подключения React.
+    // suppressHydrationWarning только тут: атрибуты у html и body статичные,
+    // своё расхождение взяться неоткуда. А расширения браузера дописывают
+    // сюда своё до того, как поднимется React.
     <html
       lang={lang}
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen" suppressHydrationWarning>
-        {/* Первая цель при табуляции: пропустить шапку и уйти к содержанию. */}
+        {/* Первый таб — сразу к содержанию, мимо шапки. */}
         <a
           href="#content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[300] focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:text-surface"

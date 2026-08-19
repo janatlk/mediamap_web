@@ -4,22 +4,14 @@ import { ArrowRight } from "lucide-react";
 import type { CaseRow, TypeRow } from "@/server/home-data";
 import { formatDate, percent } from "@/lib/format";
 import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
+import { typeColor } from "@/lib/violation-types";
 import { plural } from "@/lib/plural";
 
-/**
- * Главный блок страницы: сами случаи.
- *
- * Здесь была карта, но привязка к месту у случаев почти не встречается, и
- * карта выходила пустой. Показываем то, что у случая есть всегда: вид
- * нарушения, площадку, дату проверки и номер. Рядом — распределение по
- * видам: оно честно читается и на десяти случаях, и на тысяче.
- */
+// Главный блок. Тут была карта, но привязка к месту у случаев редкая —
+// висело бы пять точек на всю страну. Показываем то, что есть всегда:
+// вид, площадка, дата, номер. Рядом доли по видам — читается и на десяти
+// случаях, и на тысяче.
 
-const TYPE_COLOR: Record<string, string> = {
-  "hate-speech": "bg-hate",
-  disinformation: "bg-disinfo",
-  "digital-fraud": "bg-propaganda",
-};
 
 type Props = {
   dict: Dictionary;
@@ -49,7 +41,7 @@ function Breakdown({ types, total, dict, lang }: Omit<Props, "cases">) {
 
               <div className="mt-2 h-1.5 w-full bg-line" aria-hidden="true">
                 <div
-                  className={`h-full ${TYPE_COLOR[type.slug] ?? "bg-other"}`}
+                  className={`h-full ${typeColor(type.slug)}`}
                   style={{ width: `${share}%` }}
                 />
               </div>
@@ -71,8 +63,8 @@ function Breakdown({ types, total, dict, lang }: Omit<Props, "cases">) {
 function CaseItem({ item, lang, dict }: { item: CaseRow; lang: Lang; dict: Dictionary }) {
   return (
     <li className="border-b border-line py-4">
-      {/* Сначала понятное — что и где, — потом дата, и лишь затем номер:
-          человек не должен упираться в MM-2024-0065 раньше, чем в суть. */}
+      {/* Сначала суть, номер в конце: раньше человек упирался в
+          MM-2024-0065 прежде, чем понимал, о чём запись. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span className="text-base">{item.typeName[lang]}</span>
         <span className="font-mono text-2xs text-muted">{item.publicId}</span>
@@ -80,10 +72,14 @@ function CaseItem({ item, lang, dict }: { item: CaseRow; lang: Lang; dict: Dicti
 
       <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-muted">
         <span className="font-mono text-xs">
-          {item.source ?? dict.case.sourceUnknown}
+          {item.source ?? dict.home.caseSourceUnknown}
         </span>
-        <span aria-hidden="true">·</span>
-        <span>{item.city}</span>
+        {item.city ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>{item.city}</span>
+          </>
+        ) : null}
         <span aria-hidden="true">·</span>
         <span className="tabular-nums">{formatDate(item.checkedAt, lang)}</span>
       </div>

@@ -10,12 +10,8 @@ const DICTIONARIES: Record<Lang, Dictionary> = { ru, ky };
 
 export const getDictionary = (lang: Lang): Dictionary => DICTIONARIES[lang];
 
-/**
- * Формы существительных при числах.
- *
- * Русский требует три: 1 случай, 2 случая, 5 случаев. В кыргызском
- * существительное после числительного не меняется — там берётся первая.
- */
+// Русскому нужны три формы: 1 случай, 2 случая, 5 случаев.
+// В кыргызском после числительного слово не меняется — берём первую.
 export const FORMS: Record<Lang, Record<string, Forms>> = {
   ru: {
     cases: ["случай", "случая", "случаев"],

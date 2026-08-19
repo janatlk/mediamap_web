@@ -34,8 +34,8 @@ export default function NewsList({
           </Link>
         </div>
 
-        {/* Без линеек между строками: несколько списков подряд с линейками
-            превращали страницу в одну длинную таблицу. */}
+        {/* Без линеек: три списка подряд с ними превращали страницу
+            в одну длинную таблицу. */}
         <ul className="mt-8 space-y-5">
           {news.map((item) => (
             <li key={item.id}>
@@ -47,8 +47,7 @@ export default function NewsList({
               >
                 <span className="text-base group-hover:text-signal">
                   {item.title}
-                  {/* Стрелка наружу: ссылка уводит на сторонний сайт, и об
-                      этом честнее предупредить заранее. */}
+                  {/* Уводит на чужой сайт — предупреждаем стрелкой. */}
                   <ArrowUpRight
                     className="ml-1 inline h-3.5 w-3.5 align-baseline text-muted"
                     aria-hidden="true"

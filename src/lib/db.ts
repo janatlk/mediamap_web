@@ -1,13 +1,8 @@
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@/generated/prisma";
 
-/**
- * Клиент базы.
- *
- * В разработке Next.js перезагружает модули на каждое изменение, и без
- * кэша в globalThis на каждой правке открывалось бы новое соединение,
- * пока база не откажет.
- */
+// Кэш в globalThis нужен для дева: Next перезагружает модули на каждую
+// правку, и без него соединения копятся, пока база не ляжет.
 
 const createClient = () =>
   new PrismaClient({
