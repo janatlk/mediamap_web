@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, ArrowRight, Check } from "lucide-react";
 
+import AssessmentCard from "./AssessmentCard";
 import { LIMITS } from "@/lib/report-schema";
 import type { Dictionary, Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
@@ -70,7 +71,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
 
   if (state.status === "done") {
     return (
-      <div className="max-w-2xl">
+      <div className="max-w-4xl">
         <h1 className="flex items-center gap-3 text-3xl sm:text-4xl">
           <Check className="h-7 w-7 text-signal" aria-hidden="true" />
           {page.doneTitle}
@@ -82,6 +83,12 @@ export default function ReportForm({ dict, lang, types }: Props) {
           <p className="mt-1 font-mono text-2xl">{state.publicId}</p>
           <p className="mt-4 text-sm text-muted">{page.doneKeep}</p>
         </div>
+
+        <AssessmentCard
+          dict={dict}
+          assessment={state.assessment}
+          chosenType={state.chosenType}
+        />
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link

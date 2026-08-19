@@ -87,6 +87,21 @@ model Report {
 
   /// PENDING | APPROVED | REJECTED
   status   String  @default("PENDING")
+
+  /// Предварительная оценка, снимается сразу при подаче.
+  ///
+  /// Она ничего не решает: статус ставит только живой человек. Оценка
+  /// нужна, чтобы очередь на проверку шла не подряд, а с самого похожего
+  /// на настоящее нарушение.
+  ///
+  /// aiSource говорит, чем получена: rules — разбор по ключевым словам,
+  /// model — языковая модель. Без этого поля через полгода не понять, чему
+  /// верить в старых записях.
+  aiVerdict     String?
+  aiConfidence  Float?
+  aiSummary     String?
+  aiSource      String?
+  aiCheckedAt   DateTime?
   /// LOW | MEDIUM | HIGH. Пусто, пока заявку не рассмотрели.
   severity String?
 

@@ -3,6 +3,8 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { reportSchema } from "@/lib/report-schema";
+import type { ViolationSlug } from "@/lib/i18n";
+import { assess, type Assessment } from "./ai-review";
 
 // Приём сообщения о нарушении. Первая и пока единственная операция записи
 // на сайте, поэтому здесь же заведён весь порядок: проверка, номер, статус.
@@ -10,7 +12,12 @@ import { reportSchema } from "@/lib/report-schema";
 export type SubmitState =
   | { status: "idle" }
   | { status: "error"; errors: Record<string, string>; values: Record<string, string> }
-  | { status: "done"; publicId: string };
+  | {
+      status: "done";
+      publicId: string;
+      chosenType: string;
+      assessment: Assessment;
+    };
 
 /**
  * Публичный номер сообщения: MM-2026-0042.
@@ -87,13 +94,27 @@ export async function submitReport(
     };
   }
 
+  // Предварительная оценка снимается сразу: она ничего не решает, но
+  // задаёт порядок в очереди на проверку.
+  const assessment = assess({
+    story: data.story,
+    chosenType: data.typeSlug as ViolationSlug,
+    hasLink: Boolean(data.link),
+  });
+
   const fields = {
     violationTypeId: type.id,
     mediaLink: data.link ? data.link : null,
     authorComment: data.story,
     city: data.city ? data.city : null,
-    // На карту сообщение попадёт только после проверки живым человеком.
+    // Публикуется сообщение только после проверки живым человеком.
     status: REPORT_STATUS.PENDING,
+
+    aiVerdict: assessment.verdict,
+    aiConfidence: assessment.confidence,
+    aiSummary: assessment.reasons.join(","),
+    aiSource: assessment.source,
+    aiCheckedAt: new Date(),
   };
 
   // Три попытки на случай, если номер займут между запросом и вставкой.
@@ -101,7 +122,12 @@ export async function submitReport(
     const publicId = await nextPublicId();
     try {
       await db.report.create({ data: { publicId, ...fields } });
-      return { status: "done", publicId };
+      return {
+        status: "done",
+        publicId,
+        chosenType: data.typeSlug,
+        assessment,
+      };
     } catch (error) {
       if (!isDuplicateId(error)) throw error;
     }
