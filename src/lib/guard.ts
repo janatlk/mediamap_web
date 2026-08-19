@@ -1,17 +1,23 @@
 import { redirect } from "next/navigation";
 
 import { currentUser, type SessionUser } from "./auth";
-import { canEditContent } from "./enums";
+import { canEditContent, isStaff } from "./enums";
 
 // Проверка доступа для служебных страниц.
 //
 // Вызывается на каждой странице отдельно, а не один раз в макете: макет
 // легко забыть, а забытая страница окажется открытой всем.
 
-/** Пускает любого сотрудника. Иначе уводит на вход. */
+/**
+ * Пускает только сотрудника.
+ *
+ * Проверяем роль, а не просто наличие сессии: с появлением аккаунтов для
+ * заявителей сессия есть у кого угодно, и одного её наличия мало.
+ */
 export async function requireStaff(): Promise<SessionUser> {
   const user = await currentUser();
   if (!user) redirect("/admin/login");
+  if (!isStaff(user.role)) redirect("/admin/login");
   return user;
 }
 

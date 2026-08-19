@@ -2,6 +2,8 @@
 // а дев идёт на нём. Что считать допустимым, решается только здесь.
 
 export const ROLE = {
+  /// Обычный человек с аккаунтом. В панель не пускается.
+  REPORTER: "REPORTER",
   MODERATOR: "MODERATOR",
   ADMIN: "ADMIN",
   SUPERADMIN: "SUPERADMIN",
@@ -30,6 +32,17 @@ export const SEVERITY = {
 } as const;
 
 export type Severity = (typeof SEVERITY)[keyof typeof SEVERITY];
+
+/**
+ * Сотрудники — те, кому открыта панель.
+ *
+ * Список белый, а не чёрный: появится завтра новая роль — она по умолчанию
+ * никуда не попадёт, и это правильная сторона ошибки.
+ */
+export const STAFF_ROLES: string[] = [ROLE.MODERATOR, ROLE.ADMIN, ROLE.SUPERADMIN];
+
+export const isStaff = (role: string | null | undefined): boolean =>
+  typeof role === "string" && STAFF_ROLES.includes(role);
 
 /** Кому разрешено менять содержимое сайта. */
 export const canEditContent = (role: string | null | undefined): boolean =>

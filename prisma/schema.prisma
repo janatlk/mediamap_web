@@ -23,19 +23,48 @@ datasource db {
 // src/lib/enums.ts. При переезде на Postgres колонки те же.
 
 model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  name         String?
-  passwordHash String
-  /// MODERATOR | ADMIN | SUPERADMIN — см. src/lib/enums.ts
-  role         String   @default("MODERATOR")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
 
-  reviewed Report[] @relation("ReviewedBy")
+  /// Пусто у тех, кто вошёл через Google или Facebook: пароля у них нет.
+  passwordHash String?
+
+  /// REPORTER | MODERATOR | ADMIN | SUPERADMIN — см. src/lib/enums.ts.
+  /// По умолчанию REPORTER: кто заводит аккаунт сам, сотрудником не станет.
+  role String @default("REPORTER")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviewed Report[]  @relation("ReviewedBy")
+  reported Report[]  @relation("ReportedBy")
   sessions Session[]
+  accounts Account[]
 
   @@map("users")
+}
+
+/// Вход через чужой сервис.
+///
+/// Отдельной таблицей, а не колонками в User: у одного человека может быть
+/// и Google, и Facebook, и пароль — всё разом, и заводить под каждый способ
+/// по колонке значит переписывать таблицу на каждый новый сервис.
+model Account {
+  id       Int    @id @default(autoincrement())
+  /// google | facebook
+  provider String
+  /// Идентификатор человека у этого сервиса.
+  externalId String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, externalId])
+  @@index([userId])
+  @@map("accounts")
 }
 
 /// Сессия в базе, а не токен в заголовке — так доступ можно отозвать,
@@ -118,8 +147,12 @@ model Report {
   violationTypeId Int
   violationType   ViolationType @relation(fields: [violationTypeId], references: [id])
 
-  /// Кто рассмотрел. Автора нет — сообщения анонимные, а вот проверивший
-  /// сотрудник после решения есть всегда.
+  /// Кто подал, если человек был в аккаунте. Пусто у анонимных — а это
+  /// основной путь, и таким он остаётся.
+  authorId Int?
+  author   User? @relation("ReportedBy", fields: [authorId], references: [id], onDelete: SetNull)
+
+  /// Кто рассмотрел. Проверивший сотрудник после решения есть всегда.
   reviewedById Int?
   reviewedBy   User?     @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt   DateTime?

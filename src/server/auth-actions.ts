@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { endSession, startSession, verifyPassword } from "@/lib/auth";
+import { isStaff } from "@/lib/enums";
 
 // Вход и выход сотрудников.
 
@@ -20,11 +21,19 @@ export async function signIn(
 
   const user = await db.user.findUnique({ where: { email } });
 
-  // Одна и та же ошибка на «нет такого» и «пароль не тот»: иначе форма
-  // превращается в способ узнать, какие адреса у нас заведены.
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  // Пароля может не быть вовсе: человек заводил вход через Google или
+  // Facebook. Ответ всё равно один и тот же — иначе форма превращается в
+  // способ узнать, какие адреса у нас заведены и как именно они входят.
+  if (
+    !user ||
+    !user.passwordHash ||
+    !(await verifyPassword(password, user.passwordHash))
+  ) {
     return { error: "wrong" };
   }
+
+  // В панель по этой форме проходят только сотрудники.
+  if (!isStaff(user.role)) return { error: "wrong" };
 
   await startSession(user.id);
   redirect("/admin");
