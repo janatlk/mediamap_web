@@ -98,3 +98,48 @@ export const loadCaseIds = async (): Promise<string[]> => {
   });
   return rows.map((row) => row.publicId);
 };
+
+export type Receipt = {
+  publicId: string;
+  status: string;
+  typeSlug: string;
+  createdAt: Date;
+  ai: {
+    verdict: string;
+    confidence: number;
+    reasons: string[];
+    source: "rules" | "model";
+  } | null;
+};
+
+/**
+ * Сообщение по личному ключу — для страницы «принято».
+ *
+ * Ищем именно по ключу, а не по номеру: номер угадывается, а сообщение до
+ * проверки не опубликовано. Статус отдаём любой, в том числе отклонённый:
+ * человек вправе узнать решение по своему сообщению.
+ */
+export async function loadReceipt(token: string): Promise<Receipt | null> {
+  const row = await db.report.findUnique({
+    where: { receiptToken: token },
+    include: { violationType: { select: { slug: true } } },
+  });
+
+  if (!row) return null;
+
+  return {
+    publicId: row.publicId,
+    status: row.status,
+    typeSlug: row.violationType.slug,
+    createdAt: row.createdAt,
+    ai:
+      row.aiVerdict && row.aiConfidence !== null
+        ? {
+            verdict: row.aiVerdict,
+            confidence: row.aiConfidence,
+            reasons: (row.aiSummary ?? "").split(",").filter(Boolean),
+            source: row.aiSource === "model" ? "model" : "rules",
+          }
+        : null,
+  };
+}

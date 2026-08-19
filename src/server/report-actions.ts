@@ -1,5 +1,8 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { redirect } from "next/navigation";
+
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { reportSchema } from "@/lib/report-schema";
@@ -9,15 +12,12 @@ import { assess, type Assessment } from "./ai-review";
 // Приём сообщения о нарушении. Первая и пока единственная операция записи
 // на сайте, поэтому здесь же заведён весь порядок: проверка, номер, статус.
 
+// Успеха здесь нет: после записи уводим на отдельную страницу. Экран
+// «принято» — это своя страница со своим адресом, а не другое состояние
+// формы: его можно сохранить в закладки и вернуться позже за решением.
 export type SubmitState =
   | { status: "idle" }
-  | { status: "error"; errors: Record<string, string>; values: Record<string, string> }
-  | {
-      status: "done";
-      publicId: string;
-      chosenType: string;
-      assessment: Assessment;
-    };
+  | { status: "error"; errors: Record<string, string>; values: Record<string, string> };
 
 /**
  * Публичный номер сообщения: MM-2026-0042.
@@ -59,6 +59,9 @@ export async function submitReport(
   _previous: SubmitState,
   form: FormData,
 ): Promise<SubmitState> {
+  // Язык нужен, чтобы увести на страницу «принято» на том же языке.
+  const lang = String(form.get("lang") ?? "ru");
+
   const parsed = reportSchema.safeParse({
     typeSlug: form.get("typeSlug") ?? "",
     link: form.get("link") ?? "",
@@ -115,6 +118,9 @@ export async function submitReport(
     aiSummary: assessment.reasons.join(","),
     aiSource: assessment.source,
     aiCheckedAt: new Date(),
+    // Личный ключ страницы «принято». Случайный, потому что номер
+    // MM-2026-0001 угадывается с первой попытки.
+    receiptToken: randomUUID(),
   };
 
   // Три попытки на случай, если номер займут между запросом и вставкой.
@@ -122,16 +128,16 @@ export async function submitReport(
     const publicId = await nextPublicId();
     try {
       await db.report.create({ data: { publicId, ...fields } });
-      return {
-        status: "done",
-        publicId,
-        chosenType: data.typeSlug,
-        assessment,
-      };
+      // redirect бросает своё исключение, поэтому вызываем его за пределами
+      // try: внутри его перехватила бы проверка на дубль номера.
+      break;
     } catch (error) {
       if (!isDuplicateId(error)) throw error;
+      if (attempt === 2) {
+        throw new Error("Не удалось подобрать свободный номер сообщения");
+      }
     }
   }
 
-  throw new Error("Не удалось подобрать свободный номер сообщения");
+  redirect(`/${lang}/report/sent/${fields.receiptToken}`);
 }

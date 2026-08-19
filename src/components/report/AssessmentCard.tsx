@@ -1,4 +1,4 @@
-import { Bot, Check, Clock } from "lucide-react";
+import { Bot, Check, Clock, X } from "lucide-react";
 
 import { violationText, type Dictionary } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
@@ -15,6 +15,8 @@ type Props = {
   dict: Dictionary;
   assessment: Assessment;
   chosenType: string;
+  /** Решение человека: PENDING | APPROVED | REJECTED. */
+  status: string;
 };
 
 /** Словами, а не только числом: «0.42» человеку ничего не говорит. */
@@ -25,7 +27,12 @@ function confidenceWord(value: number, dict: Dictionary): string {
   return words.confidenceHigh;
 }
 
-export default function AssessmentCard({ dict, assessment, chosenType }: Props) {
+export default function AssessmentCard({
+  dict,
+  assessment,
+  chosenType,
+  status,
+}: Props) {
   const words = dict.assessment;
   const percent = Math.round(assessment.confidence * 100);
 
@@ -89,8 +96,22 @@ export default function AssessmentCard({ dict, assessment, chosenType }: Props) 
         <div className="bg-surface px-6 py-5">
           <p className="text-sm text-muted">{words.adminLabel}</p>
           <p className="mt-2 flex items-center gap-2 text-lg">
-            <Clock className="h-4 w-4 text-muted" aria-hidden="true" />
-            {words.adminPending}
+            {status === "APPROVED" ? (
+              <>
+                <Check className="h-4 w-4 text-signal" aria-hidden="true" />
+                {words.adminApproved}
+              </>
+            ) : status === "REJECTED" ? (
+              <>
+                <X className="h-4 w-4 text-muted" aria-hidden="true" />
+                {words.adminRejected}
+              </>
+            ) : (
+              <>
+                <Clock className="h-4 w-4 text-muted" aria-hidden="true" />
+                {words.adminPending}
+              </>
+            )}
           </p>
         </div>
       </div>

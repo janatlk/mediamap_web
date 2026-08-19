@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { AlertCircle, ArrowRight, Check } from "lucide-react";
+import { AlertCircle, ArrowRight } from "lucide-react";
 
-import AssessmentCard from "./AssessmentCard";
 import { LIMITS } from "@/lib/report-schema";
 import type { Dictionary, Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
@@ -16,6 +14,9 @@ import { submitReport, type SubmitState } from "@/server/report-actions";
 // Отправляется серверным действием, а не запросом из браузера: форма
 // работает и до того, как загрузится JS. Проверка целиком на сервере — это
 // единственная сторона, которой можно верить.
+//
+// Экрана «принято» здесь нет: после записи действие уводит на отдельную
+// страницу со своим адресом, который можно сохранить и открыть позже.
 
 type Props = {
   dict: Dictionary;
@@ -69,48 +70,10 @@ export default function ReportForm({ dict, lang, types }: Props) {
   const valueOf = (field: string) =>
     state.status === "error" ? state.values[field] : undefined;
 
-  if (state.status === "done") {
-    return (
-      <div className="max-w-4xl">
-        <h1 className="flex items-center gap-3 text-3xl sm:text-4xl">
-          <Check className="h-7 w-7 text-signal" aria-hidden="true" />
-          {page.doneTitle}
-        </h1>
-        <p className="mt-4 text-lg text-muted">{page.doneLead}</p>
-
-        <div className="mt-8 border border-line bg-surface p-6">
-          <p className="text-sm text-muted">{page.doneNumber}</p>
-          <p className="mt-1 font-mono text-2xl">{state.publicId}</p>
-          <p className="mt-4 text-sm text-muted">{page.doneKeep}</p>
-        </div>
-
-        <AssessmentCard
-          dict={dict}
-          assessment={state.assessment}
-          chosenType={state.chosenType}
-        />
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href={`/${lang}/report`}
-            className="inline-flex h-12 items-center justify-center rounded-xs border border-border px-6 text-base font-medium transition-colors hover:bg-surface"
-          >
-            {page.doneAnother}
-          </Link>
-          <Link
-            href={`/${lang}/cases`}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xs bg-ink px-6 text-base font-medium text-surface"
-          >
-            {page.doneToCases}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form action={action} className="max-w-2xl" noValidate>
+      <input type="hidden" name="lang" value={lang} />
+
       {/* Ловушка для роботов: спрятана от людей, но видна автозаполнялкам. */}
       <div className="absolute left-[-9999px]" aria-hidden="true">
         <label>
