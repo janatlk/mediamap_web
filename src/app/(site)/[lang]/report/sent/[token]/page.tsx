@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import AssessmentCard from "@/components/report/AssessmentCard";
+import RememberReceipt from "@/components/report/RememberReceipt";
 import { REPORT_STATUS } from "@/lib/enums";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
@@ -81,6 +82,10 @@ export default async function SentPage({
         </h1>
         <p className="mt-4 text-lg text-muted">{page.doneLead}</p>
 
+        {/* Запоминаем в браузере: ссылку легко потерять, а список своих
+            сообщений остаётся. */}
+        <RememberReceipt token={token} publicId={receipt.publicId} />
+
         <div className="mt-8 border border-line bg-surface p-6">
           <p className="text-sm text-muted">{page.doneNumber}</p>
           <p className="mt-1 font-mono text-2xl">{receipt.publicId}</p>
@@ -107,6 +112,13 @@ export default async function SentPage({
             className="inline-flex h-12 items-center justify-center rounded-xs border border-border px-6 text-base font-medium transition-colors hover:bg-surface"
           >
             {page.doneAnother}
+          </Link>
+
+          <Link
+            href={`/${lang}/report/my`}
+            className="inline-flex h-12 items-center justify-center rounded-xs border border-border px-6 text-base font-medium transition-colors hover:bg-surface"
+          >
+            {dict.myReports.link}
           </Link>
 
           {/* Пока не опубликовано — вести на карточку случая некуда. */}

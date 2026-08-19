@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import ReportForm from "@/components/report/ReportForm";
@@ -37,6 +39,14 @@ export default async function ReportPage({
       <div className="max-w-2xl">
         <h1 className="text-3xl sm:text-4xl">{dict.reportPage.title}</h1>
         <p className="mt-4 text-lg text-muted">{dict.reportPage.lead}</p>
+
+        <Link
+          href={`/${lang}/report/my`}
+          className="mt-4 inline-flex min-h-9 items-center gap-1.5 py-1 text-sm text-signal hover:underline"
+        >
+          {dict.myReports.link}
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        </Link>
       </div>
 
       <div className="mt-10">
