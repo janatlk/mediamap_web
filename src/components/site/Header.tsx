@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { LogIn, Menu, UserRound, X } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { Dictionary, Lang } from "@/lib/i18n";
@@ -14,9 +14,15 @@ import type { Dictionary, Lang } from "@/lib/i18n";
 // 2. Ничего не меняет размер от наведения. Кнопка поиска разъезжалась
 //    с 40 до 240px и толкала соседей.
 
-type Props = { dict: Dictionary; lang: Lang };
+type Account = { name: string; staff: boolean } | null;
 
-export default function Header({ dict, lang }: Props) {
+type Props = { dict: Dictionary; lang: Lang; account: Account };
+
+export default function Header({ dict, lang, account }: Props) {
+  // Сотрудника ведём в панель, остальных — в кабинет заявителя: это разные
+  // места, и путать их незачем.
+  const accountHref = account?.staff ? "/admin" : `/${lang}/account`;
+  const accountLabel = account?.staff ? dict.nav.panel : dict.nav.account;
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -63,6 +69,23 @@ export default function Header({ dict, lang }: Props) {
             soonLabel={dict.nav.languageSoon}
           />
 
+          {/* Подпись прячем на узких экранах: значка хватает, а место в
+              шапке дороже. */}
+          <Link
+            href={account ? accountHref : `/${lang}/account/login`}
+            className="flex h-10 items-center gap-2 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface"
+            title={account ? account.name : dict.nav.signIn}
+          >
+            {account ? (
+              <UserRound className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+            )}
+            <span className="hidden xl:inline">
+              {account ? accountLabel : dict.nav.signIn}
+            </span>
+          </Link>
+
           <Link
             href={`/${lang}/report`}
             className="hidden h-10 items-center rounded-xs bg-signal px-4 text-sm font-medium text-surface transition-colors hover:bg-signal-deep sm:flex"
@@ -92,6 +115,20 @@ export default function Header({ dict, lang }: Props) {
                 </Link>
               </li>
             ))}
+            <li className="border-b border-line">
+              <Link
+                href={account ? accountHref : `/${lang}/account/login`}
+                className="flex items-center gap-2 py-3.5 text-base"
+              >
+                {account ? (
+                  <UserRound className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <LogIn className="h-4 w-4" aria-hidden="true" />
+                )}
+                {account ? accountLabel : dict.nav.signIn}
+              </Link>
+            </li>
+
             <li className="py-3">
               <Link
                 href={`/${lang}/report`}

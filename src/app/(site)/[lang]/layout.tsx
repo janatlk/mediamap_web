@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { Geologica, Golos_Text, JetBrains_Mono } from "next/font/google";
 
 import Header from "@/components/site/Header";
+import { currentUser } from "@/lib/auth";
+import { isStaff } from "@/lib/enums";
 import Footer from "@/components/site/Footer";
 import { READY_LANGUAGES, isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
@@ -68,6 +70,13 @@ export default async function LangLayout({
 
   const dict = await getContent(lang);
 
+  // Шапке нужно знать лишь две вещи: вошёл ли человек и сотрудник ли он.
+  // Ни почты, ни роли целиком в браузер не отдаём.
+  const user = await currentUser();
+  const account = user
+    ? { name: user.name ?? user.email, staff: isStaff(user.role) }
+    : null;
+
   return (
     // suppressHydrationWarning только тут: атрибуты у html и body статичные,
     // своё расхождение взяться неоткуда. А расширения браузера дописывают
@@ -86,7 +95,7 @@ export default async function LangLayout({
           {dict.a11y.skipToContent}
         </a>
 
-        <Header dict={dict} lang={lang} />
+        <Header dict={dict} lang={lang} account={account} />
         <main id="content">{children}</main>
         <Footer dict={dict} lang={lang} />
       </body>
