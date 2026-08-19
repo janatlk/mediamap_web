@@ -5,7 +5,7 @@
 const COLORS: Record<string, string> = {
   "hate-speech": "bg-hate",
   disinformation: "bg-disinfo",
-  "digital-fraud": "bg-propaganda",
+  "digital-fraud": "bg-fraud",
 };
 
 const FALLBACK = "bg-other";
