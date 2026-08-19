@@ -63,6 +63,17 @@ export type MapRegion = {
 
 export const KG_VIEW_BOX = `0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`;
 
+/**
+ * Рамка с полем по краям — под внешний контур.
+ *
+ * Контур рисуется наружу от силуэта, и без запаса его срезало бы у самых
+ * западных и восточных точек страны.
+ */
+const PADDING = 8;
+export const KG_VIEW_BOX_PADDED = `${-PADDING} ${-PADDING} ${
+  VIEW_WIDTH + PADDING * 2
+} ${VIEW_HEIGHT + PADDING * 2}`;
+
 /** Середина по габаритам кольца. Точности тут не нужно — это метка, не расчёт. */
 function centerOf(region: RawRegion): [number, number] {
   const all = region.rings.flat().map(([lng, lat]) => project(lng, lat));

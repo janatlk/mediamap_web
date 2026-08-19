@@ -1,13 +1,18 @@
-import { KG_SILHOUETTE, KG_VIEW_BOX } from "@/lib/kg-map";
+import { KG_SILHOUETTE, KG_VIEW_BOX_PADDED } from "@/lib/kg-map";
 import type { Dictionary } from "@/lib/i18n";
 import type { HeatPoint } from "@/server/home-data";
 
 /*
   Тепловая карта нарушений.
 
-  Границ областей тут нет намеренно: контуры всех семи склеены в один
-  силуэт, и при заливке внутренние линии исчезают. Обводки у силуэта тоже
-  нет — она прочертила бы ровно те межобластные границы, которые мы убрали.
+  Границ областей тут нет: контуры всех семи склеены в один силуэт, и при
+  заливке внутренние линии исчезают.
+
+  Внешний контур обычной обводкой не нарисовать — она прочертила бы обратно
+  все межобластные границы, ведь путь состоит из семи отдельных контуров.
+  Поэтому контур делает фильтр: он расширяет готовую форму и вычитает её же,
+  оставляя кольцо снаружи. Фильтр работает по залитой области, а не по
+  отрезкам путей, и внутренних линий просто не видит.
 
   Плотность рисуется пятнами: под каждым случаем полупрозрачное красное
   пятно с мягким краем, наложения складываются. Где случаев больше, там
@@ -31,6 +36,9 @@ type Props = {
 const SPOT_RADIUS = 90;
 const BLUR = 26;
 
+// Толщина внешнего контура в единицах холста.
+const OUTLINE_WIDTH = 3;
+
 export default function HeatMap({
   dict,
   points,
@@ -40,7 +48,7 @@ export default function HeatMap({
   return (
     <figure className="m-0">
       <svg
-        viewBox={KG_VIEW_BOX}
+        viewBox={KG_VIEW_BOX_PADDED}
         className="h-auto w-full"
         role="img"
         aria-label={dict.home.heatAlt}
@@ -61,7 +69,26 @@ export default function HeatMap({
           <filter id="kg-blur" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation={BLUR} />
           </filter>
+
+          {/* Внешний контур: расширяем форму и вычитаем исходную — остаётся
+              кольцо снаружи. */}
+          <filter id="kg-outline" x="-10%" y="-10%" width="120%" height="120%">
+            <feMorphology
+              in="SourceAlpha"
+              operator="dilate"
+              radius={OUTLINE_WIDTH}
+              result="wider"
+            />
+            <feComposite in="wider" in2="SourceAlpha" operator="out" result="ring" />
+            <feFlood floodColor="var(--color-border)" result="colour" />
+            <feComposite in="colour" in2="ring" operator="in" />
+          </filter>
         </defs>
+
+        {/* Контур рисуем первым, чтобы тепло легло поверх него. */}
+        <g filter="url(#kg-outline)">
+          <path d={KG_SILHOUETTE} fill="var(--color-ink)" />
+        </g>
 
         <g clipPath="url(#kg-shape)">
           {/* Основа — цвет бумаги: там, где случаев нет, страна остаётся
