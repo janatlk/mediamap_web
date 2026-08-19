@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import CaseFilter from "@/components/cases/CaseFilter";
 import CaseList from "@/components/cases/CaseList";
-import Pagination from "@/components/cases/Pagination";
+import Pagination from "@/components/ui/Pagination";
 import { FORMS, getDictionary, isReadyLanguage } from "@/lib/i18n";
 import { withCount } from "@/lib/plural";
 import { loadCasePage } from "@/server/case-data";
