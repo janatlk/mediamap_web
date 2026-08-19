@@ -12,25 +12,17 @@
    "slug": "disinformation",
    "nameRu": "Дезинформация",
    "nameKy": "Жалган маалымат",
-   "descRu": "Ложные сведения, распространяемые намеренно: выдуманные факты, поддельные цитаты, искажённая статистика.",
-   "descKy": "Атайын таратылган жалган маалымат: ойдон чыгарылган фактылар, жасалма цитаталар, бурмаланган статистика.",
+   "descRu": "Ложные сведения, распространяемые намеренно: выдуманные факты, поддельные цитаты, искажённая статистика, односторонняя подача ради нужного вывода.",
+   "descKy": "Атайын таратылган жалган маалымат: ойдон чыгарылган фактылар, жасалма цитаталар, бурмаланган статистика, керектүү жыйынтык үчүн бир жактуу берүү.",
    "sort": 2
   },
   {
-   "slug": "propaganda",
-   "nameRu": "Пропаганда",
-   "nameKy": "Үгүт",
-   "descRu": "Односторонняя подача, рассчитанная на эмоцию, а не на понимание: подмена понятий, давление, замалчивание.",
-   "descKy": "Түшүнүүгө эмес, сезимге эсептелген бир жактуу маалымат: түшүнүктөрдү алмаштыруу, басым, жашыруу.",
+   "slug": "digital-fraud",
+   "nameRu": "Цифровое мошенничество",
+   "nameKy": "Санариптик алдамчылык",
+   "descRu": "Обман ради денег или доступа к счетам: поддельные розыгрыши, фишинговые ссылки, сообщения от чужого имени.",
+   "descKy": "Акча же эсепке кирүү үчүн алдоо: жасалма утуштар, фишинг шилтемелери, бөтөн атынан жиберилген билдирүүлөр.",
    "sort": 3
-  },
-  {
-   "slug": "other",
-   "nameRu": "Другое",
-   "nameKy": "Башка",
-   "descRu": "Нарушения, не подходящие под остальные виды. Вид уточняем при проверке.",
-   "descKy": "Башка түрлөргө кирбеген бузуулар. Түрүн текшерүүдө тактайбыз.",
-   "sort": 4
   }
  ],
  "reports": [
@@ -73,7 +65,7 @@
    "authorComment": "Описание маркера 1",
    "moderatorComment": null,
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:10:25.050298"
   },
   {
@@ -87,7 +79,7 @@
    "authorComment": "Описание маркера 5",
    "moderatorComment": "Описание маркера 5",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:10:25.050448"
   },
   {
@@ -143,7 +135,7 @@
    "authorComment": "Детали требуется уточнить.",
    "moderatorComment": "Согласовано.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:15:25.061693"
   },
   {
@@ -185,7 +177,7 @@
    "authorComment": "Нарушение обнаружено.",
    "moderatorComment": "Требуется проверка",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:20:25.072284"
   },
   {
@@ -241,7 +233,7 @@
    "authorComment": "Проверка информации.",
    "moderatorComment": "Проверка завершена.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:20:25.072690"
   },
   {
@@ -283,7 +275,7 @@
    "authorComment": "Проблемы с проверкой актуальности данных.",
    "moderatorComment": "Требуется дополнительное подтверждение.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:25:25.083873"
   },
   {
@@ -325,7 +317,7 @@
    "authorComment": "Необходимо дополнить информацию.",
    "moderatorComment": "Информация уточняется.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:30:45.091011"
   },
   {
@@ -395,7 +387,7 @@
    "authorComment": "Дополнительная информация будет предоставлена позже.",
    "moderatorComment": "Ждем документы.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:35:55.101112"
   },
   {
@@ -437,7 +429,7 @@
    "authorComment": "Запрашиваем дополнительные документы.",
    "moderatorComment": "На проверке.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:35:55.101426"
   },
   {
@@ -465,7 +457,7 @@
    "authorComment": "Просим ускорить процесс рассмотрения.",
    "moderatorComment": "На проверке.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:40:15.111025"
   },
   {
@@ -507,7 +499,7 @@
    "authorComment": "Уже отправлены документы, ожидаем рассмотрение.",
    "moderatorComment": "Ожидаем подтверждения.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:40:15.111350"
   },
   {
@@ -549,7 +541,7 @@
    "authorComment": "Документы будут представлены в ближайшее время.",
    "moderatorComment": "Проверка в процессе.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:45:22.112144"
   },
   {
@@ -591,7 +583,7 @@
    "authorComment": "Материалы будут добавлены позднее.",
    "moderatorComment": "Информация проверена.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:45:22.112424"
   },
   {
@@ -633,7 +625,7 @@
    "authorComment": "Добавлены новые доказательства.",
    "moderatorComment": "Проверка завершена.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:50:45.112387"
   },
   {
@@ -675,7 +667,7 @@
    "authorComment": "Предоставим дополнительные доказательства в ближайшее время.",
    "moderatorComment": "Ожидаем подтверждения от заявителей.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:55:22.112154"
   },
   {
@@ -717,7 +709,7 @@
    "authorComment": "Материалы на стадии оформления.",
    "moderatorComment": "На проверке.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:55:22.112359"
   },
   {
@@ -759,7 +751,7 @@
    "authorComment": "Все данные отправлены в соответствующие органы.",
    "moderatorComment": "Подтверждения ожидаются.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T21:55:22.112547"
   },
   {
@@ -829,7 +821,7 @@
    "authorComment": "Ожидаю отзыв от компетентных органов.",
    "moderatorComment": "Ждем окончательного заключения.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T22:00:22.112547"
   },
   {
@@ -871,7 +863,7 @@
    "authorComment": "Работа продолжается.",
    "moderatorComment": "Ждем дополнительных данных.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T22:00:22.112728"
   },
   {
@@ -913,7 +905,7 @@
    "authorComment": "Иду по плану, жду одобрения.",
    "moderatorComment": "Пожалуйста, уточните данные.",
    "status": "APPROVED",
-   "typeSlug": "propaganda",
+   "typeSlug": "disinformation",
    "createdAt": "2024-11-06T22:00:22.112915"
   },
   {

@@ -106,6 +106,17 @@ async function main() {
   }
   console.log(`заявки: ${data.reports.length}`);
 
+  // Виды, которых больше нет в наборе, удаляем — но только после того,
+  // как все сообщения переставлены на актуальные. Иначе удаление увело бы
+  // за собой связанные записи.
+  const activeSlugs = data.violationTypes.map((type) => type.slug);
+  const removed = await db.violationType.deleteMany({
+    where: { slug: { notIn: activeSlugs } },
+  });
+  if (removed.count > 0) {
+    console.log(`удалено устаревших видов: ${removed.count}`);
+  }
+
   for (const item of data.news) {
     const fields = {
       title: item.title,

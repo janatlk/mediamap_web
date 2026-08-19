@@ -1,24 +1,17 @@
-import type { Lang } from "./content";
+import type { Forms, Lang } from "./i18n";
 
 /**
- * Форма существительного при числе.
+ * Выбирает форму существительного под число.
  *
- * На странице стояло «23 заявок» и «0 заявок» — такое цепляет глаз даже у
- * тех, кто не думает про грамматику, и сразу читается как недоделка.
- *
- * Русский требует три формы: 1 сообщение, 2 сообщения, 5 сообщений.
- * В кыргызском существительное после числительного не меняется, поэтому
- * там форма всегда одна и передаётся первой.
+ * На прежней странице стояло «23 заявок» и «0 заявок» — такое цепляет глаз
+ * даже у тех, кто не думает про грамматику, и читается как недоделка.
  */
-
-export type Forms = readonly [one: string, few: string, many: string];
-
 export const plural = (count: number, forms: Forms, lang: Lang): string => {
   if (lang === "ky") return forms[0];
 
   const abs = Math.abs(count);
+  // 11–14 выпадают из общего правила: «11 случаев», а не «11 случай».
   const lastTwo = abs % 100;
-  // 11–14 выпадают из общего правила: «11 сообщений», а не «11 сообщение».
   if (lastTwo >= 11 && lastTwo <= 14) return forms[2];
 
   const last = abs % 10;
@@ -27,6 +20,6 @@ export const plural = (count: number, forms: Forms, lang: Lang): string => {
   return forms[2];
 };
 
-/** Число вместе с нужной формой слова: «23 сообщения». */
+/** Число вместе с нужной формой слова: «23 случая». */
 export const withCount = (count: number, forms: Forms, lang: Lang): string =>
   `${count} ${plural(count, forms, lang)}`;
