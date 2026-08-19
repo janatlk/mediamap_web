@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import AssessmentCard from "@/components/report/AssessmentCard";
+import CopyLink from "@/components/report/CopyLink";
 import RememberReceipt from "@/components/report/RememberReceipt";
 import { REPORT_STATUS } from "@/lib/enums";
 import { isReadyLanguage } from "@/lib/i18n";
@@ -91,6 +92,11 @@ export default async function SentPage({
           <p className="mt-1 font-mono text-2xl">{receipt.publicId}</p>
           <p className="mt-4 max-w-prose text-sm text-muted">{page.doneKeep}</p>
         </div>
+
+        {/* Аккаунтов у заявителей пока нет, поэтому предлагаем сохранить
+            ссылку всегда. Когда появятся — блок останется только для тех,
+            кто не вошёл. */}
+        <CopyLink dict={dict} />
 
         {receipt.ai ? (
           <AssessmentCard
