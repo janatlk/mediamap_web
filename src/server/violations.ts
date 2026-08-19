@@ -1,13 +1,14 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 
-// Виды нарушений нужны и главной, и списку случаев. Держим запрос здесь,
-// чтобы не разъезжались условия отбора.
+// Виды нарушений нужны и главной, и списку случаев. Запрос держим здесь,
+// чтобы условия отбора не разъехались по копиям.
+//
+// Наружу отдаём только slug и счётчик: слова берутся из словаря по этому же
+// slug, база их больше не хранит.
 
 export type ViolationType = {
   slug: string;
-  name: { ru: string; ky: string };
-  description: { ru: string; ky: string };
   count: number;
 };
 
@@ -16,14 +17,11 @@ export async function loadViolationTypes(): Promise<ViolationType[]> {
   const rows = await db.violationType.findMany({
     orderBy: { sort: "asc" },
     include: {
-      _count: { select: { reports: { where: { status: REPORT_STATUS.APPROVED } } } },
+      _count: {
+        select: { reports: { where: { status: REPORT_STATUS.APPROVED } } },
+      },
     },
   });
 
-  return rows.map((row) => ({
-    slug: row.slug,
-    name: { ru: row.nameRu, ky: row.nameKy },
-    description: { ru: row.descRu, ky: row.descKy },
-    count: row._count.reports,
-  }));
+  return rows.map((row) => ({ slug: row.slug, count: row._count.reports }));
 }

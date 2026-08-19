@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import type { ViolationType } from "@/server/violations";
-import type { Dictionary, Lang } from "@/lib/i18n";
+import { violationText, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 
 // Фильтр ссылками, а не кнопками с состоянием: выбранный вид попадает в
@@ -47,7 +47,7 @@ export default function CaseFilter({ dict, lang, types, active }: Props) {
                   className={`h-2 w-2 rounded-full ${typeColor(type.slug)}`}
                   aria-hidden="true"
                 />
-                {type.name[lang]}
+                {violationText(dict, type.slug)?.name ?? type.slug}
                 <span className="font-mono text-2xs opacity-70">
                   {type.count}
                 </span>

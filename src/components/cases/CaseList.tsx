@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { CaseListItem } from "@/server/case-data";
 import { formatDate } from "@/lib/format";
-import type { Dictionary, Lang } from "@/lib/i18n";
+import { violationText, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 
 // Строка списка: сначала суть, номер в конце. Человек не должен упираться
@@ -31,7 +31,7 @@ export default function CaseList({
                   className={`h-2 w-2 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
                   aria-hidden="true"
                 />
-                {item.typeName[lang]}
+                {violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
               </span>
               <span className="font-mono text-2xs text-muted">
                 {item.publicId}

@@ -11,7 +11,6 @@ const CONFIRMED = { status: REPORT_STATUS.APPROVED };
 export type CaseRow = {
   id: number;
   publicId: string;
-  typeName: { ru: string; ky: string };
   typeSlug: string;
   source: string | null;
   city: string | null;
@@ -45,7 +44,6 @@ async function loadCases(limit: number): Promise<CaseRow[]> {
     id: row.id,
     publicId: row.publicId,
     typeSlug: row.violationType.slug,
-    typeName: { ru: row.violationType.nameRu, ky: row.violationType.nameKy },
     source: hostFromUrl(row.mediaLink),
     city: row.city,
     checkedAt: row.createdAt,

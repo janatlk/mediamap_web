@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import type { ViolationType } from "@/server/violations";
-import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
+import { FORMS, violationText, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import { withCount } from "@/lib/plural";
 
@@ -33,15 +33,16 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
 
         <ul className="mt-8 grid gap-px bg-line sm:grid-cols-3">
           {types.map((type) => {
+            const text = violationText(dict, type.slug);
             const body = (
               <>
                 <span
                   className={`h-1 w-10 ${typeColor(type.slug)}`}
                   aria-hidden="true"
                 />
-                <h3 className="mt-4 text-lg">{type.name[lang]}</h3>
+                <h3 className="mt-4 text-lg">{text?.name ?? type.slug}</h3>
                 <p className="mt-2 flex-1 text-sm text-muted">
-                  {type.description[lang]}
+                  {text?.summary}
                 </p>
                 <p className="mt-5 text-sm text-muted">
                   {type.count > 0

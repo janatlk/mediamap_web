@@ -10,7 +10,6 @@ export type CaseListItem = {
   id: number;
   publicId: string;
   typeSlug: string;
-  typeName: { ru: string; ky: string };
   source: string | null;
   city: string | null;
   checkedAt: Date;
@@ -36,12 +35,11 @@ const toListItem = (row: {
   mediaLink: string | null;
   city: string | null;
   createdAt: Date;
-  violationType: { slug: string; nameRu: string; nameKy: string };
+  violationType: { slug: string };
 }): CaseListItem => ({
   id: row.id,
   publicId: row.publicId,
   typeSlug: row.violationType.slug,
-  typeName: { ru: row.violationType.nameRu, ky: row.violationType.nameKy },
   source: hostFromUrl(row.mediaLink),
   city: row.city,
   checkedAt: row.createdAt,

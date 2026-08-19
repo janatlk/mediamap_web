@@ -12,14 +12,7 @@ import { join } from "node:path";
 import { db } from "../src/lib/db";
 
 type SeedData = {
-  violationTypes: {
-    slug: string;
-    nameRu: string;
-    nameKy: string;
-    descRu: string;
-    descKy: string;
-    sort: number;
-  }[];
+  violationTypes: { slug: string; sort: number }[];
   reports: {
     legacyId: number;
     lat: number;

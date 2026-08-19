@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { formatDate } from "@/lib/format";
-import { getDictionary, isReadyLanguage } from "@/lib/i18n";
+import { getDictionary, isReadyLanguage, violationText } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import { loadCase } from "@/server/case-data";
 
@@ -28,7 +28,7 @@ export async function generateMetadata({
   if (!item) return { title: dict.cases.notFound };
 
   return {
-    title: `${item.typeName[lang]} · ${item.publicId}`,
+    title: `${violationText(dict, item.typeSlug)?.name ?? item.typeSlug} · ${item.publicId}`,
     description: dict.cases.detailLead,
   };
 }
@@ -96,7 +96,7 @@ export default async function CasePage({
             className={`h-3 w-3 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
             aria-hidden="true"
           />
-          {item.typeName[lang]}
+          {violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
         </h1>
 
         <dl className="mt-10">

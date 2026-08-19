@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import type { CaseRow } from "@/server/home-data";
 import type { ViolationType } from "@/server/violations";
 import { formatDate, percent } from "@/lib/format";
-import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
+import { FORMS, violationText, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import { plural } from "@/lib/plural";
 
@@ -34,7 +34,7 @@ function Breakdown({ types, total, dict, lang }: Omit<Props, "cases">) {
           return (
             <li key={type.slug}>
               <div className="flex items-baseline justify-between gap-3">
-                <span className="text-base">{type.name[lang]}</span>
+                <span className="text-base">{violationText(dict, type.slug)?.name ?? type.slug}</span>
                 <span className="font-mono text-sm tabular-nums text-muted">
                   {share}%
                 </span>
@@ -67,7 +67,7 @@ function CaseItem({ item, lang, dict }: { item: CaseRow; lang: Lang; dict: Dicti
       {/* Сначала суть, номер в конце: раньше человек упирался в
           MM-2024-0065 прежде, чем понимал, о чём запись. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="text-base">{item.typeName[lang]}</span>
+        <span className="text-base">{violationText(dict, item.typeSlug)?.name ?? item.typeSlug}</span>
         <span className="font-mono text-2xs text-muted">{item.publicId}</span>
       </div>
 
