@@ -7,14 +7,19 @@ import { ArrowRight, Check, Clock, X } from "lucide-react";
 import { forgetAll, listSaved } from "@/lib/my-reports";
 import { violationText, type Dictionary, type Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
-import { loadMyReports, type MyReport } from "@/server/my-reports-actions";
+import {
+  loadAccountReports,
+  loadMyReports,
+  type MyReport,
+} from "@/server/my-reports-actions";
 
 // Список своих сообщений.
 //
-// Ключи берутся из браузера, состояние — с сервера по этим ключам. На
-// сервере списка нет и быть не может: мы не знаем, кто подавал.
+// Вошедшему список приходит из базы: сообщения привязаны к аккаунту и видны
+// на любом устройстве. Остальным — по ключам из браузера, потому что на
+// сервере связать сообщение с человеком нечем: имени и почты мы не просим.
 
-type Props = { dict: Dictionary; lang: Lang };
+type Props = { dict: Dictionary; lang: Lang; signedIn: boolean };
 
 /** Состояние проверки: значком и словом, не только цветом. */
 function Status({ report, dict }: { report: MyReport; dict: Dictionary }) {
@@ -46,18 +51,23 @@ function Status({ report, dict }: { report: MyReport; dict: Dictionary }) {
   );
 }
 
-export default function MyReports({ dict, lang }: Props) {
+export default function MyReports({ dict, lang, signedIn }: Props) {
   const page = dict.myReports;
   const [reports, setReports] = useState<MyReport[] | null>(null);
 
   useEffect(() => {
+    if (signedIn) {
+      loadAccountReports().then(setReports);
+      return;
+    }
+
     const saved = listSaved();
     if (saved.length === 0) {
       setReports([]);
       return;
     }
     loadMyReports(saved.map((item) => item.token)).then(setReports);
-  }, []);
+  }, [signedIn]);
 
   // Пока не прочитали хранилище, не показываем ни списка, ни «пусто»:
   // мигающее «сообщений нет» пугает сильнее ожидания.
@@ -134,6 +144,7 @@ export default function MyReports({ dict, lang }: Props) {
         ))}
       </ul>
 
+      {signedIn ? null : (
       <div className="mt-8">
         <button
           type="button"
@@ -147,6 +158,7 @@ export default function MyReports({ dict, lang }: Props) {
         </button>
         <p className="mt-2 max-w-prose text-sm text-muted">{page.forgetHint}</p>
       </div>
+      )}
     </>
   );
 }

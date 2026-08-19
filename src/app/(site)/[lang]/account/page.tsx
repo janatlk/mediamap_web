@@ -46,7 +46,7 @@ export default async function AccountPage({
           </form>
         </div>
 
-        <MyReports dict={dict} lang={lang} />
+        <MyReports dict={dict} lang={lang} signedIn />
       </div>
     </div>
   );

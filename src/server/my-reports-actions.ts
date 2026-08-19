@@ -47,3 +47,31 @@ export async function loadMyReports(tokens: string[]): Promise<MyReport[]> {
     moderatorNote: row.moderatorComment,
   }));
 }
+
+/**
+ * Все сообщения вошедшего человека.
+ *
+ * Здесь список приходит из базы, а не из браузера: у аккаунта сообщения
+ * привязаны напрямую, и видны они на любом устройстве, где человек вошёл.
+ */
+export async function loadAccountReports(): Promise<MyReport[]> {
+  const { currentUser } = await import("@/lib/auth");
+  const user = await currentUser();
+  if (!user) return [];
+
+  const rows = await db.report.findMany({
+    where: { authorId: user.id },
+    orderBy: { createdAt: "desc" },
+    include: { violationType: { select: { slug: true } } },
+  });
+
+  return rows.map((row) => ({
+    token: row.receiptToken ?? String(row.id),
+    publicId: row.publicId,
+    status: row.status,
+    typeSlug: row.violationType.slug,
+    createdAt: row.createdAt.toISOString(),
+    reviewedAt: row.reviewedAt?.toISOString() ?? null,
+    moderatorNote: row.moderatorComment,
+  }));
+}

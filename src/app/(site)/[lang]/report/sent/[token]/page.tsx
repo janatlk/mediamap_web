@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import AssessmentCard from "@/components/report/AssessmentCard";
-import CopyLink from "@/components/report/CopyLink";
 import RememberReceipt from "@/components/report/RememberReceipt";
+import { currentUser } from "@/lib/auth";
 import { REPORT_STATUS } from "@/lib/enums";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
@@ -73,6 +73,8 @@ export default async function SentPage({
   }
 
   const isPublished = receipt.status === REPORT_STATUS.APPROVED;
+  // Вошедшему предлагать аккаунт незачем — он у него уже есть.
+  const signedIn = (await currentUser()) !== null;
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
@@ -90,13 +92,18 @@ export default async function SentPage({
         <div className="mt-8 border border-line bg-surface p-6">
           <p className="text-sm text-muted">{page.doneNumber}</p>
           <p className="mt-1 font-mono text-2xl">{receipt.publicId}</p>
-          <p className="mt-4 max-w-prose text-sm text-muted">{page.doneKeep}</p>
+          <p className="mt-4 max-w-prose text-sm text-muted">
+            {page.doneKeep}{" "}
+            {signedIn ? null : (
+              <Link
+                href={`/${lang}/account/register`}
+                className="text-signal hover:underline"
+              >
+                {page.doneAccountHint}
+              </Link>
+            )}
+          </p>
         </div>
-
-        {/* Аккаунтов у заявителей пока нет, поэтому предлагаем сохранить
-            ссылку всегда. Когда появятся — блок останется только для тех,
-            кто не вошёл. */}
-        <CopyLink dict={dict} />
 
         {receipt.ai ? (
           <AssessmentCard

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import MyReports from "@/components/report/MyReports";
+import { currentUser } from "@/lib/auth";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
 
@@ -35,20 +36,25 @@ export default async function MyReportsPage({
 
   const dict = await getContent(lang);
   const page = dict.myReports;
+  const signedIn = (await currentUser()) !== null;
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <div className="max-w-2xl">
         <h1 className="text-3xl sm:text-4xl">{page.title}</h1>
-        <p className="mt-4 text-lg text-muted">{page.lead}</p>
-
-        {/* Ограничение проговариваем сразу, а не после того, как человек
-            обнаружит пустой список на другом устройстве. */}
-        <p className="mt-4 border-l-2 border-line pl-4 text-sm text-muted">
-          {page.warning}
+        <p className="mt-4 text-lg text-muted">
+          {signedIn ? page.leadAccount : page.lead}
         </p>
 
-        <MyReports dict={dict} lang={lang} />
+        {/* Оговорка про браузер нужна только гостям: у вошедшего сообщения
+            привязаны к аккаунту и от браузера не зависят. */}
+        {signedIn ? null : (
+          <p className="mt-4 border-l-2 border-line pl-4 text-sm text-muted">
+            {page.warning}
+          </p>
+        )}
+
+        <MyReports dict={dict} lang={lang} signedIn={signedIn} />
       </div>
     </div>
   );
