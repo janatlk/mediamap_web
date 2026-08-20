@@ -94,8 +94,6 @@ export default function AccountForm({
             ))}
           </div>
 
-          <p className="mt-3 text-sm text-muted">{page.providerHint}</p>
-
           <div className="my-8 flex items-center gap-4">
             <span className="h-px flex-1 bg-line" aria-hidden="true" />
             <span className="text-sm text-muted">{page.orDivider}</span>

@@ -28,7 +28,6 @@ export default async function AccountLoginPage({
   return (
     <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
       <h1 className="text-2xl">{dict.account.loginTitle}</h1>
-      <p className="mt-3 text-muted">{dict.account.loginLead}</p>
 
       <div className="mt-10">
         <AccountForm
