@@ -9,7 +9,7 @@ import NewsList from "@/components/home/NewsList";
 import HowItWorks from "@/components/home/HowItWorks";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
-import { getHomeData, loadHeatPoints } from "@/server/home-data";
+import { getHomeData } from "@/server/home-data";
 
 // Тут только порядок разделов. Разметка — в компонентах, запросы —
 // в src/server/home-data.ts.
@@ -30,15 +30,11 @@ export default async function HomePage({
   if (!isReadyLanguage(lang)) notFound();
 
   const dict = await getContent(lang);
-  const [data, heat] = await Promise.all([getHomeData(), loadHeatPoints()]);
+  const data = await getHomeData();
 
   return (
     <>
-      <Hero
-        dict={dict}
-        lang={lang}
-        heat={heat}
-      />
+      <Hero dict={dict} lang={lang} />
 
       <Stats
         dict={dict}

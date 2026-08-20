@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { KG_REGIONS } from "./kg-map";
+import { KG_REGIONS } from "./regions";
 
 // Проверка сообщения о нарушении.
 //

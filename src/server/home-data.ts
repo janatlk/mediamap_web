@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { loadViolationTypes, type ViolationType } from "./violations";
 import { hostFromUrl } from "@/lib/format";
-import { regionCenter, toCanvas } from "@/lib/kg-map";
 
 // Всё, что главная просит у базы. Одна функция — один вопрос,
 // форматирование не здесь, а в компонентах.
@@ -124,48 +123,3 @@ export async function getHomeData(): Promise<HomeData> {
 
   return { caseCount, newsCount, sourceCount, types, cases, news };
 }
-
-/**
- * Точки для тепловой карты, уже в координатах холста.
- *
- * Настоящие координаты берём как есть. Где их нет, но указана область —
- * ставим точку в середину области: приблизительно, зато случай виден, а не
- * пропадает. У кого нет ни того ни другого — считаем отдельно и пишем об
- * этом под картой, чтобы часть данных не выдавалась за целое.
- */
-export type HeatPoint = { x: number; y: number; exact: boolean };
-
-export async function loadHeatPoints(): Promise<{
-  points: HeatPoint[];
-  approximate: number;
-  withoutPlace: number;
-}> {
-  const rows = await db.report.findMany({
-    where: CONFIRMED,
-    select: { lat: true, lng: true, regionCode: true },
-  });
-
-  const points: HeatPoint[] = [];
-  let approximate = 0;
-  let withoutPlace = 0;
-
-  for (const row of rows) {
-    if (row.lat !== null && row.lng !== null) {
-      const [x, y] = toCanvas(row.lng, row.lat);
-      points.push({ x, y, exact: true });
-      continue;
-    }
-
-    const center = row.regionCode ? regionCenter(row.regionCode) : null;
-    if (center) {
-      approximate += 1;
-      points.push({ x: center[0], y: center[1], exact: false });
-      continue;
-    }
-
-    withoutPlace += 1;
-  }
-
-  return { points, approximate, withoutPlace };
-}
-
