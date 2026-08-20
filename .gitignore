@@ -44,3 +44,6 @@ next-env.d.ts
 dev.db
 dev.db-journal
 src/generated/
+
+# Приложенные к сообщениям файлы. В репозитории им не место.
+uploads/

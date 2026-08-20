@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { loadViolationTypes, type ViolationType } from "./violations";
-import { hostFromUrl } from "@/lib/format";
+import { decodeEntities, hostFromUrl } from "@/lib/format";
 
 // Всё, что главная просит у базы. Одна функция — один вопрос,
 // форматирование не здесь, а в компонентах.
@@ -91,7 +91,7 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
     .slice(0, limit)
     .map((item) => ({
       id: item.id,
-      title: item.title,
+      title: decodeEntities(item.title),
       link: item.link,
       source: item.source,
       publishedAt: item.publishedAt,

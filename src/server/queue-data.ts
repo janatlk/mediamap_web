@@ -15,6 +15,7 @@ export type QueueItem = {
   createdAt: Date;
   aiVerdict: string | null;
   aiConfidence: number | null;
+  attachments: { id: string; kind: string; name: string; mime: string }[];
 };
 
 /**
@@ -29,7 +30,13 @@ export async function loadQueue(): Promise<QueueItem[]> {
   const rows = await db.report.findMany({
     where: { status: REPORT_STATUS.PENDING },
     orderBy: [{ aiConfidence: "desc" }, { createdAt: "asc" }],
-    include: { violationType: { select: { slug: true } } },
+    include: {
+      violationType: { select: { slug: true } },
+      attachments: {
+        select: { id: true, kind: true, name: true, mime: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
   return rows.map((row) => ({
@@ -43,6 +50,7 @@ export async function loadQueue(): Promise<QueueItem[]> {
     createdAt: row.createdAt,
     aiVerdict: row.aiVerdict,
     aiConfidence: row.aiConfidence,
+    attachments: row.attachments,
   }));
 }
 

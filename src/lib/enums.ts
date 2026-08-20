@@ -47,3 +47,13 @@ export const isStaff = (role: string | null | undefined): boolean =>
 /** Кому разрешено менять содержимое сайта. */
 export const canEditContent = (role: string | null | undefined): boolean =>
   role === ROLE.ADMIN || role === ROLE.SUPERADMIN;
+
+export const ATTACHMENT_KIND = {
+  /** Снимок экрана или фотография. */
+  IMAGE: "IMAGE",
+  /** Запись экрана или видео. */
+  VIDEO: "VIDEO",
+} as const;
+
+export type AttachmentKind =
+  (typeof ATTACHMENT_KIND)[keyof typeof ATTACHMENT_KIND];

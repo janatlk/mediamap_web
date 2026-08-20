@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import AssessmentCard from "@/components/report/AssessmentCard";
+import Attachments from "@/components/report/Attachments";
 import RememberReceipt from "@/components/report/RememberReceipt";
 import { currentUser } from "@/lib/auth";
 import { REPORT_STATUS } from "@/lib/enums";
@@ -104,6 +105,12 @@ export default async function SentPage({
             )}
           </p>
         </div>
+
+        <Attachments
+          items={receipt.attachments}
+          token={token}
+          title={page.filesChosen}
+        />
 
         {receipt.ai ? (
           <AssessmentCard

@@ -104,6 +104,7 @@ export type Receipt = {
   status: string;
   typeSlug: string;
   createdAt: Date;
+  attachments: { id: string; kind: string; name: string; mime: string }[];
   ai: {
     verdict: string;
     confidence: number;
@@ -122,7 +123,13 @@ export type Receipt = {
 export async function loadReceipt(token: string): Promise<Receipt | null> {
   const row = await db.report.findUnique({
     where: { receiptToken: token },
-    include: { violationType: { select: { slug: true } } },
+    include: {
+      violationType: { select: { slug: true } },
+      attachments: {
+        select: { id: true, kind: true, name: true, mime: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
   if (!row) return null;
@@ -132,6 +139,7 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
     status: row.status,
     typeSlug: row.violationType.slug,
     createdAt: row.createdAt,
+    attachments: row.attachments,
     ai:
       row.aiVerdict && row.aiConfidence !== null
         ? {

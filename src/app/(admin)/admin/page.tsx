@@ -1,5 +1,6 @@
 import { ArrowUpRight, Bot, Check, X } from "lucide-react";
 
+import Attachments from "@/components/report/Attachments";
 import { formatDate } from "@/lib/format";
 import { requireStaff } from "@/lib/guard";
 import { DEFAULT_LANG, getDictionary, violationText } from "@/lib/i18n";
@@ -75,6 +76,10 @@ export default async function QueuePage() {
 
             <div className="px-5 py-4">
               <p className="max-w-prose whitespace-pre-line">{item.story}</p>
+
+              {/* Приложенное — то, ради чего проверку вообще можно провести:
+                  публикацию к этому времени часто уже удалили. */}
+              <Attachments items={item.attachments} title="Приложено" />
 
               <p className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted">
                 {item.link ? (

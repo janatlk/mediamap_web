@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { decodeEntities } from "@/lib/format";
 
 // Лента новостей. Собирается кроном из чужих RSS, поэтому здесь только
 // чтение и приведение к виду, годному для показа.
@@ -61,9 +62,9 @@ export async function loadNewsPage(
   return {
     items: shown.slice(from, from + PER_PAGE).map((item) => ({
       id: item.id,
-      title: item.title,
+      title: decodeEntities(item.title),
       link: item.link,
-      snippet: item.snippet,
+      snippet: item.snippet ? decodeEntities(item.snippet) : null,
       source: item.source,
       publishedAt: item.publishedAt,
     })),

@@ -120,8 +120,13 @@ model Report {
   city       String?
 
   mediaLink        String?
-  screenshot       String?
   authorComment    String?
+
+  /// Имя файла из старой системы: "c0b772af-….jpg". Самих файлов у нас нет,
+  /// они остались на прежнем сервере. Колонку держим, чтобы не потерять
+  /// ссылку, если их когда-нибудь перенесут. Новые снимки сюда не пишем —
+  /// для них есть Attachment.
+  screenshot       String?
   moderatorComment String?
 
   /// PENDING | APPROVED | REJECTED
@@ -157,12 +162,46 @@ model Report {
   reviewedBy   User?     @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt   DateTime?
 
+  attachments Attachment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([violationTypeId])
   @@map("reports")
+}
+
+/// Снимок экрана или запись, приложенные к сообщению.
+///
+/// Отдельной таблицей, а не колонкой: снимков бывает несколько, и колонка
+/// screenshot это уже не вмещала. Заодно к файлу нужно знать тип и размер —
+/// в строке с путём этого не сохранить.
+///
+/// Самих файлов в базе нет, только ключ хранилища. Складывать двадцать
+/// мегабайт видео в SQLite — способ получить базу, которую нельзя открыть.
+model Attachment {
+  id String @id @default(cuid())
+
+  reportId Int
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  /// IMAGE | VIDEO — см. src/lib/enums.ts.
+  kind String
+  /// Тип из заголовка файла, уже проверенный по белому списку.
+  mime String
+  /// Размер в байтах. Держим у себя, чтобы не ходить в хранилище ради подписи.
+  size Int
+  /// Имя, с которым файл пришёл. Показываем человеку; путь из него не строим.
+  name String
+  /// Ключ в хранилище. Сейчас это путь на диске, потом станет ключом в R2 —
+  /// снаружи этой строки его формат не знает никто.
+  key String
+
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+  @@map("attachments")
 }
 
 model NewsItem {

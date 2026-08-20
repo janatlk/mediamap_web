@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, ArrowRight } from "lucide-react";
 
+import FilePicker from "./FilePicker";
+import { LIMITS as FILE_LIMITS, megabytes } from "@/lib/attachment-rules";
 import { LIMITS } from "@/lib/report-schema";
 import type { Dictionary, Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
@@ -63,9 +65,27 @@ export default function ReportForm({ dict, lang, types }: Props) {
   });
 
   const page = dict.reportPage;
+  /*
+    Ключ ошибки может нести с собой число: "tooOften:14" — «через 14 минут».
+    Всё остальное подставляем из правил, чтобы потолки не пришлось
+    переписывать в двух местах — в коде и в словаре.
+  */
+  const message = (raw: string): string | undefined => {
+    const [key, argument] = raw.split(":");
+    const text = page.errors[key as keyof typeof page.errors];
+    if (!text) return undefined;
+
+    return text
+      .replace("{n}", argument ?? "")
+      .replace("{files}", String(FILE_LIMITS.FILES))
+      .replace("{image}", String(megabytes(FILE_LIMITS.IMAGE_BYTES)))
+      .replace("{video}", String(megabytes(FILE_LIMITS.VIDEO_BYTES)))
+      .replace("{total}", String(megabytes(FILE_LIMITS.TOTAL_BYTES)));
+  };
+
   const errorFor = (field: string) =>
-    state.status === "error"
-      ? page.errors[state.errors[field] as keyof typeof page.errors]
+    state.status === "error" && state.errors[field]
+      ? message(state.errors[field])
       : undefined;
   const valueOf = (field: string) =>
     state.status === "error" ? state.values[field] : undefined;
@@ -159,11 +179,10 @@ export default function ReportForm({ dict, lang, types }: Props) {
         <FieldError text={errorFor("city")} />
       </div>
 
-      {/* Про скриншот говорим прямо, а не молчим: человек будет искать
-          кнопку прикрепления и решит, что она сломалась. */}
-      <p className="mt-8 border-l-2 border-line pl-4 text-sm text-muted">
-        {page.noScreenshot}
-      </p>
+      <div className="mt-8">
+        <FilePicker dict={dict} lang={lang} />
+        <FieldError text={errorFor("files")} />
+      </div>
 
       <div className="mt-8 border-t border-line pt-6">
         <label className="flex cursor-pointer items-start gap-3">
@@ -181,6 +200,10 @@ export default function ReportForm({ dict, lang, types }: Props) {
         </label>
         <FieldError text={errorFor("consent")} />
       </div>
+
+      {/* Ошибка про всю форму — над кнопкой, а не под ней: под кнопкой её
+          не видно, когда форма длиннее экрана. */}
+      <FieldError text={errorFor("form")} />
 
       <div className="mt-8">
         <Submit dict={dict} />

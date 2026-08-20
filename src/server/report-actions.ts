@@ -4,10 +4,13 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
+import type { Prisma } from "@/generated/prisma";
 import { REPORT_STATUS } from "@/lib/enums";
 import { reportSchema } from "@/lib/report-schema";
 import type { ViolationSlug } from "@/lib/i18n";
-import { assess, type Assessment } from "./ai-review";
+import { assess } from "./ai-review";
+import { attachTo, discard, filesFrom, prepare } from "./attachments";
+import { takeSubmitSlot } from "./rate-limit";
 
 // Приём сообщения о нарушении. Первая и пока единственная операция записи
 // на сайте, поэтому здесь же заведён весь порядок: проверка, номер, статус.
@@ -18,6 +21,13 @@ import { assess, type Assessment } from "./ai-review";
 export type SubmitState =
   | { status: "idle" }
   | { status: "error"; errors: Record<string, string>; values: Record<string, string> };
+
+/** Ошибка, которая относится ко всей форме, а не к какому-то полю. */
+const wholeForm = (message: string, form: FormData): SubmitState => ({
+  status: "error",
+  errors: { form: message },
+  values: submitted(form),
+});
 
 /**
  * Публичный номер сообщения: MM-2026-0042.
@@ -55,12 +65,40 @@ const submitted = (form: FormData): Record<string, string> =>
     KEEP_ON_ERROR.map((field) => [field, String(form.get(field) ?? "")]),
   );
 
+/** Всё, что мы знаем о сообщении, кроме публичного номера. */
+type NewReport = Omit<Prisma.ReportUncheckedCreateInput, "publicId">;
+
+/** Записывает сообщение, подбирая свободный номер. Возвращает его id. */
+async function createReport(fields: NewReport): Promise<number> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const publicId = await nextPublicId();
+    try {
+      const row = await db.report.create({
+        data: { publicId, ...fields },
+        select: { id: true },
+      });
+      return row.id;
+    } catch (error) {
+      if (!isDuplicateId(error)) throw error;
+    }
+  }
+
+  throw new Error("Не удалось подобрать свободный номер сообщения");
+}
+
 export async function submitReport(
   _previous: SubmitState,
   form: FormData,
 ): Promise<SubmitState> {
   // Язык нужен, чтобы увести на страницу «принято» на том же языке.
   const lang = String(form.get("lang") ?? "ru");
+
+  // Считаем частоту до всего остального: разбирать и тем более записывать
+  // на диск сорок мегабайт ради того, чтобы потом отказать, незачем.
+  const slot = await takeSubmitSlot();
+  if (!slot.ok) {
+    return wholeForm(`tooOften:${slot.minutes}`, form);
+  }
 
   const parsed = reportSchema.safeParse({
     typeSlug: form.get("typeSlug") ?? "",
@@ -125,21 +163,27 @@ export async function submitReport(
     receiptToken: randomUUID(),
   };
 
-  // Три попытки на случай, если номер займут между запросом и вставкой.
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const publicId = await nextPublicId();
-    try {
-      await db.report.create({ data: { publicId, ...fields } });
-      // redirect бросает своё исключение, поэтому вызываем его за пределами
-      // try: внутри его перехватила бы проверка на дубль номера.
-      break;
-    } catch (error) {
-      if (!isDuplicateId(error)) throw error;
-      if (attempt === 2) {
-        throw new Error("Не удалось подобрать свободный номер сообщения");
-      }
-    }
+  // Файлы кладём в хранилище до записи: сообщение без снимка ещё можно
+  // рассмотреть, а запись со ссылкой на непоявившийся файл — уже нет.
+  const files = await prepare(filesFrom(form, "files"));
+  if (!files.ok) {
+    return { status: "error", errors: { files: files.error }, values: submitted(form) };
   }
 
+  let reportId: number;
+
+  // Три попытки на случай, если номер займут между запросом и вставкой.
+  try {
+    reportId = await createReport(fields);
+  } catch (error) {
+    // Сообщения не будет — значит и файлам лежать не за чем.
+    await discard(files.items);
+    throw error;
+  }
+
+  await attachTo(reportId, files.items);
+
+  // redirect бросает своё исключение, поэтому вызываем его последним:
+  // раньше его перехватила бы проверка на дубль номера.
   redirect(`/${lang}/report/sent/${fields.receiptToken}`);
 }

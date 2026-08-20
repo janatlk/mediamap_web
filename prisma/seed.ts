@@ -20,7 +20,6 @@ type SeedData = {
     regionCode: string;
     city: string;
     mediaLink: string | null;
-    screenshot: string | null;
     authorComment: string | null;
     moderatorComment: string | null;
     status: string;
@@ -83,7 +82,6 @@ async function main() {
       regionCode: report.regionCode,
       city: report.city,
       mediaLink: report.mediaLink,
-      screenshot: report.screenshot,
       authorComment: report.authorComment,
       moderatorComment: report.moderatorComment,
       status: report.status,
