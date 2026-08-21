@@ -54,7 +54,7 @@ function Channel({
           {...(external
             ? { target: "_blank", rel: "noopener noreferrer" }
             : {})}
-          className="mt-5 inline-flex min-h-9 items-center gap-1.5 py-1 text-base text-signal hover:underline"
+          className="mt-5 inline-flex min-h-11 items-center gap-1.5 text-base text-signal hover:underline"
         >
           {value}
           {external ? (

@@ -79,7 +79,7 @@ export default async function NewsPage({
 
           {!showAll ? (
             <span className="text-sm text-muted">
-              {hiddenByLanguage} {dict.newsPage.hiddenNote}
+              {dict.newsPage.hiddenNote.replace("{n}", String(hiddenByLanguage))}
             </span>
           ) : null}
         </div>
@@ -90,7 +90,7 @@ export default async function NewsPage({
       ) : (
         <>
           <p className="mt-8 text-sm text-muted">
-            {total} {dict.newsPage.found}
+            {dict.newsPage.found.replace("{n}", String(total))}
           </p>
 
           <ul className="mt-6 space-y-6">

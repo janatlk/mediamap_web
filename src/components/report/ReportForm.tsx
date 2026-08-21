@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, ArrowRight } from "lucide-react";
 
@@ -53,6 +53,74 @@ function FieldError({ text }: { text?: string }) {
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       {text}
     </p>
+  );
+}
+
+/*
+  Метка «необязательно» у подписи поля.
+
+  Обязательных полей три, необязательных тоже три, и по виду они не
+  отличались: человек честно заполнял всё подряд, а на ссылку и город ему
+  было нечего ответить. Помечаем необязательные — их пропускают без
+  чувства, что форма недоделана.
+*/
+function Optional({ dict }: { dict: Dictionary }) {
+  return (
+    <span className="ml-2 align-middle text-sm font-normal text-muted">
+      {dict.reportPage.optional}
+    </span>
+  );
+}
+
+/*
+  Рассказ о случае со счётчиком.
+
+  Нижняя граница в 30 знаков раньше срабатывала только после отправки:
+  человек писал «оскорбили в комментариях», жал кнопку, и форма возвращала
+  его назад с упрёком. Теперь видно заранее, сколько осталось, — и упрёка
+  не случается вовсе.
+*/
+function StoryField({
+  dict,
+  defaultValue,
+  error,
+}: {
+  dict: Dictionary;
+  defaultValue?: string;
+  error?: string;
+}) {
+  const page = dict.reportPage;
+  const [length, setLength] = useState((defaultValue ?? "").trim().length);
+  const left = LIMITS.STORY_MIN - length;
+
+  return (
+    <div className="mt-8">
+      <label htmlFor="story" className="text-base font-medium">
+        {page.storyLabel}
+      </label>
+      <p className="mt-1 text-sm text-muted">{page.storyHint}</p>
+      <textarea
+        id="story"
+        name="story"
+        rows={7}
+        maxLength={LIMITS.STORY_MAX}
+        defaultValue={defaultValue}
+        onChange={(event) => setLength(event.target.value.trim().length)}
+        className={`${inputStyle} resize-y`}
+      />
+
+      {/* Пока не начали писать, молчим: счётчик над пустым полем — это
+          требование, а не помощь. */}
+      {length > 0 && !error ? (
+        <p className="mt-1.5 text-sm text-muted">
+          {left > 0
+            ? page.storyShortHint.replace("{n}", String(left))
+            : page.storyOkHint}
+        </p>
+      ) : null}
+
+      <FieldError text={error} />
+    </div>
   );
 }
 
@@ -130,25 +198,16 @@ export default function ReportForm({ dict, lang, types }: Props) {
         <FieldError text={errorFor("typeSlug")} />
       </fieldset>
 
-      <div className="mt-8">
-        <label htmlFor="story" className="text-base font-medium">
-          {page.storyLabel}
-        </label>
-        <p className="mt-1 text-sm text-muted">{page.storyHint}</p>
-        <textarea
-          id="story"
-          name="story"
-          rows={7}
-          maxLength={LIMITS.STORY_MAX}
-          defaultValue={valueOf("story")}
-          className={`${inputStyle} resize-y`}
-        />
-        <FieldError text={errorFor("story")} />
-      </div>
+      <StoryField
+        dict={dict}
+        defaultValue={valueOf("story")}
+        error={errorFor("story")}
+      />
 
       <div className="mt-8">
         <label htmlFor="link" className="text-base font-medium">
           {page.linkLabel}
+          <Optional dict={dict} />
         </label>
         <p className="mt-1 text-sm text-muted">{page.linkHint}</p>
         <input
@@ -166,6 +225,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
       <div className="mt-8">
         <label htmlFor="city" className="text-base font-medium">
           {page.cityLabel}
+          <Optional dict={dict} />
         </label>
         <p className="mt-1 text-sm text-muted">{page.cityHint}</p>
         <input

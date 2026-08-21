@@ -91,7 +91,7 @@ export default async function TypePage({
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <Link
         href={`/${lang}/types`}
-        className="inline-flex min-h-9 items-center gap-2 py-2 text-sm text-signal hover:underline"
+        className="inline-flex min-h-11 items-center gap-2 py-2 text-sm text-signal hover:underline"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         {dict.typesPage.backToTypes}

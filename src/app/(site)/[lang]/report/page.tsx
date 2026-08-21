@@ -42,7 +42,7 @@ export default async function ReportPage({
 
         <Link
           href={`/${lang}/report/my`}
-          className="mt-4 inline-flex min-h-9 items-center gap-1.5 py-1 text-sm text-signal hover:underline"
+          className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-signal hover:underline"
         >
           {dict.myReports.link}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

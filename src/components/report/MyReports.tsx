@@ -135,7 +135,7 @@ export default function MyReports({ dict, lang, signedIn }: Props) {
 
             <Link
               href={`/${lang}/report/sent/${report.token}`}
-              className="mt-2 inline-flex min-h-9 items-center gap-1.5 py-1 text-sm text-signal hover:underline"
+              className="mt-2 inline-flex min-h-11 items-center gap-1.5 py-1 text-sm text-signal hover:underline"
             >
               {page.open}
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

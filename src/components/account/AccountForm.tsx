@@ -164,6 +164,21 @@ export default function AccountForm({
       </form>
 
       <div className="mt-8 space-y-2 text-sm">
+        {/* Забытый пароль был тупиком: почтовой рассылки у нас нет, а
+            значит и ссылки «сбросить» быть не может. Вместо неё — путь к
+            живым людям, которые сбросят руками. Честнее, чем форма, из
+            которой никогда не приходит письмо. */}
+        {isRegister ? null : (
+          <p>
+            <Link
+              href={`/${lang}/contacts`}
+              className="text-muted hover:text-signal"
+            >
+              {page.forgot}
+            </Link>
+          </p>
+        )}
+
         <p className="text-muted">
           {isRegister ? page.haveAccount : page.noAccount}{" "}
           <Link

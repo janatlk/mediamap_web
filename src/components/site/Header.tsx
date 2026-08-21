@@ -73,7 +73,7 @@ export default function Header({ dict, lang, account }: Props) {
               шапке дороже. */}
           <Link
             href={account ? accountHref : `/${lang}/account/login`}
-            className="flex h-10 items-center gap-2 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface"
+            className="flex h-11 items-center gap-2 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface"
             title={account ? account.name : dict.nav.signIn}
           >
             {account ? (
@@ -88,7 +88,7 @@ export default function Header({ dict, lang, account }: Props) {
 
           <Link
             href={`/${lang}/report`}
-            className="hidden h-10 items-center rounded-xs bg-signal px-4 text-sm font-medium text-surface transition-colors hover:bg-signal-deep sm:flex"
+            className="hidden h-11 items-center rounded-xs bg-signal px-4 text-sm font-medium text-surface transition-colors hover:bg-signal-deep sm:flex"
           >
             {dict.nav.report}
           </Link>

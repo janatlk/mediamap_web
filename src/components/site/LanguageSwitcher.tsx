@@ -61,7 +61,7 @@ export default function LanguageSwitcher({ current, label, soonLabel }: Props) {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label={label}
-        className="flex h-10 items-center gap-1.5 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface"
+        className="flex h-11 items-center gap-1.5 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface"
       >
         <span className="font-mono text-2xs">{active?.short}</span>
         <ChevronDown className="h-3.5 w-3.5 text-muted" aria-hidden="true" />

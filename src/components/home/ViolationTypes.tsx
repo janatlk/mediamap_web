@@ -24,7 +24,7 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
           </div>
           <Link
             href={`/${lang}/types`}
-            className="inline-flex min-h-9 items-center gap-1.5 py-2 text-sm text-signal hover:underline"
+            className="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm text-signal hover:underline"
           >
             {dict.home.typesAll}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

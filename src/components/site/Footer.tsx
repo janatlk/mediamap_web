@@ -31,7 +31,7 @@ export default function Footer({ dict, lang }: Props) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="py-2 text-muted transition-colors hover:text-signal"
+                className="flex min-h-11 items-center text-muted transition-colors hover:text-signal"
               >
                 {link.label}
               </Link>

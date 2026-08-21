@@ -98,7 +98,7 @@ export default function CaseFeed({ dict, lang, cases, types, total }: Props) {
         </div>
         <Link
           href={`/${lang}/cases`}
-          className="inline-flex min-h-9 items-center gap-1.5 py-2 text-sm text-signal hover:underline"
+          className="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm text-signal hover:underline"
         >
           {dict.home.casesAll}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />

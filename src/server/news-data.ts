@@ -4,6 +4,24 @@ import { decodeEntities } from "@/lib/format";
 // Лента новостей. Собирается кроном из чужих RSS, поэтому здесь только
 // чтение и приведение к виду, годному для показа.
 
+/*
+  Подзаголовок из ленты сплошь и рядом начинается тем же заголовком —
+  агрегаторы склеивают title и описание. На странице это выглядело как
+  заикание: одна и та же фраза два раза подряд, только вторая мельче.
+
+  Сравниваем по началу и без знаков препинания: у повтора обычно приклеен
+  хвост вроде « RTVI», и посимвольное равенство его не поймает.
+*/
+const bare = (text: string) =>
+  text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+const usefulSnippet = (title: string, snippet: string | null): string | null => {
+  if (!snippet) return null;
+  const clean = decodeEntities(snippet);
+  const head = bare(clean).slice(0, 60);
+  return head && bare(decodeEntities(title)).startsWith(head) ? null : clean;
+};
+
 export type NewsRow = {
   id: number;
   title: string;
@@ -64,7 +82,7 @@ export async function loadNewsPage(
       id: item.id,
       title: decodeEntities(item.title),
       link: item.link,
-      snippet: item.snippet ? decodeEntities(item.snippet) : null,
+      snippet: usefulSnippet(item.title, item.snippet),
       source: item.source,
       publishedAt: item.publishedAt,
     })),

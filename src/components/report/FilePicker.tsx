@@ -68,7 +68,12 @@ export default function FilePicker({ dict, lang }: Props) {
 
   return (
     <div>
-      <span className="text-base font-medium">{page.filesLabel}</span>
+      <span className="text-base font-medium">
+        {page.filesLabel}
+        <span className="ml-2 text-sm font-normal text-muted">
+          {page.optional}
+        </span>
+      </span>
       <p className="mt-1 text-sm text-muted">{page.filesHint}</p>
 
       <label className="mt-3 inline-flex h-11 cursor-pointer items-center gap-2 rounded-xs border border-border bg-surface px-4 text-base transition-colors hover:bg-paper focus-within:border-ink">
