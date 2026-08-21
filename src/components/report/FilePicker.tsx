@@ -74,7 +74,9 @@ export default function FilePicker({ dict, lang }: Props) {
           {page.optional}
         </span>
       </span>
-      <p className="mt-1 text-sm text-muted">{page.filesHint}</p>
+      {page.filesHint ? (
+        <p className="mt-1 text-sm text-muted">{page.filesHint}</p>
+      ) : null}
 
       <label className="mt-3 inline-flex h-11 cursor-pointer items-center gap-2 rounded-xs border border-border bg-surface px-4 text-base transition-colors hover:bg-paper focus-within:border-ink">
         <Paperclip className="h-4 w-4" aria-hidden="true" />

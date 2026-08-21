@@ -131,6 +131,12 @@ function ErrorSummary({
   );
 }
 
+/** Пояснение под подписью. Пустое — значит подпись справилась сама. */
+function Hint({ text }: { text: string }) {
+  if (!text) return null;
+  return <p className="mt-1 text-sm text-muted">{text}</p>;
+}
+
 /*
   Метка «необязательно» у подписи поля.
 
@@ -173,9 +179,10 @@ function StoryField({
       <label htmlFor="story" className="text-base font-medium">
         {page.storyLabel}
       </label>
-      <p className="mt-1 text-sm text-muted">{page.storyHint}</p>
+      <Hint text={page.storyHint} />
       <textarea
         id="story"
+        placeholder={page.storyPlaceholder}
         name="story"
         rows={7}
         maxLength={LIMITS.STORY_MAX}
@@ -269,7 +276,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
 
       <fieldset>
         <legend className="text-base font-medium">{page.typeLabel}</legend>
-        <p className="mt-1 text-sm text-muted">{page.typeHint}</p>
+        <Hint text={page.typeHint} />
 
         <div className="mt-3 space-y-2">
           {types.map((type, index) => (
@@ -308,7 +315,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
           {page.linkLabel}
           <Optional dict={dict} />
         </label>
-        <p className="mt-1 text-sm text-muted">{page.linkHint}</p>
+        <Hint text={page.linkHint} />
         <input
           id="link"
           aria-describedby={errorFor("link") ? "link-error" : undefined}
@@ -327,7 +334,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
           {page.cityLabel}
           <Optional dict={dict} />
         </label>
-        <p className="mt-1 text-sm text-muted">{page.cityHint}</p>
+        <Hint text={page.cityHint} />
         <input
           id="city"
           aria-describedby={errorFor("city") ? "city-error" : undefined}
@@ -356,9 +363,11 @@ export default function ReportForm({ dict, lang, types }: Props) {
           />
           <span>
             <span className="text-base">{page.consentLabel}</span>
-            <span className="mt-1 block text-sm text-muted">
-              {page.consentHint}
-            </span>
+            {page.consentHint ? (
+              <span className="mt-1 block text-sm text-muted">
+                {page.consentHint}
+              </span>
+            ) : null}
           </span>
         </label>
         <FieldError text={errorFor("consent")} id="consent-error" />
