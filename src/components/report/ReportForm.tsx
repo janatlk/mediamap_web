@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, ArrowRight } from "lucide-react";
 
@@ -42,17 +42,92 @@ function Submit({ dict }: { dict: Dictionary }) {
   );
 }
 
-/** Сообщение об ошибке под полем. Красный тут значит ошибку, не действие. */
-function FieldError({ text }: { text?: string }) {
+/*
+  Сообщение об ошибке под полем. Красный тут значит ошибку, не действие.
+
+  Вслух её не объявляем — это делает сводка над формой. Четыре сообщения,
+  заговорившие разом, слышны как одно неразборчивое.
+
+  id нужен полю: оно ссылается сюда через aria-describedby, и тогда ошибка
+  читается вместе с подписью, когда человек до поля доходит.
+*/
+function FieldError({ text, id }: { text?: string; id?: string }) {
   if (!text) return null;
 
   return (
     // Не только цветом: значок и текст остаются видны тем, кто цвет не
     // различает, и тем, кто читает страницу с экрана.
-    <p className="mt-1.5 flex items-start gap-1.5 text-sm text-signal">
+    <p id={id} className="mt-1.5 flex items-start gap-1.5 text-sm text-signal">
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       {text}
     </p>
+  );
+}
+
+/*
+  Сводка ошибок над формой.
+
+  Форма длиннее экрана, и после неудачной отправки человек оказывался на её
+  верху без единого объяснения: ошибка ждала его где-то ниже, за сгибом.
+  Выглядело так, будто кнопка не сработала.
+
+  Поэтому сводка ловит фокус — не только для чтения с экрана: страница
+  прокручивается к ней сама, и первое, что человек видит, это список того,
+  что поправить, со ссылками прямо на поля.
+*/
+function ErrorSummary({
+  dict,
+  items,
+  notice,
+}: {
+  dict: Dictionary;
+  items: { anchor: string; text: string }[];
+  /** Ошибка, которая не про поле: частота отправки, отказ хранилища. */
+  notice?: string;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const page = dict.reportPage;
+
+  // Наводим фокус на каждую неудачную отправку, а не один раз: вторая
+  // ошибка подряд так же нуждается в объяснении, как первая.
+  const shown = items.length > 0 || Boolean(notice);
+
+  useEffect(() => {
+    if (shown) box.current?.focus();
+  }, [shown, items, notice]);
+
+  if (!shown) return null;
+
+  return (
+    <div
+      ref={box}
+      tabIndex={-1}
+      role="alert"
+      className="mb-8 border-l-2 border-signal bg-surface px-5 py-4 outline-none"
+    >
+      <p className="flex items-center gap-2 text-base font-medium">
+        <AlertCircle className="h-4 w-4 shrink-0 text-signal" aria-hidden="true" />
+        {page.errorSummaryTitle}
+      </p>
+      {notice ? (
+        <p className="mt-1 text-sm">{notice}</p>
+      ) : (
+        <p className="mt-1 text-sm text-muted">{page.errorSummaryLead}</p>
+      )}
+
+      <ul className="mt-3 space-y-1">
+        {items.map((item) => (
+          <li key={item.anchor}>
+            <a
+              href={`#${item.anchor}`}
+              className="inline-flex min-h-11 items-center text-sm text-signal hover:underline"
+            >
+              {item.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -106,20 +181,22 @@ function StoryField({
         maxLength={LIMITS.STORY_MAX}
         defaultValue={defaultValue}
         onChange={(event) => setLength(event.target.value.trim().length)}
+        aria-describedby={error ? "story-error" : "story-count"}
         className={`${inputStyle} resize-y`}
       />
 
       {/* Пока не начали писать, молчим: счётчик над пустым полем — это
           требование, а не помощь. */}
       {length > 0 && !error ? (
-        <p className="mt-1.5 text-sm text-muted">
+        // Живая, но вежливая: сообщает по готовности, не перебивая набор.
+        <p id="story-count" aria-live="polite" className="mt-1.5 text-sm text-muted">
           {left > 0
             ? page.storyShortHint.replace("{n}", String(left))
             : page.storyOkHint}
         </p>
       ) : null}
 
-      <FieldError text={error} />
+      <FieldError text={error} id="story-error" />
     </div>
   );
 }
@@ -155,11 +232,31 @@ export default function ReportForm({ dict, lang, types }: Props) {
     state.status === "error" && state.errors[field]
       ? message(state.errors[field])
       : undefined;
+
+  // Куда вести из сводки. Для набора переключателей — на первый из них:
+  // отдельного заголовка, на который можно встать, у fieldset нет.
+  const ANCHORS: Record<string, string> = {
+    typeSlug: "type-first",
+    story: "story",
+    link: "link",
+    city: "city",
+    files: "files",
+    consent: "consent",
+  };
+
+  const summary =
+    state.status === "error"
+      ? Object.keys(state.errors)
+          .filter((field) => ANCHORS[field] && errorFor(field))
+          .map((field) => ({ anchor: ANCHORS[field], text: errorFor(field)! }))
+      : [];
   const valueOf = (field: string) =>
     state.status === "error" ? state.values[field] : undefined;
 
   return (
     <form action={action} className="max-w-2xl" noValidate>
+      <ErrorSummary dict={dict} items={summary} notice={errorFor("form")} />
+
       <input type="hidden" name="lang" value={lang} />
 
       {/* Ловушка для роботов: спрятана от людей, но видна автозаполнялкам. */}
@@ -175,16 +272,18 @@ export default function ReportForm({ dict, lang, types }: Props) {
         <p className="mt-1 text-sm text-muted">{page.typeHint}</p>
 
         <div className="mt-3 space-y-2">
-          {types.map((type) => (
+          {types.map((type, index) => (
             <label
               key={type.slug}
               className="flex cursor-pointer items-center gap-3 rounded-xs border border-border bg-surface px-4 py-3 transition-colors hover:bg-paper has-checked:border-ink"
             >
               <input
+                id={index === 0 ? "type-first" : undefined}
                 type="radio"
                 name="typeSlug"
                 value={type.slug}
                 defaultChecked={valueOf("typeSlug") === type.slug}
+                aria-describedby={errorFor("typeSlug") ? "type-error" : undefined}
                 className="h-4 w-4 accent-ink"
               />
               <span
@@ -195,7 +294,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
             </label>
           ))}
         </div>
-        <FieldError text={errorFor("typeSlug")} />
+        <FieldError text={errorFor("typeSlug")} id="type-error" />
       </fieldset>
 
       <StoryField
@@ -212,6 +311,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
         <p className="mt-1 text-sm text-muted">{page.linkHint}</p>
         <input
           id="link"
+          aria-describedby={errorFor("link") ? "link-error" : undefined}
           name="link"
           type="url"
           inputMode="url"
@@ -219,7 +319,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
           defaultValue={valueOf("link")}
           className={inputStyle}
         />
-        <FieldError text={errorFor("link")} />
+        <FieldError text={errorFor("link")} id="link-error" />
       </div>
 
       <div className="mt-8">
@@ -230,25 +330,28 @@ export default function ReportForm({ dict, lang, types }: Props) {
         <p className="mt-1 text-sm text-muted">{page.cityHint}</p>
         <input
           id="city"
+          aria-describedby={errorFor("city") ? "city-error" : undefined}
           name="city"
           type="text"
           maxLength={LIMITS.CITY_MAX}
           defaultValue={valueOf("city")}
           className={inputStyle}
         />
-        <FieldError text={errorFor("city")} />
+        <FieldError text={errorFor("city")} id="city-error" />
       </div>
 
       <div className="mt-8">
         <FilePicker dict={dict} lang={lang} />
-        <FieldError text={errorFor("files")} />
+        <FieldError text={errorFor("files")} id="files-error" />
       </div>
 
       <div className="mt-8 border-t border-line pt-6">
         <label className="flex cursor-pointer items-start gap-3">
           <input
+            id="consent"
             type="checkbox"
             name="consent"
+            aria-describedby={errorFor("consent") ? "consent-error" : undefined}
             className="mt-1 h-4 w-4 shrink-0 accent-ink"
           />
           <span>
@@ -258,12 +361,8 @@ export default function ReportForm({ dict, lang, types }: Props) {
             </span>
           </span>
         </label>
-        <FieldError text={errorFor("consent")} />
+        <FieldError text={errorFor("consent")} id="consent-error" />
       </div>
-
-      {/* Ошибка про всю форму — над кнопкой, а не под ней: под кнопкой её
-          не видно, когда форма длиннее экрана. */}
-      <FieldError text={errorFor("form")} />
 
       <div className="mt-8">
         <Submit dict={dict} />

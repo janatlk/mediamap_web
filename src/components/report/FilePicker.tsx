@@ -81,6 +81,7 @@ export default function FilePicker({ dict, lang }: Props) {
         {page.filesChoose}
         <input
           ref={input}
+          id="files"
           type="file"
           name="files"
           multiple
