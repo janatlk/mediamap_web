@@ -112,8 +112,16 @@ export default async function NewsPage({
                     <span className="sr-only">{dict.a11y.externalLink}</span>
                   </span>
 
+                  {/* Две строки и не больше. Подзаголовки приезжают из чужих
+                      лент любой длины, и на пяти абзацах подряд лента
+                      превращалась в стену, по которой не пробежаться
+                      глазами. Двух строк хватает, чтобы решить, открывать.
+
+                      Без block: line-clamp держится на display:-webkit-box,
+                      и block его перебивает — обрезка молча перестаёт
+                      работать, а класс остаётся на месте. */}
                   {item.snippet ? (
-                    <span className="mt-2 block max-w-prose text-sm text-muted">
+                    <span className="mt-2 line-clamp-2 max-w-prose text-sm text-muted">
                       {item.snippet}
                     </span>
                   ) : null}
