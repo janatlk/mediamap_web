@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { hashPassword, startSession, verifyPassword, endSession } from "@/lib/auth";
@@ -78,6 +79,25 @@ export async function signInAccount(
 
   await startSession(user.id);
   redirect("/ru/account");
+}
+
+/**
+ * Включает или выключает письма о решении по своим заявкам.
+ *
+ * Значение приходит галкой: невыбранная галка в форме не отправляется вовсе,
+ * поэтому смотрим на присутствие поля, а не на его содержимое.
+ */
+export async function setEmailNotifications(form: FormData): Promise<void> {
+  const { currentUser } = await import("@/lib/auth");
+  const user = await currentUser();
+  if (!user) return;
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { notifyByEmail: form.get("notify") !== null },
+  });
+
+  revalidatePath("/[lang]/account", "page");
 }
 
 export async function signOutAccount(): Promise<void> {

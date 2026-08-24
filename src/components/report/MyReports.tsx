@@ -18,6 +18,12 @@ import {
 // Вошедшему список приходит из базы: сообщения привязаны к аккаунту и видны
 // на любом устройстве. Остальным — по ключам из браузера, потому что на
 // сервере связать сообщение с человеком нечем: имени и почты мы не просим.
+//
+// Вошедшему показываем и то, и другое. Привязка к аккаунту появилась позже
+// самой формы, и всё поданное до неё в базе ничьё: список из одной базы у
+// человека, подавшего вчера десяток сообщений, оказывался пустым. Ключи из
+// браузера про них помнят — и здесь этого достаточно, чтобы человек увидел
+// свои сообщения, ничего не переписывая в базе задним числом.
 
 type Props = { dict: Dictionary; lang: Lang; signedIn: boolean };
 
@@ -51,22 +57,42 @@ function Status({ report, dict }: { report: MyReport; dict: Dictionary }) {
   );
 }
 
+/**
+ * Два списка в один, без повторов и с сохранением порядка «новые сверху».
+ *
+ * Ключ — token: одно и то же сообщение приходит и из аккаунта, и из браузера,
+ * а увидеть его дважды человеку незачем.
+ */
+function merge(first: MyReport[], second: MyReport[]): MyReport[] {
+  const byToken = new Map(first.map((report) => [report.token, report]));
+  for (const report of second) {
+    if (!byToken.has(report.token)) byToken.set(report.token, report);
+  }
+
+  return [...byToken.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export default function MyReports({ dict, lang, signedIn }: Props) {
   const page = dict.myReports;
   const [reports, setReports] = useState<MyReport[] | null>(null);
 
   useEffect(() => {
-    if (signedIn) {
-      loadAccountReports().then(setReports);
+    const tokens = listSaved().map((item) => item.token);
+
+    // Не вошёл — только браузер, и спрашивать сервер не о чем.
+    if (!signedIn) {
+      if (tokens.length === 0) {
+        setReports([]);
+        return;
+      }
+      loadMyReports(tokens).then(setReports);
       return;
     }
 
-    const saved = listSaved();
-    if (saved.length === 0) {
-      setReports([]);
-      return;
-    }
-    loadMyReports(saved.map((item) => item.token)).then(setReports);
+    Promise.all([
+      loadAccountReports(),
+      tokens.length ? loadMyReports(tokens) : Promise.resolve([]),
+    ]).then(([fromAccount, fromBrowser]) => setReports(merge(fromAccount, fromBrowser)));
   }, [signedIn]);
 
   // Пока не прочитали хранилище, не показываем ни списка, ни «пусто»:
@@ -76,14 +102,24 @@ export default function MyReports({ dict, lang, signedIn }: Props) {
   if (reports.length === 0) {
     return (
       <div className="mt-10">
-        <p className="text-muted">{page.empty}</p>
-        <Link
-          href={`/${lang}/report`}
-          className="mt-6 inline-flex h-12 items-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep"
-        >
-          {page.emptyAction}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </Link>
+        <p className="text-muted">
+          {signedIn ? page.emptyAccount : page.empty}
+        </p>
+
+        {/* В профиле кнопки подачи нет. Профиль — место, куда приходят
+            посмотреть, что стало с уже поданным; красная кнопка «сообщить о
+            нарушении» там подталкивает не к тому, зачем человек зашёл, и
+            дублирует ту же кнопку в шапке. На отдельной странице «мои
+            сообщения», куда попадают прямо с формы, она уместна. */}
+        {signedIn ? null : (
+          <Link
+            href={`/${lang}/report`}
+            className="mt-6 inline-flex h-12 items-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep"
+          >
+            {page.emptyAction}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        )}
       </div>
     );
   }
@@ -123,6 +159,12 @@ export default function MyReports({ dict, lang, signedIn }: Props) {
                 ? ` · ${page.reviewed}: ${date(report.reviewedAt)}`
                 : ""}
             </p>
+
+            {/* Начало текста: через неделю человек не вспомнит, о чём было
+                сообщение, а вид и номер ему об этом не скажут. */}
+            {report.excerpt ? (
+              <p className="mt-2 max-w-prose">{report.excerpt}</p>
+            ) : null}
 
             {/* Заметку проверяющего показываем: человек вправе знать, почему
                 решили именно так. */}
