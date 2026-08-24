@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { hostFromUrl } from "@/lib/format";
+import type { ViolationSlug } from "@/lib/i18n";
+import type { TypeCheck } from "./ml-service";
 
 // Запросы для страницы случаев. Наружу отдаём готовые к показу поля, без
 // сырых колонок: компонентам незачем знать, что площадка вычисляется из
@@ -9,6 +11,8 @@ import { hostFromUrl } from "@/lib/format";
 export type CaseListItem = {
   id: number;
   publicId: string;
+  /** Короткий заголовок случая. Пусто у старых записей — тогда показываем вид. */
+  headline: string | null;
   typeSlug: string;
   source: string | null;
   city: string | null;
@@ -32,6 +36,7 @@ const filterBy = (typeSlug?: string) =>
 const toListItem = (row: {
   id: number;
   publicId: string;
+  headline: string | null;
   mediaLink: string | null;
   city: string | null;
   createdAt: Date;
@@ -39,6 +44,7 @@ const toListItem = (row: {
 }): CaseListItem => ({
   id: row.id,
   publicId: row.publicId,
+  headline: row.headline,
   typeSlug: row.violationType.slug,
   source: hostFromUrl(row.mediaLink),
   city: row.city,
@@ -104,12 +110,41 @@ export type Receipt = {
   status: string;
   typeSlug: string;
   createdAt: Date;
+  /** То, что человек написал. Через день он этого уже не помнит. */
+  story: string | null;
+  link: string | null;
+  city: string | null;
   attachments: { id: string; kind: string; name: string; mime: string }[];
+  /** Заметка проверяющего к решению. Человек вправе знать, почему решили так. */
+  moderatorComment: string | null;
+  /** Решение принял живой человек, а не только модель. */
+  reviewed: boolean;
+  /** Пояснение, переписанное проверяющим. Пусто — остаётся вариант модели. */
+  reviewSummary: string | null;
+  /** Проверяющий поменял вердикт, уверенность или пояснение. */
+  overridden: boolean;
+  /*
+    По чему судила модель: снимок, ссылка или пересказ заявителя.
+
+    Разница принципиальная, и человеку о ней надо сказать. Разбор по описанию
+    относится к словам заявителя, а не к тому, что он видел, — а он-то
+    спрашивает про увиденное.
+  */
+  basis: "image" | "link" | "story";
   ai: {
     verdict: string;
     confidence: number;
+    /** Перечень примет — только у разбора по словам. */
     reasons: string[];
+    /** Обоснование словами — только у модели. */
+    explanation: string | null;
     source: "rules" | "model";
+    /*
+      Что модель ответила по каждому виду. Пусто у разбора по словам и у
+      старых записей, снятых до появления этого поля, — страница должна
+      уметь обойтись без него, а не показывать пустой вывод.
+    */
+    checks: Partial<Record<ViolationSlug, TypeCheck>>;
   } | null;
 };
 
@@ -139,15 +174,66 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
     status: row.status,
     typeSlug: row.violationType.slug,
     createdAt: row.createdAt,
+    story: row.authorComment,
+    link: row.mediaLink,
+    city: row.city,
     attachments: row.attachments,
+    moderatorComment: row.moderatorComment,
+    reviewed: row.reviewedAt !== null,
+    reviewSummary: row.reviewSummary,
+    overridden:
+      row.reviewVerdict !== null ||
+      row.reviewConfidence !== null ||
+      row.reviewSummary !== null,
+    // Старые записи признака не знают — для них честнее «по описанию»:
+    // ни ссылок, ни снимков модель тогда не открывала.
+    basis:
+      row.aiBasis === "image" || row.aiBasis === "link" ? row.aiBasis : "story",
     ai:
-      row.aiVerdict && row.aiConfidence !== null
+      /*
+        Правка проверяющего показывается вместо оценки модели.
+
+        Именно вместо, а не рядом: заявителю нужен ответ, а не протокол
+        разногласий внутри редакции. След модели при этом никуда не девается —
+        он остался в колонках ai* и в журнале проверок.
+      */
+      (row.reviewVerdict ?? row.aiVerdict) &&
+      (row.reviewConfidence ?? row.aiConfidence) !== null
         ? {
-            verdict: row.aiVerdict,
-            confidence: row.aiConfidence,
-            reasons: (row.aiSummary ?? "").split(",").filter(Boolean),
+            verdict: (row.reviewVerdict ?? row.aiVerdict)!,
+            confidence: (row.reviewConfidence ?? row.aiConfidence)!,
+            // У словаря в aiSummary лежит перечень кодов через запятую, у
+            // модели — связный текст. Резать его по запятым нельзя: получались
+            // обрывки предложений, поданные как список причин.
+            reasons:
+              row.reviewSummary || row.aiSource === "model"
+                ? []
+                : (row.aiSummary ?? "").split(",").filter(Boolean),
+            explanation:
+              row.reviewSummary ?? (row.aiSource === "model" ? row.aiSummary : null),
             source: row.aiSource === "model" ? "model" : "rules",
+            checks: parseChecks(row.aiTypeChecks),
           }
         : null,
   };
+}
+
+/**
+ * Разбор ответов по видам из JSON-колонки.
+ *
+ * Молча отдаёт пустое на всём, что не разобралось. Колонку писала предыдущая
+ * версия сервиса, и её формат может отличаться; лишиться из-за этого всей
+ * страницы «принято» — цена несоразмерная тому, что мы теряем.
+ */
+function parseChecks(raw: string | null): Partial<Record<ViolationSlug, TypeCheck>> {
+  if (!raw) return {};
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === "object"
+      ? (parsed as Partial<Record<ViolationSlug, TypeCheck>>)
+      : {};
+  } catch {
+    return {};
+  }
 }

@@ -3,12 +3,15 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 
+import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma";
-import { REPORT_STATUS } from "@/lib/enums";
+import { ruleFor } from "@/lib/attachment-rules";
+import { ATTACHMENT_KIND, REPORT_STATUS } from "@/lib/enums";
 import { reportSchema } from "@/lib/report-schema";
 import type { ViolationSlug } from "@/lib/i18n";
-import { assess } from "./ai-review";
+import { assess, type AssessRun } from "./ai-review";
+import { recordCheck } from "./ai-journal";
 import { attachTo, discard, filesFrom, prepare } from "./attachments";
 import { takeSubmitSlot } from "./rate-limit";
 
@@ -86,19 +89,41 @@ async function createReport(fields: NewReport): Promise<number> {
   throw new Error("Не удалось подобрать свободный номер сообщения");
 }
 
+/*
+  Первая картинка, которую модель сможет прочитать.
+
+  Раньше вложения не отправлялись вовсе, и заявка «мошенническая схема, на
+  скриншоте» приходила к модели одной этой фразой — без скриншота. Модель
+  честно отвечала, что содержимое ей не показали, и это был правильный ответ
+  на неправильно заданный вопрос.
+
+  Видео не берём: сервис разбирает картинки, а речь из видео вытаскивается
+  другим путём и только по ссылке. Слишком большой файл тоже пропускаем —
+  base64 раздувает его ещё на треть, и запрос упрётся в предел раньше, чем
+  принесёт пользу.
+*/
+const IMAGE_FOR_MODEL_BYTES = 4 * 1024 * 1024;
+
+async function readableImage(
+  files: File[],
+): Promise<{ base64: string; mime: string } | undefined> {
+  const image = files.find(
+    (file) =>
+      ruleFor(file.type)?.kind === ATTACHMENT_KIND.IMAGE &&
+      file.size <= IMAGE_FOR_MODEL_BYTES,
+  );
+  if (!image) return undefined;
+
+  const bytes = Buffer.from(await image.arrayBuffer());
+  return { base64: bytes.toString("base64"), mime: image.type };
+}
+
 export async function submitReport(
   _previous: SubmitState,
   form: FormData,
 ): Promise<SubmitState> {
   // Язык нужен, чтобы увести на страницу «принято» на том же языке.
   const lang = String(form.get("lang") ?? "ru");
-
-  // Считаем частоту до всего остального: разбирать и тем более записывать
-  // на диск сорок мегабайт ради того, чтобы потом отказать, незачем.
-  const slot = await takeSubmitSlot();
-  if (!slot.ok) {
-    return wholeForm(`tooOften:${slot.minutes}`, form);
-  }
 
   const parsed = reportSchema.safeParse({
     typeSlug: form.get("typeSlug") ?? "",
@@ -120,6 +145,20 @@ export async function submitReport(
     return { status: "error", errors, values: submitted(form) };
   }
 
+  /*
+    Частоту считаем ПОСЛЕ проверки полей, а не до.
+
+    Раньше было наоборот — чтобы не разбирать сорок мегабайт вложений ради
+    отказа. Но теперь пауза наступает уже на четвёртой отправке, и человек,
+    дважды промахнувшийся мимо обязательного поля, тратил бы на опечатки те
+    же попытки, что и спамер. Файлы всё равно разбираются ниже, после этой
+    проверки, так что лишней работы не прибавилось.
+  */
+  const slot = await takeSubmitSlot();
+  if (!slot.ok) {
+    return wholeForm(`tooOften:${slot.seconds}`, form);
+  }
+
   const data = parsed.data;
 
   // Вид приходит из формы и может быть подменён. Сверяем с базой.
@@ -138,13 +177,31 @@ export async function submitReport(
 
   // Предварительная оценка снимается сразу: она ничего не решает, но
   // задаёт порядок в очереди на проверку.
-  const assessment = assess({
+  const run = await assess({
     story: data.story,
     chosenType: data.typeSlug as ViolationSlug,
     hasLink: Boolean(data.link),
+    link: data.link || undefined,
+    // Читаем прямо из формы, не дожидаясь записи в хранилище: байты уже здесь,
+    // а лишний круг через диск ничего не добавляет.
+    image: await readableImage(filesFrom(form, "files")),
   });
+  const assessment = run.assessment;
+
+  /*
+    Кто подал, если человек был в аккаунте.
+
+    Не проставлялось вовсе — и аккаунт получался бесполезным: сообщения
+    привязывались только к браузеру, а страница «История» у вошедшего всегда
+    была пуста, хотя он подавал их сам и только что.
+
+    Анонимности это не отменяет: у не вошедшего остаётся null, и это по-
+    прежнему основной путь.
+  */
+  const author = await currentUser();
 
   const fields = {
+    authorId: author?.id ?? null,
     violationTypeId: type.id,
     mediaLink: data.link ? data.link : null,
     authorComment: data.story,
@@ -153,11 +210,25 @@ export async function submitReport(
     // Публикуется сообщение только после проверки живым человеком.
     status: REPORT_STATUS.PENDING,
 
+    // Черновик заголовка от модели. Проверяющий его правит перед публикацией.
+    headline: assessment.details?.headline ?? null,
+
     aiVerdict: assessment.verdict,
     aiConfidence: assessment.confidence,
-    aiSummary: assessment.reasons.join(","),
+    // У модели обоснование словами, у словаря — перечень примет.
+    aiSummary: assessment.details?.explanation || assessment.reasons.join(","),
     aiSource: assessment.source,
     aiCheckedAt: new Date(),
+    // Ответ по каждому виду отдельно — из него собирается вывод для
+    // заявителя. У разбора по словам такого нет, там остаётся пусто.
+    aiTypeChecks: assessment.details?.checks
+      ? JSON.stringify(assessment.details.checks)
+      : null,
+    // Что модель списала с картинки. Без этого вердикт по снимку нечем
+    // проверить: проверяющий видит вывод и не видит, из чего он сделан.
+    aiExtractedText: assessment.details?.extractedText || null,
+    // По чему судили. Заявителю это говорят на странице прямым текстом.
+    aiBasis: run.basis,
     // Личный ключ страницы «принято». Случайный, потому что номер
     // MM-2026-0001 угадывается с первой попытки.
     receiptToken: randomUUID(),
@@ -182,6 +253,7 @@ export async function submitReport(
   }
 
   await attachTo(reportId, files.items);
+  await recordCheck(reportId, run, data.typeSlug);
 
   // redirect бросает своё исключение, поэтому вызываем его последним:
   // раньше его перехватила бы проверка на дубль номера.

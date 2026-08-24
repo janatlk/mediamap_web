@@ -1,4 +1,5 @@
 import type { ViolationSlug } from "@/lib/i18n";
+import { classify, mlEnabled, type MlVerdict } from "./ml-service";
 
 /*
   Предварительная оценка сообщения.
@@ -11,9 +12,10 @@ import type { ViolationSlug } from "@/lib/i18n";
   Разбор по словам примитивен, зато каждое число объяснимо, и в выводе
   видно, за что оно получено.
 
-  Когда подключим модель, меняется одна функция — assess. Всё остальное,
-  включая хранение и показ, уже рассчитано на оба источника: поле aiSource
-  говорит, чем именно снята оценка.
+  Модель подключена: assess ходит в ML-сервис, а разбор по словам остался
+  запасным путём на случай, когда сервис не поднят или не ответил. Поле
+  aiSource говорит, чем именно снята оценка, — без него через полгода не
+  понять, чему верить в старых записях.
 */
 
 export type Verdict = ViolationSlug | "unclear";
@@ -26,6 +28,20 @@ export type Assessment = {
   reasons: string[];
   /** rules — разбор по словам, model — языковая модель. */
   source: "rules" | "model";
+  /** Дальше — только от модели; у разбора по словам этого нет. */
+  details?: MlVerdict;
+};
+
+/** По чему судили. Заявителю это говорят прямым текстом на странице. */
+export type Basis = "image" | "link" | "story";
+
+/** Оценка вместе с тем, как она далась: для журнала и для аналитики. */
+export type AssessRun = {
+  assessment: Assessment;
+  basis: Basis;
+  latencyMs: number;
+  ok: boolean;
+  error: string | null;
 };
 
 /**
@@ -119,6 +135,10 @@ export type AssessInput = {
   chosenType: ViolationSlug;
   /** Есть ли ссылка на публикацию. */
   hasLink: boolean;
+  /** Сама ссылка, если её оставили: модели она идёт как контекст. */
+  link?: string;
+  /** Приложенная картинка, если она есть и модель её осилит. */
+  image?: { base64: string; mime: string };
 };
 
 const MIN_DETAILED_STORY = 200;
@@ -131,7 +151,144 @@ const MIN_DETAILED_STORY = 200;
  * подробно описан случай. Ни одна из них сама по себе ничего не доказывает,
  * поэтому потолок здесь — 0.8, а не единица.
  */
-export function assess(input: AssessInput): Assessment {
+/**
+ * Снимает оценку моделью, а если та недоступна — словарём.
+ *
+ * Не бросает никогда: подача сообщения не должна срываться из-за того, что
+ * у постороннего сервиса выходной. Но и молчать о сбое нельзя — он ложится
+ * в журнал, и в аналитике видно, как часто это происходит.
+ */
+export async function assess(input: AssessInput): Promise<AssessRun> {
+  if (!mlEnabled()) {
+    return {
+      assessment: assessByRules(input),
+      basis: "story",
+      latencyMs: 0,
+      ok: true,
+      error: null,
+    };
+  }
+
+  const started = Date.now();
+  const first = basisFor(input);
+
+  try {
+    const verdict = await classify(payloadFor(input, first));
+    return {
+      assessment: fromModel(verdict, input),
+      basis: first,
+      latencyMs: Date.now() - started,
+      ok: true,
+      error: null,
+    };
+  } catch (error) {
+    /*
+      Ссылка не открылась — разбираем рассказ заявителя.
+
+      Закрытая площадка, удалённый пост, чужой антибот: причин много, и все
+      они про ссылку, а не про поломку сервиса. Ронять оценку до разбора по
+      словам из-за этого нельзя — модель работает, ей просто нечего было
+      открыть. Пробуем ещё раз тем, что есть.
+    */
+    if (first === "link") {
+      try {
+        const verdict = await classify(payloadFor(input, "story"));
+        return {
+          assessment: fromModel(verdict, input),
+          basis: "story",
+          latencyMs: Date.now() - started,
+          ok: true,
+          error: shortError(error),
+        };
+      } catch {
+        // Второй отказ — уже про сервис, а не про ссылку. Идём вниз.
+      }
+    }
+
+    return {
+      assessment: assessByRules(input),
+      basis: "story",
+      latencyMs: Date.now() - started,
+      ok: false,
+      error: shortError(error),
+    };
+  }
+}
+
+/**
+ * Что именно отправляем на разбор.
+ *
+ * Порядок один: снимок, потом ссылка, потом рассказ. Это не про удобство, а
+ * про исправление главной ошибки: человек описывает чужую
+ * публикацию своими словами, и его пересказ — не то, что нарушает. Заявитель
+ * пишет «говорят, что…» или «я не верю», и модель принималась судить его
+ * осторожность вместо чужого поста.
+ *
+ * Поэтому рассказ заявителя вместе с картинкой НЕ отправляем. Поле context у
+ * сервиса означает «пост, под которым оставлен комментарий», и подсунуть туда
+ * слова заявителя значило бы вернуть ту же ошибку с другой стороны: модель
+ * снова читала бы его мнение как часть материала.
+ *
+ * Картинок может быть несколько, а сервис берёт одну. Берём первую: снимок
+ * обычно один, а остальные — то же самое с другого угла.
+ */
+function basisFor(input: AssessInput): Basis {
+  if (input.image) return "image";
+  if (input.link) return "link";
+  return "story";
+}
+
+function payloadFor(
+  input: AssessInput,
+  basis: Basis,
+): Parameters<typeof classify>[0] {
+  if (basis === "image" && input.image) {
+    return {
+      content_type: "image",
+      image_base64: input.image.base64,
+      image_mime: input.image.mime,
+    };
+  }
+
+  if (basis === "link" && input.link) {
+    return { content_type: "url", url: input.link };
+  }
+
+  // Ссылку в контекст не кладём: там ждут текст поста, а голый адрес модель
+  // читает как содержимое — и рассуждает о наборе символов в нём.
+  return { content_type: "text", text: input.story };
+}
+
+/**
+ * Ответ модели в вид, который понимает остальной сайт.
+ *
+ * Расхождение с выбором заявителя не понижает уверенность: модель видела
+ * текст, а человек выбирал вид из трёх пунктов, случайно не разобравшись.
+ * Мы просто отмечаем расхождение — решать всё равно проверяющему.
+ */
+function fromModel(verdict: MlVerdict, input: AssessInput): Assessment {
+  const reasons: string[] = [];
+  if (verdict.slug === "unclear") reasons.push("modelFoundNothing");
+  else if (verdict.slug === input.chosenType) reasons.push("matchesChoice");
+  else reasons.push("differsFromChoice");
+  if (verdict.requiresFactCheck) reasons.push("needsFactCheck");
+  if (verdict.sources.length) reasons.push("hasSources");
+
+  return {
+    verdict: verdict.slug,
+    confidence: Math.round(verdict.confidence * 100) / 100,
+    reasons,
+    source: "model",
+    details: verdict,
+  };
+}
+
+function shortError(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error);
+  return text.slice(0, 200);
+}
+
+export function assessByRules(input: AssessInput): Assessment {
   const hits = countMarkers(input.story);
   const reasons: string[] = [];
 
