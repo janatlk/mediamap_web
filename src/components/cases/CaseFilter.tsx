@@ -48,7 +48,7 @@ export default function CaseFilter({ dict, lang, types, active }: Props) {
                   aria-hidden="true"
                 />
                 {violationText(dict, type.slug)?.name ?? type.slug}
-                <span className="font-mono text-2xs opacity-70">
+                <span className="text-2xs tabular-nums opacity-70">
                   {type.count}
                 </span>
               </Link>

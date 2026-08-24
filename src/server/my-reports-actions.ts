@@ -12,6 +12,17 @@ export type MyReport = {
   createdAt: string;
   reviewedAt: string | null;
   moderatorNote: string | null;
+  /** Начало текста — чтобы человек узнал своё сообщение в списке. */
+  excerpt: string | null;
+};
+
+/** Длиннее двух строк в списке не нужно: за подробностями открывают карточку. */
+const EXCERPT = 140;
+
+const excerptOf = (text: string | null): string | null => {
+  const clean = (text ?? "").trim();
+  if (!clean) return null;
+  return clean.length > EXCERPT ? clean.slice(0, EXCERPT).trimEnd() + "…" : clean;
 };
 
 const MAX_TOKENS = 50;
@@ -45,6 +56,7 @@ export async function loadMyReports(tokens: string[]): Promise<MyReport[]> {
     reviewedAt: row.reviewedAt?.toISOString() ?? null,
     // Заметку проверяющего показываем: человек вправе знать, почему решили так.
     moderatorNote: row.moderatorComment,
+    excerpt: excerptOf(row.authorComment),
   }));
 }
 
@@ -73,5 +85,6 @@ export async function loadAccountReports(): Promise<MyReport[]> {
     createdAt: row.createdAt.toISOString(),
     reviewedAt: row.reviewedAt?.toISOString() ?? null,
     moderatorNote: row.moderatorComment,
+    excerpt: excerptOf(row.authorComment),
   }));
 }

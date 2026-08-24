@@ -37,7 +37,7 @@ export default function HowItWorks({
       </section>
 
       <section className="bg-ink text-surface">
-        <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl">{dict.home.ctaTitle}</h2>

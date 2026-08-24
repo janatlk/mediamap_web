@@ -29,7 +29,7 @@ export async function generateMetadata({
   if (!item) return { title: dict.cases.notFound };
 
   return {
-    title: `${violationText(dict, item.typeSlug)?.name ?? item.typeSlug} · ${item.publicId}`,
+    title: `${item.headline ?? violationText(dict, item.typeSlug)?.name ?? item.typeSlug} · ${item.publicId}`,
     description: dict.cases.detailLead,
   };
 }
@@ -89,15 +89,20 @@ export default async function CasePage({
         {dict.cases.backToList}
       </Link>
 
+      {/* Заголовок говорит, что произошло. Раньше здесь стояло название вида,
+          и у всех случаев одного вида страница называлась одинаково. Вид никуда
+          не делся — он ушёл в строку над заголовком, вместе с точкой цвета. */}
       <div className="mt-6 max-w-3xl">
-        <p className="eyebrow">{dict.cases.detailLead}</p>
-
-        <h1 className="mt-3 flex items-center gap-3 text-3xl sm:text-4xl">
+        <p className="eyebrow flex items-center gap-2">
           <span
-            className={`h-3 w-3 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
             aria-hidden="true"
           />
           {violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
+        </p>
+
+        <h1 className="mt-3 text-3xl sm:text-4xl">
+          {item.headline ?? violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
         </h1>
 
         <dl className="mt-10">
@@ -111,6 +116,10 @@ export default async function CasePage({
             </span>
           </Field>
 
+          {/* Поле «где опубликовано» показываем, только если есть что показать.
+              Раньше при отсутствии ссылки и города оставалась строка
+              «площадка не указана» — подпись без содержимого. */}
+          {item.link || item.city ? (
           <Field label={dict.cases.where}>
             {item.link ? (
               <>
@@ -131,14 +140,13 @@ export default async function CasePage({
                     чтобы ссылка в никуда не выглядела нашей недоработкой. */}
                 <p className="mt-2 text-sm text-muted">{dict.cases.linkGone}</p>
               </>
-            ) : (
-              <span className="text-muted">{dict.home.caseSourceUnknown}</span>
-            )}
+            ) : null}
 
             {item.city ? (
               <p className="mt-1 text-sm text-muted">{item.city}</p>
             ) : null}
           </Field>
+          ) : null}
 
           <Field label={dict.cases.fromAuthor}>
             {item.authorComment ?? (

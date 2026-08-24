@@ -15,7 +15,7 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
   const forms = FORMS[lang];
 
   return (
-    <section className="border-t border-line bg-surface">
+    <section className="border-t border-line">
       <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>

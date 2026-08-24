@@ -30,15 +30,20 @@ export default function Stats({
 
   return (
     <section className="border-y border-line bg-surface">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-px bg-line sm:grid-cols-4">
-        {items.map((item) => (
-          <div key={item.tail} className="bg-surface px-4 py-6 sm:px-6 sm:py-7">
-            <p className="font-display text-3xl tabular-nums">{item.value}</p>
-            <p className="mt-1 text-sm text-muted">
-              {item.word} {item.tail}
-            </p>
-          </div>
-        ))}
+      {/* Полоса во всю ширину, но числа стоят на той же вертикали, что и
+          заголовки соседних блоков: иначе левый край страницы «гуляет».
+          Отсюда отрицательные поля — они гасят внутренний отступ ячейки. */}
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
+        <div className="-mx-4 grid grid-cols-2 gap-px bg-line sm:-mx-6 sm:grid-cols-4 lg:-mx-10">
+          {items.map((item) => (
+            <div key={item.tail} className="bg-surface px-4 py-6 sm:px-6 sm:py-7 lg:px-10">
+              <p className="font-display text-3xl tabular-nums">{item.value}</p>
+              <p className="mt-1 text-sm text-muted">
+                {item.word} {item.tail}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

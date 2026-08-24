@@ -4,7 +4,6 @@ import Hero from "@/components/home/Hero";
 import Stats from "@/components/home/Stats";
 import CaseFeed from "@/components/home/CaseFeed";
 import ViolationTypes from "@/components/home/ViolationTypes";
-import AiTeaser from "@/components/home/AiTeaser";
 import NewsList from "@/components/home/NewsList";
 import HowItWorks from "@/components/home/HowItWorks";
 import { isReadyLanguage } from "@/lib/i18n";
@@ -54,8 +53,6 @@ export default async function HomePage({
       />
 
       <ViolationTypes dict={dict} lang={lang} types={data.types} />
-
-      <AiTeaser dict={dict} />
 
       <NewsList dict={dict} lang={lang} news={data.news} />
 

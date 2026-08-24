@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
+import { splitPublisher } from "./news-data";
 import { loadViolationTypes, type ViolationType } from "./violations";
 import { decodeEntities, hostFromUrl } from "@/lib/format";
 
@@ -11,6 +12,8 @@ const CONFIRMED = { status: REPORT_STATUS.APPROVED };
 export type CaseRow = {
   id: number;
   publicId: string;
+  /** Короткий заголовок случая. Пусто у старых записей — тогда показываем вид. */
+  headline: string | null;
   typeSlug: string;
   source: string | null;
   city: string | null;
@@ -43,6 +46,7 @@ async function loadCases(limit: number): Promise<CaseRow[]> {
   return rows.map((row) => ({
     id: row.id,
     publicId: row.publicId,
+    headline: row.headline,
     typeSlug: row.violationType.slug,
     source: hostFromUrl(row.mediaLink),
     city: row.city,
@@ -89,13 +93,18 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
       return true;
     })
     .slice(0, limit)
-    .map((item) => ({
-      id: item.id,
-      title: decodeEntities(item.title),
-      link: item.link,
-      source: item.source,
-      publishedAt: item.publishedAt,
-    }));
+    .map((item) => {
+      // Разбор заголовка общий с лентой новостей — см. splitPublisher.
+      const parsed = splitPublisher(decodeEntities(item.title));
+
+      return {
+        id: item.id,
+        title: parsed.title,
+        link: item.link,
+        source: parsed.publisher ?? item.source,
+        publishedAt: item.publishedAt,
+      };
+    });
 }
 
 export type HomeData = {

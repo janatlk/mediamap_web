@@ -25,30 +25,46 @@ export default function CaseList({
             href={`/${lang}/cases/${item.publicId}`}
             className="block py-4 transition-colors hover:bg-surface"
           >
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <span className="flex items-center gap-2 text-base">
+            {/* Заголовок переносится на две строки — номер при этом должен
+                остаться справа, а не уезжать под точку. Отсюда flex без
+                переноса: колонка с текстом сжимается, номер держит ширину. */}
+            <div className="flex items-baseline gap-x-4">
+              <span className="flex min-w-0 flex-1 items-baseline gap-2 text-base">
                 <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
+                  className={`mt-1.5 h-2 w-2 shrink-0 self-start rounded-full ${typeColor(item.typeSlug)}`}
                   aria-hidden="true"
                 />
-                {violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
+                {item.headline ?? violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
               </span>
-              <span className="font-mono text-2xs text-muted">
+              <span className="shrink-0 font-mono text-2xs text-muted">
                 {item.publicId}
               </span>
             </div>
 
+            {/* Площадку показываем, только если она известна. Строка
+                «площадка не указана» занимала место данных и ничего не
+                сообщала — отсутствие площадки и так видно по её отсутствию. */}
             <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 pl-4 text-sm text-muted">
-              <span className="font-mono text-xs">
-                {item.source ?? dict.home.caseSourceUnknown}
-              </span>
-              {item.city ? (
+              {/* Вид уходит в подпись: заголовок теперь говорит, что случилось,
+                  а вид — к какой полке случай отнесли. */}
+              {item.headline ? (
                 <>
+                  <span>{violationText(dict, item.typeSlug)?.name ?? item.typeSlug}</span>
                   <span aria-hidden="true">·</span>
-                  <span>{item.city}</span>
                 </>
               ) : null}
-              <span aria-hidden="true">·</span>
+              {item.source ? (
+                <>
+                  <span>{item.source}</span>
+                  <span aria-hidden="true">·</span>
+                </>
+              ) : null}
+              {item.city ? (
+                <>
+                  <span>{item.city}</span>
+                  <span aria-hidden="true">·</span>
+                </>
+              ) : null}
               <span className="tabular-nums">
                 {formatDate(item.checkedAt, lang)}
               </span>
