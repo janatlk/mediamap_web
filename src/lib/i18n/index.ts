@@ -36,6 +36,14 @@ export type ViolationSlug = keyof typeof violationsRu;
 export type ViolationText = (typeof violationsRu)[ViolationSlug];
 
 /**
+ * Все известные виды нарушений.
+ *
+ * Берётся из словаря, а не пишется списком рядом: список пришлось бы
+ * помнить и дополнять вторым местом при заведении нового вида.
+ */
+export const VIOLATION_SLUGS = Object.keys(ru.violations) as ViolationSlug[];
+
+/**
  * Тексты вида по slug из базы.
  *
  * Slug приходит из базы обычной строкой, а словарь знает лишь свои ключи.

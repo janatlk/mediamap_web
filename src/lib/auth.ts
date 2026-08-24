@@ -19,6 +19,8 @@ export type SessionUser = {
   email: string;
   name: string | null;
   role: Role;
+  /** Писать ли ему о решении по его заявкам. */
+  notifyByEmail: boolean;
 };
 
 export const hashPassword = (plain: string) => bcrypt.hash(plain, ROUNDS);
@@ -81,5 +83,6 @@ export async function currentUser(): Promise<SessionUser | null> {
     email: session.user.email,
     name: session.user.name,
     role: session.user.role as Role,
+    notifyByEmail: session.user.notifyByEmail,
   };
 }

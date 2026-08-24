@@ -1,136 +1,440 @@
-import { ArrowUpRight, Bot, Check, X } from "lucide-react";
+import Link from "next/link";
 
 import Attachments from "@/components/report/Attachments";
+import { REPORT_STATUS } from "@/lib/enums";
 import { formatDate } from "@/lib/format";
 import { requireStaff } from "@/lib/guard";
-import { DEFAULT_LANG, getDictionary, violationText } from "@/lib/i18n";
-import { typeColor } from "@/lib/violation-types";
-import { approveReport, rejectReport } from "@/server/moderation-actions";
-import { loadQueue, type QueueItem } from "@/server/queue-data";
+import { DEFAULT_LANG, VIOLATION_SLUGS, getDictionary, violationText } from "@/lib/i18n";
+import { approveReport, rejectReport, reopenReport } from "@/server/moderation-actions";
+import { loadReports, type Filter, type ReportRow } from "@/server/reports-data";
 
-export const metadata = { title: "Очередь" };
-
-// Очередь на проверку. Сверху — то, в чём разбор уверен больше всего.
-
+export const metadata = { title: "Сообщения" };
 export const dynamic = "force-dynamic";
 
-/** Название вида по slug. Панель одноязычная, поэтому язык всегда русский. */
+/*
+  Сообщения и решения по ним.
+
+  Раньше здесь была только очередь непроверенного, и всё решённое исчезало из
+  панели навсегда. Теперь фильтр: видно и то, что ждёт, и то, что уже разобрали,
+  с возможностью вернуть решение назад.
+*/
+
 const dict = getDictionary(DEFAULT_LANG);
 const typeName = (slug: string) => violationText(dict, slug)?.name ?? slug;
 
-function Assessment({ item }: { item: QueueItem }) {
-  if (!item.aiVerdict || item.aiConfidence === null) {
-    return <span className="text-sm text-muted">оценки нет</span>;
-  }
+const TABS: { value: Filter["status"]; label: string }[] = [
+  { value: REPORT_STATUS.PENDING, label: "Ждут проверки" },
+  { value: REPORT_STATUS.APPROVED, label: "Подтверждены" },
+  { value: REPORT_STATUS.REJECTED, label: "Отклонены" },
+  { value: "ALL", label: "Все" },
+];
 
-  const percent = Math.round(item.aiConfidence * 100);
-  const agrees = item.aiVerdict === item.typeSlug;
+const STATUS_NAME: Record<string, string> = {
+  PENDING: "ждёт",
+  APPROVED: "подтверждено",
+  REJECTED: "отклонено",
+};
+
+const FACT_NAME: Record<string, string> = {
+  false: "опровергается источниками",
+  true: "подтверждается источниками",
+  unverified: "источников не нашлось",
+};
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
+}) {
+  await requireStaff();
+
+  const params = await searchParams;
+  const filter: Filter = {
+    status: asStatus(params.status),
+    query: params.q ?? "",
+    page: Number(params.page) || 1,
+  };
+  const data = await loadReports(filter);
 
   return (
-    <span className="flex flex-wrap items-center gap-2 text-sm">
-      <Bot className="h-4 w-4 text-muted" aria-hidden="true" />
-      <span className="font-mono tabular-nums">{percent}%</span>
-      <span className="text-muted">
-        {item.aiVerdict === "unclear" ? "вид не определён" : typeName(item.aiVerdict)}
-      </span>
+    <div className="panel">
+      <h1>Сообщения</h1>
+      <p className="lead">
+        Решение принимает человек. Оценка ИИ только задаёт порядок в очереди —
+        сверху то, что больше похоже на настоящее нарушение.
+      </p>
+
+      <Filters filter={filter} counts={data.counts} />
+
+      {data.rows.length === 0 ? (
+        <p className="empty">Ничего не найдено.</p>
+      ) : (
+        data.rows.map((row) => <Report key={row.id} row={row} />)
+      )}
+
+      <Pager filter={filter} page={data.page} pages={data.pages} total={data.total} />
+    </div>
+  );
+}
+
+function asStatus(raw: string | undefined): Filter["status"] {
+  const allowed = [...Object.values(REPORT_STATUS), "ALL"];
+  return allowed.includes(raw as string) ? (raw as Filter["status"]) : REPORT_STATUS.PENDING;
+}
+
+function Filters({ filter, counts }: { filter: Filter; counts: Record<string, number> }) {
+  return (
+    <>
+      <p>
+        {TABS.map((tab, index) => (
+          <span key={tab.value}>
+            {index > 0 ? " | " : ""}
+            {tab.value === filter.status ? (
+              <b>
+                {tab.label} ({counts[tab.value] ?? 0})
+              </b>
+            ) : (
+              <Link href={link({ ...filter, status: tab.value, page: 1 })}>
+                {tab.label} ({counts[tab.value] ?? 0})
+              </Link>
+            )}
+          </span>
+        ))}
+      </p>
+
+      {/* Поиск обычной формой на GET: адрес остаётся ссылкой, которой можно
+          поделиться с коллегой. */}
+      <form action="/admin" method="get">
+        <input type="hidden" name="status" value={filter.status} />
+        <input
+          type="search"
+          name="q"
+          size={30}
+          defaultValue={filter.query}
+          placeholder="Номер, текст, город"
+          aria-label="Поиск по сообщениям"
+        />{" "}
+        <button type="submit">Найти</button>
+      </form>
+    </>
+  );
+}
+
+function Report({ row }: { row: ReportRow }) {
+  return (
+    <article>
+      <header>
+        <span className="status">{STATUS_NAME[row.status] ?? row.status}</span>
+        {" · "}
+        {row.headline ?? typeName(row.typeSlug)}
+        {row.headline ? ` · ${typeName(row.typeSlug)}` : ""}
+        {" · "}
+        <Assessment row={row} />
+        <br />
+        <span className="id">
+          {row.publicId}, {formatDate(row.createdAt, DEFAULT_LANG)}
+        </span>
+        {/* Ссылки на само нарушение. В списке по двадцать пять карточек, и без
+            них нельзя было ни открыть дело отдельно, ни переслать коллеге, ни
+            посмотреть, что по этому сообщению видит заявитель. */}
+        {row.receiptToken ? (
+          <>
+            {" · "}
+            <a
+              href={`/${DEFAULT_LANG}/report/sent/${row.receiptToken}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              как видит заявитель
+            </a>
+          </>
+        ) : null}
+        {row.status === REPORT_STATUS.APPROVED ? (
+          <>
+            {" · "}
+            <a
+              href={`/${DEFAULT_LANG}/cases/${row.publicId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              опубликованный случай
+            </a>
+          </>
+        ) : null}
+      </header>
+
+      <div>
+        <p>{row.story}</p>
+
+        {/* Приложенное — то, ради чего проверку вообще можно провести:
+            публикацию к этому времени часто уже удалили. */}
+        <Attachments items={row.attachments} title="Приложено" />
+
+        <Reasoning row={row} />
+
+        <p className="note">
+          {row.link ? (
+            <a href={row.link} target="_blank" rel="noopener noreferrer nofollow">
+              {row.source ?? row.link}
+            </a>
+          ) : (
+            "ссылки нет"
+          )}
+          {row.city ? ` · ${row.city}` : ""}
+        </p>
+      </div>
+
+      <Decide row={row} />
+    </article>
+  );
+}
+
+function Assessment({ row }: { row: ReportRow }) {
+  // Правка человека показывается вместо оценки модели, но с пометкой чья
+  // она: иначе через месяц не отличить, что решила модель, а что сотрудник.
+  const edited = row.reviewVerdict !== null || row.reviewConfidence !== null;
+  const finalVerdict = row.reviewVerdict ?? row.aiVerdict;
+  const finalConfidence = row.reviewConfidence ?? row.aiConfidence;
+
+  if (!finalVerdict || finalConfidence === null) {
+    return <span className="note">оценки нет</span>;
+  }
+
+  const percent = Math.round(finalConfidence * 100);
+  const agrees = finalVerdict === row.typeSlug;
+  const verdict = finalVerdict === "unclear" ? "вид не определён" : typeName(finalVerdict);
+
+  return (
+    <span className="note">
+      {edited ? "правка проверяющего" : "ИИ"}: {verdict}, {percent}%
       {/* Расхождение с выбором заявителя — главное, ради чего оценка нужна
           проверяющему: значит вид, скорее всего, надо поменять. */}
-      {!agrees && item.aiVerdict !== "unclear" ? (
-        <span className="rounded-xs bg-paper px-2 py-0.5 text-2xs text-muted">
-          заявитель выбрал другой вид
-        </span>
-      ) : null}
+      {!agrees && finalVerdict !== "unclear" ? " · заявитель выбрал другой вид" : ""}
+      {row.aiSource === "rules" && !edited ? " · по словарю, не моделью" : ""}
     </span>
   );
 }
 
-export default async function QueuePage() {
-  await requireStaff();
-  const queue = await loadQueue();
+/** Разбор целиком: почему так решено, что проверить и чем кончилась проверка. */
+function Reasoning({ row }: { row: ReportRow }) {
+  const summary = readable(row.aiSummary);
+  if (!summary && !row.claim && !row.aiExtractedText) return null;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
-      <h1 className="text-2xl">Очередь на проверку</h1>
-      <p className="mt-2 text-muted">
-        {queue.length > 0
-          ? "Сверху то, в чём разбор уверен больше всего."
-          : "Непроверенных сообщений нет."}
-      </p>
+    <details>
+      <summary>Разбор ИИ</summary>
 
-      <ul className="mt-8 space-y-4">
-        {queue.map((item) => (
-          <li key={item.id} className="border border-line bg-surface">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
-              <span className="flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${typeColor(item.typeSlug)}`}
-                  aria-hidden="true"
-                />
-                <span className="text-base">{typeName(item.typeSlug)}</span>
-              </span>
-              <Assessment item={item} />
-              <span className="font-mono text-2xs text-muted">
-                {item.publicId} · {formatDate(item.createdAt, DEFAULT_LANG)}
-              </span>
-            </div>
+      {/* Что модель списала со снимка. Идёт первым: когда картинка есть,
+          вердикт вынесен по этому тексту, а не по словам заявителя, и
+          сверять надо в первую очередь его. */}
+      {row.aiExtractedText ? (
+        <p>
+          <i>Со снимка прочитано:</i> «{row.aiExtractedText}»
+        </p>
+      ) : null}
 
-            <div className="px-5 py-4">
-              <p className="max-w-prose whitespace-pre-line">{item.story}</p>
+      {summary ? <p>{summary}</p> : null}
 
-              {/* Приложенное — то, ради чего проверку вообще можно провести:
-                  публикацию к этому времени часто уже удалили. */}
-              <Attachments items={item.attachments} title="Приложено" />
+      {row.claim ? (
+        <p>
+          Проверить утверждение: «{row.claim}»
+          {row.factVerdict ? ` — ${FACT_NAME[row.factVerdict] ?? row.factVerdict}` : ""}
+        </p>
+      ) : null}
 
-              <p className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted">
-                {item.link ? (
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="inline-flex items-center gap-1 text-signal hover:underline"
-                  >
-                    {item.source ?? item.link}
-                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </a>
-                ) : (
-                  <span>ссылки нет</span>
-                )}
-                {item.city ? <span>· {item.city}</span> : null}
-              </p>
-            </div>
+      {row.sources.length ? (
+        <ul>
+          {row.sources.map((source) => (
+            <li key={source}>
+              <a href={source} target="_blank" rel="noopener noreferrer nofollow">
+                {hostOf(source)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
-            {/* Обе кнопки в одной форме: заметка пишется один раз и уходит
-                с любым решением. */}
-            <form className="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center">
-              <input type="hidden" name="id" value={item.id} />
-              <input
-                name="note"
-                placeholder="Заметка для себя и для заявителя, необязательно"
-                className="h-11 flex-1 rounded-xs border border-border bg-paper px-3 text-sm outline-none focus:border-ink"
-              />
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  formAction={approveReport}
-                  className="inline-flex h-11 items-center gap-2 rounded-xs bg-ink px-5 text-sm font-medium text-surface"
-                >
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  Подтвердить
-                </button>
-                <button
-                  type="submit"
-                  formAction={rejectReport}
-                  className="inline-flex h-11 items-center gap-2 rounded-xs border border-border px-5 text-sm transition-colors hover:bg-paper"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                  Отклонить
-                </button>
-              </div>
-            </form>
-          </li>
-        ))}
-      </ul>
-    </div>
+      {/* Ссылку модель способна выдумать. Открыть и посмотреть — обязательно. */}
+      {row.sources.length ? (
+        <p className="note">Источники подобрала модель — откройте их, прежде чем опираться.</p>
+      ) : null}
+    </details>
   );
+}
+
+/*
+  Решение по сообщению — и его правка.
+
+  Форма одна на оба состояния. Раньше их было две: у нерассмотренного —
+  поля, у рассмотренного — только «вернуть в очередь». Выходило, что
+  исправить собственную опечатку в заголовке или заметке можно было, лишь
+  отправив дело обратно в очередь, а вердикт и уверенность не правились
+  вовсе — они так и оставались тем, что выдала модель.
+
+  Все поля показывают текущее значение, а не пустоту: сохранение перезаписывает
+  их целиком, и пустое поле «заметка» стёрло бы написанное в прошлый раз.
+*/
+function Decide({ row }: { row: ReportRow }) {
+  const decided = row.status !== REPORT_STATUS.PENDING;
+
+  return (
+    <footer>
+      <form>
+        <input type="hidden" name="id" value={row.id} />
+
+        <p>
+          <label htmlFor={`headline-${row.id}`}>Заголовок случая</label>
+          <br />
+          <input
+            id={`headline-${row.id}`}
+            type="text"
+            name="headline"
+            size={60}
+            defaultValue={row.headline ?? ""}
+            placeholder="Коротко: что произошло"
+          />
+        </p>
+
+        <p>
+          <label htmlFor={`verdict-${row.id}`}>Вердикт</label>{" "}
+          <select
+            id={`verdict-${row.id}`}
+            name="verdict"
+            defaultValue={row.reviewVerdict ?? ""}
+          >
+            {/* Пустой пункт — не «ничего», а «оставить как решила модель».
+                Без него правка вердикта стала бы обязательной на каждом
+                сообщении, включая те, где с моделью и так согласны. */}
+            <option value="">как решил ИИ</option>
+            <option value="unclear">вид не определён</option>
+            {VIOLATION_SLUGS.map((slug) => (
+              <option key={slug} value={slug}>
+                {typeName(slug)}
+              </option>
+            ))}
+          </select>{" "}
+          <label htmlFor={`confidence-${row.id}`}>Уверенность</label>{" "}
+          <input
+            id={`confidence-${row.id}`}
+            type="number"
+            name="confidence"
+            min={0}
+            max={100}
+            step={1}
+            size={4}
+            // == null ловит и null, и undefined: у старых записей поля
+            // может не быть вовсе, и тогда в атрибут уезжал NaN.
+            defaultValue={
+              row.reviewConfidence == null
+                ? ""
+                : Math.round(row.reviewConfidence * 100)
+            }
+            placeholder={
+              row.aiConfidence == null
+                ? "—"
+                : String(Math.round(row.aiConfidence * 100))
+            }
+          />
+          %
+        </p>
+
+        <p>
+          <label htmlFor={`summary-${row.id}`}>Из чего сложился вывод</label>
+          <br />
+          {/* Текст модели можно переписать целиком: его читает заявитель, а
+              модель формулирует то коряво, то мимо сути. Пусто — остаётся
+              её вариант. */}
+          <textarea
+            id={`summary-${row.id}`}
+            name="summary"
+            rows={3}
+            cols={70}
+            defaultValue={row.reviewSummary ?? ""}
+            placeholder={readable(row.aiSummary) || "Пояснение для заявителя"}
+          />
+        </p>
+
+        <p>
+          <label htmlFor={`note-${row.id}`}>Заметка к решению</label>
+          <br />
+          <input
+            id={`note-${row.id}`}
+            type="text"
+            name="note"
+            size={70}
+            defaultValue={row.moderatorComment ?? ""}
+            placeholder="Видна заявителю, необязательно"
+          />
+        </p>
+
+        <p>
+          <button type="submit" formAction={approveReport}>
+            {decided ? "Сохранить как подтверждённое" : "Подтвердить"}
+          </button>{" "}
+          <button type="submit" formAction={rejectReport}>
+            {decided ? "Сохранить как отклонённое" : "Отклонить"}
+          </button>
+          {decided ? (
+            <>
+              {" "}
+              {/* Возврат в очередь правки в полях не сохраняет — он про
+                  статус. Сначала сохраните, потом возвращайте. */}
+              <button type="submit" formAction={reopenReport}>
+                Вернуть в очередь
+              </button>
+            </>
+          ) : null}
+        </p>
+
+        {decided ? (
+          <p className="note">
+            {STATUS_NAME[row.status]}
+            {row.reviewedAt ? ` ${formatDate(row.reviewedAt, DEFAULT_LANG)}` : ""}
+            {row.reviewedBy ? `, ${row.reviewedBy}` : ""}
+          </p>
+        ) : null}
+      </form>
+    </footer>
+  );
+}
+
+function Pager({ filter, page, pages, total }: {
+  filter: Filter;
+  page: number;
+  pages: number;
+  total: number;
+}) {
+  return (
+    <p className="note">
+      Всего {total}
+      {pages > 1 ? `, страница ${page} из ${pages}` : ""}
+      {page > 1 ? <> · <Link href={link({ ...filter, page: page - 1 })}>назад</Link></> : null}
+      {page < pages ? <> · <Link href={link({ ...filter, page: page + 1 })}>дальше</Link></> : null}
+    </p>
+  );
+}
+
+function link(filter: Filter): string {
+  const params = new URLSearchParams({ status: String(filter.status) });
+  if (filter.query) params.set("q", filter.query);
+  if (filter.page > 1) params.set("page", String(filter.page));
+  return `/admin?${params}`;
+}
+
+/**
+ * У записей, снятых разбором по словам, в aiSummary лежит не текст, а перечень
+ * кодов: «markersFound,matchesChoice,noLink,brief». Человеку он ничего не
+ * говорит. Показываем только то, что действительно написано словами.
+ */
+function readable(summary: string | null): string | null {
+  const text = (summary ?? "").trim();
+  return text && text.includes(" ") ? text : null;
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }

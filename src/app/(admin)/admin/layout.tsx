@@ -1,35 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Geologica, Golos_Text, JetBrains_Mono } from "next/font/google";
 
 import { currentUser } from "@/lib/auth";
 import { signOut } from "@/server/auth-actions";
-import "../../globals.css";
+import "./admin.css";
 
-// Каркас админки. Свой корневой макет, а не общий с сайтом: публичная
-// шапка с языками и кнопкой «сообщить о нарушении» сотруднику не нужна,
-// а служебные экраны не должны попадать в поиск.
+/*
+  Каркас панели.
 
-const display = Geologica({
-  subsets: ["cyrillic", "latin"],
-  weight: ["400", "500"],
-  variable: "--font-geologica",
-  display: "swap",
-});
+  Свой корневой макет, а не общий с сайтом: публичная шапка с языками и кнопкой
+  «сообщить о нарушении» сотруднику не нужна, а служебные экраны не должны
+  попадать в поиск.
 
-const sans = Golos_Text({
-  subsets: ["cyrillic", "latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-golos",
-  display: "swap",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["cyrillic", "latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono-jb",
-  display: "swap",
-});
+  Ни своих шрифтов, ни globals.css здесь намеренно нет. Панель — служебный
+  экран, ему идут браузерные умолчания: грузится мгновенно, читается везде и не
+  требует сопровождения. Всё оформление — admin.css, полсотни строк.
+*/
 
 export const metadata: Metadata = {
   title: { default: "Панель · MediaMap", template: "%s · Панель MediaMap" },
@@ -37,9 +23,20 @@ export const metadata: Metadata = {
 };
 
 const LINKS = [
-  { href: "/admin", label: "Очередь" },
+  { href: "/admin", label: "Сообщения" },
+  { href: "/admin/ai", label: "Контроль ИИ" },
   { href: "/admin/texts", label: "Тексты сайта" },
 ];
+
+/*
+  Выход на сам сайт.
+
+  У панели свой корневой макет, без общей шапки, и попасть отсюда на сайт
+  было нечем: сотрудник правил адрес руками или лез в закладки. Отдельно от
+  списка разделов и отдельно от «Выйти» — это не раздел панели и не выход из
+  учётной записи, а «посмотреть, как это выглядит снаружи».
+*/
+const SITE = "/ru";
 
 export default async function AdminLayout({
   children,
@@ -51,51 +48,28 @@ export default async function AdminLayout({
   const user = await currentUser();
 
   return (
-    <html
-      lang="ru"
-      className={`${display.variable} ${sans.variable} ${mono.variable}`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-screen" suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         {user ? (
-          <header className="border-b border-line bg-paper">
-            <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 sm:px-6">
-              <Link
-                href="/admin"
-                className="font-display text-base font-medium whitespace-nowrap"
-              >
-                MediaMap · панель
-              </Link>
-
-              <nav className="flex items-center gap-5">
-                {LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="flex h-11 items-center text-sm text-muted transition-colors hover:text-ink"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-
-              <div className="ml-auto flex items-center gap-4">
-                <span className="hidden text-sm text-muted sm:inline">
-                  {user.name ?? user.email}
-                </span>
-                {/* Настоящий выход, а не ссылка на главную: в старой панели
-                    кнопка «выйти» просто уводила на сайт, оставляя сессию. */}
-                <form action={signOut}>
-                  <button
-                    type="submit"
-                    className="flex h-10 items-center rounded-xs border border-border px-4 text-sm transition-colors hover:bg-surface"
-                  >
-                    Выйти
-                  </button>
-                </form>
-              </div>
-            </div>
-          </header>
+          <div className="topbar">
+            <b>MediaMap · панель</b>
+            {LINKS.map((link) => (
+              <span key={link.href}>
+                {" | "}
+                <Link href={link.href}>{link.label}</Link>
+              </span>
+            ))}
+            {" | "}
+            <a href={SITE}>← На сайт</a>
+            {" | "}
+            <span className="note">{user.name ?? user.email}</span>{" "}
+            {/* Настоящий выход, а не ссылка на главную: в старой панели
+                кнопка «выйти» просто уводила на сайт, оставляя сессию. */}
+            <form action={signOut} style={{ display: "inline" }}>
+              <button type="submit">Выйти</button>
+            </form>
+            <hr />
+          </div>
         ) : null}
 
         <main>{children}</main>

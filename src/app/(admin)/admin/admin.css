@@ -1,0 +1,193 @@
+/*
+  Оформление панели.
+
+  Панель — служебный экран, и выглядит соответственно: браузерные умолчания
+  плюс несколько правил. Ни своих шрифтов, ни Tailwind здесь нет — этот файл
+  единственный, что подключается к админке.
+
+  Правила навешаны на сами элементы, а не на классы: страницы остаются
+  читаемым HTML, а всё оформление правится тут.
+
+  Публичного сайта это не касается — файл подключён только в макете админки.
+*/
+
+body {
+  margin: 0;
+  background: #fff;
+  color: #000;
+}
+
+/* Ширину ограничиваем: строка на весь монитор не читается. */
+.panel,
+.topbar {
+  max-width: 55em;
+  margin: 0 auto;
+  padding: 0 1em;
+}
+
+.topbar {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.topbar hr {
+  margin: 0.5em 0 0;
+}
+
+.panel {
+  padding-bottom: 3em;
+}
+
+h1 {
+  font-size: 1.4em;
+  margin: 0.8em 0 0.2em;
+}
+
+h2 {
+  font-size: 1.1em;
+  margin: 1.8em 0 0.4em;
+}
+
+p {
+  margin: 0.4em 0;
+}
+
+/* Ширину полей задаём атрибутами size и cols, как раньше и делали. На
+   телефоне такое поле вылезает за экран — отсюда единственная поправка. */
+
+input,
+textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- таблицы: главный способ показать данные --- */
+
+table {
+  border-collapse: collapse;
+  margin: 0.5em 0 1em;
+}
+
+th,
+td {
+  border: 1px solid #999;
+  padding: 0.2em 0.6em;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #eee;
+  font-weight: normal;
+}
+
+td.num,
+th.num {
+  text-align: right;
+}
+
+/* --- сообщение --- */
+
+article {
+  border: 1px solid #999;
+  margin: 0 0 1em;
+  padding: 0.5em 0.8em;
+}
+
+article > header {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.5em;
+}
+
+article > footer {
+  border-top: 1px solid #ccc;
+  padding-top: 0.4em;
+  margin-top: 0.5em;
+}
+
+article p {
+  white-space: pre-line;
+}
+
+/* --- служебные пометки --- */
+
+.note,
+.lead,
+.id {
+  color: #555;
+  font-size: 0.9em;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.empty,
+.warn {
+  border: 1px solid #999;
+  background: #eee;
+  padding: 0.5em 0.8em;
+  margin: 0.8em 0;
+}
+
+/* --- разбор ИИ --- */
+
+details {
+  margin: 0.5em 0;
+}
+
+details summary {
+  cursor: pointer;
+}
+
+details ul {
+  margin: 0.3em 0;
+  padding-left: 1.5em;
+}
+
+details li {
+  word-break: break-all;
+}
+
+/* --- приложенные файлы ---
+   Компонент общий с сайтом и рассчитан на Tailwind, которого здесь нет.
+   Достаточно не дать картинке развернуться на весь экран. */
+
+article img,
+article video {
+  max-width: 100%;
+  max-height: 20em;
+  display: block;
+}
+
+article section ul {
+  list-style: none;
+  margin: 0.5em 0;
+  padding: 0;
+}
+
+article section li {
+  border: 1px solid #ccc;
+  margin-bottom: 0.4em;
+  padding: 0.3em;
+}
+
+/* --- правка текстов: строка словаря --- */
+
+section form {
+  border-bottom: 1px solid #ccc;
+  padding: 0.5em 0;
+}
+
+/* Поля во всю строку. Атрибут size у них тоже стоит, но одного его мало:
+   inline-block вокруг растягивается вслед за полем и уносит строку за экран. */
+section form label {
+  display: block;
+  margin-bottom: 0.3em;
+}
+
+section form input,
+section form textarea {
+  width: 100%;
+}
