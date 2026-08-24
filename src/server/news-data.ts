@@ -22,6 +22,31 @@ const usefulSnippet = (title: string, snippet: string | null): string | null => 
   return head && bare(decodeEntities(title)).startsWith(head) ? null : clean;
 };
 
+/*
+  Агрегаторы приклеивают издание к заголовку: «…после ковида - RTVI». В ленте
+  это выглядело так, будто издание названо дважды и оба раза не то: в строке
+  под заголовком стоял не RTVI, а сам агрегатор — «Google News (KG/RU)».
+
+  Отрезаем хвост и показываем его как источник. Отрезаем осторожно: тире
+  встречается и внутри заголовков, поэтому забираем только короткий хвост из
+  пары слов — так агрегаторы и подписывают издание.
+*/
+const MAX_PUBLISHER_WORDS = 4;
+const MAX_PUBLISHER_CHARS = 30;
+
+export function splitPublisher(title: string): { title: string; publisher: string | null } {
+  const at = title.lastIndexOf(" - ");
+  if (at < 20) return { title, publisher: null };
+
+  const tail = title.slice(at + 3).trim();
+  const fits =
+    tail.length > 0 &&
+    tail.length <= MAX_PUBLISHER_CHARS &&
+    tail.split(/\s+/).length <= MAX_PUBLISHER_WORDS;
+
+  return fits ? { title: title.slice(0, at).trim(), publisher: tail } : { title, publisher: null };
+}
+
 export type NewsRow = {
   id: number;
   title: string;
@@ -78,14 +103,19 @@ export async function loadNewsPage(
   const from = (page - 1) * PER_PAGE;
 
   return {
-    items: shown.slice(from, from + PER_PAGE).map((item) => ({
-      id: item.id,
-      title: decodeEntities(item.title),
-      link: item.link,
-      snippet: usefulSnippet(item.title, item.snippet),
-      source: item.source,
-      publishedAt: item.publishedAt,
-    })),
+    items: shown.slice(from, from + PER_PAGE).map((item) => {
+      const parsed = splitPublisher(decodeEntities(item.title));
+
+      return {
+        id: item.id,
+        title: parsed.title,
+        link: item.link,
+        snippet: usefulSnippet(item.title, item.snippet),
+        // Издание точнее агрегатора: RTVI полезнее, чем «Google News (KG/RU)».
+        source: parsed.publisher ?? item.source,
+        publishedAt: item.publishedAt,
+      };
+    }),
     total,
     page,
     pageCount,
