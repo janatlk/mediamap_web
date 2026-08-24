@@ -415,11 +415,11 @@ const ky: typeof ru = {
     translateNone: "Котормосуз",
     translateApply: "Көрсөтүү",
     translate: "Которуу",
-    translating: "Которулууда…",
-    showOriginal: "Түп нуска",
-    showTranslation: "Котормо",
-    machineNote: "машина котормосу",
-    translateFailed: "Котормо чыкпады — кийинчерээк аракет кылыңыз",
+    translateSoonTitle: "Котормо иштелип жатат",
+    translateSoonLead:
+      "Жаңылыктарды он эки тилге которууну даярдап жатабыз. Азырынча " +
+      "өчүрүлгөн — баскыч келечектеги ордунда турат.",
+    translateSoonClose: "Түшүнүктүү",
   },
 
   typesPage: {

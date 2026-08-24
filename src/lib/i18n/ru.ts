@@ -422,11 +422,11 @@ const ru = {
     translateNone: "Без перевода",
     translateApply: "Показать",
     translate: "Перевести",
-    translating: "Перевожу…",
-    showOriginal: "Оригинал",
-    showTranslation: "Перевод",
-    machineNote: "машинный перевод",
-    translateFailed: "Перевод не получился — попробуйте позже",
+    translateSoonTitle: "Перевод в разработке",
+    translateSoonLead:
+      "Мы готовим перевод новостей на двенадцать языков. Пока он выключен — " +
+      "кнопка стоит на своём будущем месте.",
+    translateSoonClose: "Понятно",
   },
 
   typesPage: {

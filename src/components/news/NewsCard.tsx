@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { ArrowUpRight, Languages } from "lucide-react";
 
 import type { Dictionary } from "@/lib/i18n";
-import { translateNews } from "@/server/translate-actions";
-import type { Translated } from "@/server/translate";
+import NotReady from "./NotReady";
 
 /*
   Заметка в ленте — вместе с переводом.
@@ -15,13 +14,14 @@ import type { Translated } from "@/server/translate";
   «текст оттуда, кнопка отсюда» нельзя — функцию-шаблон через границу
   сервер/клиент не передать.
 
-  Перевод по кнопке у каждой заметки, а не разом на всю ленту: модель считает
-  на процессоре секунду-две на заметку, и перевод всей страницы означал бы
-  полминуты ожидания ради одного заголовка, который человеку и нужен.
+  Перевод сейчас отключён. Он работал на своей модели NLLB, но она держала в
+  памяти три гигабайта и тем решала, где всему проекту жить. На время
+  демонстрации кнопка осталась и честно говорит «в разработке»: замысел по
+  ней читается, а возвращать её потом на место не придётся.
 
-  Оригинал никуда не девается — под переводом остаётся кнопка вернуть его.
-  Машинный перевод врёт достаточно часто, чтобы возможность свериться была
-  не роскошью.
+  Всё, что было нужно для настоящего перевода, лежит рядом и работает:
+  server/translate.ts, запас переводов в базе и маршрут /translate у
+  ML-сервиса. Включить обратно — это вернуть сюда вызов действия.
 */
 
 type Item = {
@@ -43,37 +43,7 @@ type Props = {
 
 export default function NewsCard({ dict, item, to }: Props) {
   const words = dict.newsPage;
-  const [translated, setTranslated] = useState<Translated | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
-  const [pending, start] = useTransition();
-
-  const shown = translated && !showOriginal ? translated : item;
-
-  const run = () => {
-    if (!to) return;
-
-    // Уже переводили — сервис не тревожим, просто переключаем показ.
-    if (translated) {
-      setShowOriginal((value) => !value);
-      return;
-    }
-
-    setFailed(false);
-    start(async () => {
-      const result = await translateNews(item.id, to);
-      if (result.status === "ok") setTranslated(result.text);
-      else setFailed(true);
-    });
-  };
-
-  const label = pending
-    ? words.translating
-    : translated
-      ? showOriginal
-        ? words.showTranslation
-        : words.showOriginal
-      : words.translate;
+  const [asking, setAsking] = useState(false);
 
   return (
     <li className="border-b border-line pb-6">
@@ -84,7 +54,7 @@ export default function NewsCard({ dict, item, to }: Props) {
         className="group block"
       >
         <span className="text-lg group-hover:text-signal">
-          {shown.title}
+          {item.title}
           {/* Уводит на чужой сайт — предупреждаем стрелкой. */}
           <ArrowUpRight
             className="ml-1 inline h-4 w-4 align-baseline text-muted"
@@ -99,9 +69,9 @@ export default function NewsCard({ dict, item, to }: Props) {
 
             Без block: line-clamp держится на display:-webkit-box, и block его
             перебивает — обрезка молча перестаёт работать. */}
-        {shown.snippet ? (
+        {item.snippet ? (
           <span className="mt-2 line-clamp-2 max-w-prose text-sm text-muted">
-            {shown.snippet}
+            {item.snippet}
           </span>
         ) : null}
 
@@ -113,28 +83,19 @@ export default function NewsCard({ dict, item, to }: Props) {
       {/* Кнопка снаружи ссылки, а не внутри: кнопка внутри ссылки — это два
           действия на одном месте, и нажатие достаётся тому, кто успел. */}
       {to ? (
-        <p className="mt-1 flex flex-wrap items-center gap-3">
+        <p className="mt-1">
           <button
             type="button"
-            onClick={run}
-            disabled={pending}
-            className="inline-flex min-h-11 items-center gap-1.5 text-sm text-signal hover:underline disabled:opacity-60"
+            onClick={() => setAsking(true)}
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm text-signal hover:underline"
           >
             <Languages className="h-4 w-4" aria-hidden="true" />
-            {label}
+            {words.translate}
           </button>
-
-          {/* Про машинный перевод человеку стоит знать ровно тогда, когда он
-              его читает, — а не в сноске внизу страницы. */}
-          {translated && !showOriginal ? (
-            <span className="text-xs text-muted">{words.machineNote}</span>
-          ) : null}
-
-          {failed ? (
-            <span className="text-sm text-signal">{words.translateFailed}</span>
-          ) : null}
         </p>
       ) : null}
+
+      {asking ? <NotReady dict={dict} onClose={() => setAsking(false)} /> : null}
     </li>
   );
 }
