@@ -58,7 +58,7 @@ export default async function SentPage({
   if (!receipt) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-10">
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl">
           <h1 className="text-3xl">{page.receiptNotFound}</h1>
           <p className="mt-4 text-muted">{page.receiptNotFoundLead}</p>
           <Link
@@ -79,7 +79,10 @@ export default async function SentPage({
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
-      <div className="max-w-4xl">
+      {/* Колонка та же, что у формы, и так же по центру. Человек приходит
+          сюда прямо с формы, и страница не должна на глазах прыгать влево и
+          становиться шире — это читается как «меня перекинуло не туда». */}
+      <div className="mx-auto max-w-2xl">
         <h1 className="flex items-center gap-3 text-3xl sm:text-4xl">
           <Check className="h-7 w-7 text-signal" aria-hidden="true" />
           {page.doneTitle}
@@ -94,7 +97,6 @@ export default async function SentPage({
           <p className="text-sm text-muted">{page.doneNumber}</p>
           <p className="mt-1 font-mono text-2xl">{receipt.publicId}</p>
           <p className="mt-4 max-w-prose text-sm text-muted">
-            {page.doneKeep}{" "}
             {signedIn ? null : (
               <Link
                 href={`/${lang}/account/register`}
@@ -105,6 +107,33 @@ export default async function SentPage({
             )}
           </p>
         </div>
+
+        {/* Что человек написал. Через день он этого уже не помнит, а до сих
+            пор на странице были только номер и вид — узнать своё сообщение
+            было не по чему. */}
+        {receipt.story ? (
+          <div className="mt-8 border border-line bg-surface p-6">
+            <p className="text-sm text-muted">{page.doneYourText}</p>
+            <p className="mt-2 max-w-prose whitespace-pre-line">{receipt.story}</p>
+
+            {receipt.link ? (
+              <p className="mt-4 text-sm">
+                <a
+                  href={receipt.link}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="break-all text-signal hover:underline"
+                >
+                  {receipt.link}
+                </a>
+              </p>
+            ) : null}
+
+            {receipt.city ? (
+              <p className="mt-1 text-sm text-muted">{receipt.city}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <Attachments
           items={receipt.attachments}
@@ -117,9 +146,17 @@ export default async function SentPage({
             dict={dict}
             status={receipt.status}
             chosenType={receipt.typeSlug}
+            checks={receipt.ai.checks}
+            reviewed={receipt.reviewed}
+            moderatorComment={receipt.moderatorComment}
+            reviewSummary={receipt.reviewSummary}
+            overridden={receipt.overridden}
+            basis={receipt.basis}
+            hasLink={Boolean(receipt.link)}
             assessment={{
               verdict: receipt.ai.verdict as Verdict,
               confidence: receipt.ai.confidence,
+              explanation: receipt.ai.explanation,
               reasons: receipt.ai.reasons,
               source: receipt.ai.source,
             }}

@@ -10,6 +10,7 @@ import { LIMITS } from "@/lib/report-schema";
 import type { Dictionary, Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import { submitReport, type SubmitState } from "@/server/report-actions";
+import Sending from "./Sending";
 
 // Форма сообщения о нарушении.
 //
@@ -26,11 +27,42 @@ type Props = {
   types: { slug: string; name: string }[];
 };
 
-/** Кнопка знает, что отправка идёт, и не даёт нажать себя дважды. */
+/**
+ * Ждём ли мы ответа дольше, чем человек успевает заметить.
+ *
+ * Окно ожидания нельзя показывать сразу: незаполненная форма возвращается с
+ * ошибкой за доли секунды, и окно успевало моргнуть — выходило, что сообщение
+ * будто бы отправлялось, хотя его развернули на проверке.
+ */
+function useSlowRequest(pending: boolean): boolean {
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (!pending) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), 600);
+    return () => clearTimeout(timer);
+  }, [pending]);
+
+  return slow;
+}
+
+/**
+ * Кнопка знает, что отправка идёт, и не даёт нажать себя дважды.
+ *
+ * Она же поднимает окошко ожидания: разбор занимает до пятнадцати секунд, и
+ * потускневшей кнопки на такой срок мало — человек не понимает, ушло у него
+ * сообщение или страница сломалась.
+ */
 function Submit({ dict }: { dict: Dictionary }) {
   const { pending } = useFormStatus();
+  const waiting = useSlowRequest(pending);
 
   return (
+    <>
+      {waiting ? <Sending dict={dict} /> : null}
     <button
       type="submit"
       disabled={pending}
@@ -39,14 +71,15 @@ function Submit({ dict }: { dict: Dictionary }) {
       {pending ? dict.reportPage.submitting : dict.reportPage.submit}
       {pending ? null : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
     </button>
+    </>
   );
 }
 
 /*
   Сообщение об ошибке под полем. Красный тут значит ошибку, не действие.
 
-  Вслух её не объявляем — это делает сводка над формой. Четыре сообщения,
-  заговорившие разом, слышны как одно неразборчивое.
+  Вслух не объявляем: браузер и так прочитает её, когда человек дойдёт до
+  поля. Четыре сообщения, заговорившие разом, слышны как одно неразборчивое.
 
   id нужен полю: оно ссылается сюда через aria-describedby, и тогда ошибка
   читается вместе с подписью, когда человек до поля доходит.
@@ -65,68 +98,32 @@ function FieldError({ text, id }: { text?: string; id?: string }) {
 }
 
 /*
-  Сводка ошибок над формой.
+  Сообщение об ошибке, которая не про поле: слишком частая отправка, отказ
+  хранилища. Раньше над формой висела красная сводка «Сообщение не
+  отправилось» со списком ссылок на поля — на пустую форму она читалась как
+  выговор, хотя человек просто не дозаполнил.
 
-  Форма длиннее экрана, и после неудачной отправки человек оказывался на её
-  верху без единого объяснения: ошибка ждала его где-то ниже, за сгибом.
-  Выглядело так, будто кнопка не сработала.
-
-  Поэтому сводка ловит фокус — не только для чтения с экрана: страница
-  прокручивается к ней сама, и первое, что человек видит, это список того,
-  что поправить, со ссылками прямо на поля.
+  Про поля теперь говорят сами поля: рамка краснеет, под ней строка с
+  причиной. А сюда попадает только то, что человек в форме не увидит.
 */
-function ErrorSummary({
-  dict,
-  items,
-  notice,
-}: {
-  dict: Dictionary;
-  items: { anchor: string; text: string }[];
-  /** Ошибка, которая не про поле: частота отправки, отказ хранилища. */
-  notice?: string;
-}) {
+function FormNotice({ text }: { text?: string }) {
   const box = useRef<HTMLDivElement>(null);
-  const page = dict.reportPage;
-
-  // Наводим фокус на каждую неудачную отправку, а не один раз: вторая
-  // ошибка подряд так же нуждается в объяснении, как первая.
-  const shown = items.length > 0 || Boolean(notice);
 
   useEffect(() => {
-    if (shown) box.current?.focus();
-  }, [shown, items, notice]);
+    if (text) box.current?.focus();
+  }, [text]);
 
-  if (!shown) return null;
+  if (!text) return null;
 
   return (
     <div
       ref={box}
       tabIndex={-1}
       role="alert"
-      className="mb-8 border-l-2 border-signal bg-surface px-5 py-4 outline-none"
+      className="mb-8 flex items-start gap-2 border-l-2 border-signal bg-surface px-5 py-4 text-base outline-none"
     >
-      <p className="flex items-center gap-2 text-base font-medium">
-        <AlertCircle className="h-4 w-4 shrink-0 text-signal" aria-hidden="true" />
-        {page.errorSummaryTitle}
-      </p>
-      {notice ? (
-        <p className="mt-1 text-sm">{notice}</p>
-      ) : (
-        <p className="mt-1 text-sm text-muted">{page.errorSummaryLead}</p>
-      )}
-
-      <ul className="mt-3 space-y-1">
-        {items.map((item) => (
-          <li key={item.anchor}>
-            <a
-              href={`#${item.anchor}`}
-              className="inline-flex min-h-11 items-center text-sm text-signal hover:underline"
-            >
-              {item.text}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <AlertCircle className="mt-1 h-4 w-4 shrink-0 text-signal" aria-hidden="true" />
+      {text}
     </div>
   );
 }
@@ -138,17 +135,20 @@ function Hint({ text }: { text: string }) {
 }
 
 /*
-  Метка «необязательно» у подписи поля.
+  Звёздочка у обязательного поля.
 
-  Обязательных полей три, необязательных тоже три, и по виду они не
-  отличались: человек честно заполнял всё подряд, а на ссылку и город ему
-  было нечего ответить. Помечаем необязательные — их пропускают без
-  чувства, что форма недоделана.
+  Раньше было наоборот: три необязательных поля носили подпись
+  «необязательно». Слово рядом с каждой второй подписью читалось как шум, а
+  главного — что именно надо заполнить обязательно — по-прежнему не было
+  видно. Звёздочка короче и помечает меньшинство.
+
+  aria-hidden, потому что вслух её читают как «звёздочка» и это ничего не
+  объясняет; для чтения с экрана обязательность несёт aria-required у поля.
 */
-function Optional({ dict }: { dict: Dictionary }) {
+function Required() {
   return (
-    <span className="ml-2 align-middle text-sm font-normal text-muted">
-      {dict.reportPage.optional}
+    <span className="ml-1 align-middle text-signal" aria-hidden="true">
+      *
     </span>
   );
 }
@@ -178,6 +178,7 @@ function StoryField({
     <div className="mt-8">
       <label htmlFor="story" className="text-base font-medium">
         {page.storyLabel}
+        <Required />
       </label>
       <Hint text={page.storyHint} />
       <textarea
@@ -189,7 +190,9 @@ function StoryField({
         defaultValue={defaultValue}
         onChange={(event) => setLength(event.target.value.trim().length)}
         aria-describedby={error ? "story-error" : "story-count"}
-        className={`${inputStyle} resize-y`}
+        aria-required="true"
+        aria-invalid={error ? true : undefined}
+        className={`${fieldStyle(Boolean(error))} resize-y`}
       />
 
       {/* Пока не начали писать, молчим: счётчик над пустым полем — это
@@ -209,7 +212,17 @@ function StoryField({
 }
 
 const inputStyle =
-  "mt-2 block w-full rounded-xs border border-border bg-surface px-3 py-2.5 text-base outline-none focus:border-ink";
+  "mt-2 block w-full rounded-xs border bg-surface px-3 py-2.5 text-base outline-none focus:border-ink";
+
+/*
+  Рамка поля. Обычная — серая, у поля с ошибкой — красная и вдвое толще.
+
+  Толщина важна: одним цветом отличие видит не каждый, и на плохом мониторе
+  красная рамка в один пиксель почти не отличается от серой. Смысл всё равно
+  несёт не она, а строка с причиной под полем.
+*/
+const fieldStyle = (invalid: boolean) =>
+  `${inputStyle} ${invalid ? "border-2 border-signal" : "border-border"}`;
 
 export default function ReportForm({ dict, lang, types }: Props) {
   const [state, action] = useActionState<SubmitState, FormData>(submitReport, {
@@ -218,12 +231,23 @@ export default function ReportForm({ dict, lang, types }: Props) {
 
   const page = dict.reportPage;
   /*
-    Ключ ошибки может нести с собой число: "tooOften:14" — «через 14 минут».
+    Ключ ошибки может нести с собой число: "tooOften:30" — пауза в секундах.
+    Короткую паузу называем секундами, длинную — минутами: «через 900 с»
+    человек в уме не переводит.
+
     Всё остальное подставляем из правил, чтобы потолки не пришлось
     переписывать в двух местах — в коде и в словаре.
   */
   const message = (raw: string): string | undefined => {
     const [key, argument] = raw.split(":");
+    const seconds = Number(argument);
+
+    if (key === "tooOften" && Number.isFinite(seconds)) {
+      return seconds < 90
+        ? page.errors.tooOftenSeconds.replace("{n}", String(seconds))
+        : page.errors.tooOften.replace("{n}", String(Math.ceil(seconds / 60)));
+    }
+
     const text = page.errors[key as keyof typeof page.errors];
     if (!text) return undefined;
 
@@ -240,29 +264,35 @@ export default function ReportForm({ dict, lang, types }: Props) {
       ? message(state.errors[field])
       : undefined;
 
-  // Куда вести из сводки. Для набора переключателей — на первый из них:
-  // отдельного заголовка, на который можно встать, у fieldset нет.
-  const ANCHORS: Record<string, string> = {
-    typeSlug: "type-first",
-    story: "story",
-    link: "link",
-    city: "city",
-    files: "files",
-    consent: "consent",
-  };
+  /*
+    Ведём человека к первому незаполненному полю.
 
-  const summary =
-    state.status === "error"
-      ? Object.keys(state.errors)
-          .filter((field) => ANCHORS[field] && errorFor(field))
-          .map((field) => ({ anchor: ANCHORS[field], text: errorFor(field)! }))
-      : [];
+    Красной рамки самой по себе мало: форма выше экрана, и после отправки
+    человек остаётся там, где нажал кнопку, — а рамка краснеет где-то вверху,
+    вне поля зрения. Раньше эту работу делала сводка над формой, которая
+    забирала фокус; сводки больше нет, значит фокус забирает само поле.
+
+    Порядок перечислен руками, а не взят из ключей ошибок: у объекта порядок
+    не тот, в каком поля стоят на странице, и человека уводило бы к согласию
+    в конце формы, минуя пустой рассказ в начале.
+  */
+  useEffect(() => {
+    if (state.status !== "error") return;
+
+    const order = ["typeSlug", "story", "link", "city", "files", "consent"];
+    const first = order.find((field) => state.errors[field]);
+    if (!first) return;
+
+    const id = first === "typeSlug" ? "type-first" : first;
+    document.getElementById(id)?.focus({ preventScroll: false });
+  }, [state]);
+
   const valueOf = (field: string) =>
     state.status === "error" ? state.values[field] : undefined;
 
   return (
     <form action={action} className="max-w-2xl" noValidate>
-      <ErrorSummary dict={dict} items={summary} notice={errorFor("form")} />
+      <FormNotice text={errorFor("form")} />
 
       <input type="hidden" name="lang" value={lang} />
 
@@ -275,14 +305,23 @@ export default function ReportForm({ dict, lang, types }: Props) {
       </div>
 
       <fieldset>
-        <legend className="text-base font-medium">{page.typeLabel}</legend>
+        <legend className="text-base font-medium">
+          {page.typeLabel}
+          <Required />
+        </legend>
         <Hint text={page.typeHint} />
 
-        <div className="mt-3 space-y-2">
+      {/* На широком экране три вида стоят в ряд: выбор из трёх и должен
+          выглядеть как выбор, а не как список из трёх полос во всю ширину.
+          Заодно форма короче на сотню пикселей. На узком — столбиком, там
+          ряд превратился бы в тесноту. */}
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {types.map((type, index) => (
             <label
               key={type.slug}
-              className="flex cursor-pointer items-center gap-3 rounded-xs border border-border bg-surface px-4 py-3 transition-colors hover:bg-paper has-checked:border-ink"
+              className={`flex cursor-pointer items-center gap-3 rounded-xs border bg-surface px-4 py-3 transition-colors hover:bg-paper has-checked:border-ink ${
+                errorFor("typeSlug") ? "border-2 border-signal" : "border-border"
+              }`}
             >
               <input
                 id={index === 0 ? "type-first" : undefined}
@@ -310,41 +349,55 @@ export default function ReportForm({ dict, lang, types }: Props) {
         error={errorFor("story")}
       />
 
-      <div className="mt-8">
-        <label htmlFor="link" className="text-base font-medium">
-          {page.linkLabel}
-          <Optional dict={dict} />
-        </label>
-        <Hint text={page.linkHint} />
-        <input
-          id="link"
-          aria-describedby={errorFor("link") ? "link-error" : undefined}
-          name="link"
-          type="url"
-          inputMode="url"
-          placeholder={page.linkPlaceholder}
-          defaultValue={valueOf("link")}
-          className={inputStyle}
-        />
-        <FieldError text={errorFor("link")} id="link-error" />
-      </div>
+      {/* Два необязательных поля рядом, а не одно под другим.
 
-      <div className="mt-8">
-        <label htmlFor="city" className="text-base font-medium">
-          {page.cityLabel}
-          <Optional dict={dict} />
-        </label>
-        <Hint text={page.cityHint} />
-        <input
-          id="city"
-          aria-describedby={errorFor("city") ? "city-error" : undefined}
-          name="city"
-          type="text"
-          maxLength={LIMITS.CITY_MAX}
-          defaultValue={valueOf("city")}
-          className={inputStyle}
-        />
-        <FieldError text={errorFor("city")} id="city-error" />
+          Так форма короче на целый экран, и ширина поля начинает о чём-то
+          говорить: под ссылку места много, под название города — вдвое
+          меньше. Поле шириной в семьсот пикселей под слово «Бишкек» выглядит
+          как требование написать сочинение.
+
+          На узком экране они возвращаются в столбик — там ширина ничего не
+          значит, а два поля в ряд стали бы теснотой. */}
+      {/* items-end равняет поля по нижнему краю: у ссылки есть подсказка, у
+          города нет, и без этого их рамки разъезжались по вертикали на
+          строку — мелочь, от которой форма выглядит собранной кое-как. */}
+      <div className="mt-8 grid gap-x-6 gap-y-8 sm:grid-cols-[1.6fr_1fr] sm:items-end">
+        <div>
+          <label htmlFor="link" className="text-base font-medium">
+            {page.linkLabel}
+          </label>
+          <Hint text={page.linkHint} />
+          <input
+            id="link"
+            aria-describedby={errorFor("link") ? "link-error" : undefined}
+            name="link"
+            type="url"
+            inputMode="url"
+            placeholder={page.linkPlaceholder}
+            defaultValue={valueOf("link")}
+            aria-invalid={errorFor("link") ? true : undefined}
+            className={fieldStyle(Boolean(errorFor("link")))}
+          />
+          <FieldError text={errorFor("link")} id="link-error" />
+        </div>
+
+        <div>
+          <label htmlFor="city" className="text-base font-medium">
+            {page.cityLabel}
+          </label>
+          <Hint text={page.cityHint} />
+          <input
+            id="city"
+            aria-describedby={errorFor("city") ? "city-error" : undefined}
+            name="city"
+            type="text"
+            maxLength={LIMITS.CITY_MAX}
+            defaultValue={valueOf("city")}
+            aria-invalid={errorFor("city") ? true : undefined}
+            className={fieldStyle(Boolean(errorFor("city")))}
+          />
+          <FieldError text={errorFor("city")} id="city-error" />
+        </div>
       </div>
 
       <div className="mt-8">
@@ -353,16 +406,25 @@ export default function ReportForm({ dict, lang, types }: Props) {
       </div>
 
       <div className="mt-8 border-t border-line pt-6">
-        <label className="flex cursor-pointer items-start gap-3">
+        <label
+          className={`flex cursor-pointer items-start gap-3 rounded-xs ${
+            errorFor("consent") ? "border-2 border-signal px-3 py-2" : ""
+          }`}
+        >
           <input
             id="consent"
             type="checkbox"
             name="consent"
             aria-describedby={errorFor("consent") ? "consent-error" : undefined}
+            aria-required="true"
+            aria-invalid={errorFor("consent") ? true : undefined}
             className="mt-1 h-4 w-4 shrink-0 accent-ink"
           />
           <span>
-            <span className="text-base">{page.consentLabel}</span>
+            <span className="text-base">
+              {page.consentLabel}
+              <Required />
+            </span>
             {page.consentHint ? (
               <span className="mt-1 block text-sm text-muted">
                 {page.consentHint}

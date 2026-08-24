@@ -14,15 +14,62 @@ import { headers } from "next/headers";
   копиях приложения у каждой он свой. Для защиты от человека, который в
   сердцах жмёт кнопку двадцать раз, этого хватает. Против настоящего
   напора нужен общий счётчик — Redis или та же защита у входа на сервер.
+
+  Пауза растёт постепенно. Раньше первое же превышение закрывало отправку
+  почти на час — а человек, который увидел три нарушения подряд и написал о
+  каждом, ничего дурного не делал и оказывался наказан наравне со спамером.
+  Теперь первая пауза короткая, чтобы просто сбить темп, и только упорство
+  подряд стоит по-настоящему.
+
+  Второй заход по той же грабле был тоньше. «Серия» считалась в окне памяти,
+  то есть за целый час: три сообщения за час — и человек упирался в паузу,
+  шесть — и получал пятнадцать минут. Слово «подряд» в коде означало совсем
+  не то, что значит для человека. Окно серии теперь своё и короткое, а память
+  о паузах живёт отдельно и сама затухает.
 */
 
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_IN_WINDOW = 5;
+/** Сколько сообщений подряд пропускаем, прежде чем притормозить. */
+const BURST = 5;
+
+/**
+ * В каком окне считается «подряд».
+ *
+ * Пять сообщений за пять минут — это человек, который жмёт кнопку, а не
+ * рассказывает о пяти разных случаях: на каждое нужно написать пару абзацев.
+ * Растянутые по часу пять сообщений — обычная работа, и трогать её нельзя.
+ */
+const BURST_WINDOW_MS = 5 * 60 * 1000;
+
+/** Пауза растёт: сбить темп → настойчивому → упорному. */
+const PAUSES_MS = [30 * 1000, 2 * 60 * 1000, 10 * 60 * 1000];
+
+/** Сколько помним о человеке после последней отправки. */
+const MEMORY_MS = 60 * 60 * 1000;
+
+/**
+ * Через сколько тишины прощаем прошлые паузы.
+ *
+ * Без этого счётчик рос до конца часа: один раз попавшись утром, человек
+ * получал следующую паузу сразу длинной, хотя вёл себя нормально уже
+ * полчаса. Наказание должно кончаться вместе с поводом.
+ */
+const FORGIVE_MS = 15 * 60 * 1000;
 
 /** Соль живёт ровно столько, сколько процесс. Между запусками — новая. */
 const SALT = createHash("sha256").update(String(Math.random())).digest("hex");
 
-const hits = new Map<string, number[]>();
+export type Record = {
+  /** Время отправок, попавших в текущую серию. */
+  times: number[];
+  /** Сколько раз этот отправитель уже упирался в ограничение. */
+  pauses: number;
+  /** Когда упёрся в последний раз — по нему паузы и прощаются. */
+  lastPauseAt: number;
+  /** До какого момента отправка закрыта. */
+  blockedUntil: number;
+};
+
+const hits = new Map<string, Record>();
 
 /**
  * Адрес отправителя.
@@ -40,33 +87,71 @@ async function callerFingerprint(): Promise<string> {
   return createHash("sha256").update(SALT).update(address).digest("hex");
 }
 
-/** Выбрасывает из памяти всё, что старше окна. */
-function recent(times: number[], now: number): number[] {
-  return times.filter((time) => now - time < WINDOW_MS);
-}
+export const fresh = (): Record => ({
+  times: [],
+  pauses: 0,
+  lastPauseAt: 0,
+  blockedUntil: 0,
+});
 
 /**
  * Можно ли принять ещё одно сообщение с этого адреса.
  *
- * Считает попытку сразу: если вернули true, место в окне уже занято.
- * Возвращает и через сколько минут откроется следующее — человеку надо
- * сказать не «нельзя», а «нельзя до без четверти».
+ * Считает попытку сразу: если вернули true, место в серии уже занято.
+ * Возвращает и сколько ждать — человеку надо сказать не «нельзя», а
+ * «нельзя ещё полминуты».
  */
-export async function takeSubmitSlot(): Promise<
-  { ok: true } | { ok: false; minutes: number }
-> {
+export async function takeSubmitSlot(): Promise<Decision> {
   const key = await callerFingerprint();
   const now = Date.now();
-  const times = recent(hits.get(key) ?? [], now);
 
-  if (times.length >= MAX_IN_WINDOW) {
-    hits.set(key, times);
-    const freesAt = times[0] + WINDOW_MS;
-    return { ok: false, minutes: Math.max(1, Math.ceil((freesAt - now) / 60000)) };
+  const { decision, next } = decide(hits.get(key) ?? fresh(), now);
+  hits.set(key, next);
+  return decision;
+}
+
+export type Decision = { ok: true } | { ok: false; seconds: number };
+
+/**
+ * Само решение — отдельно от адресов, времени и карты в памяти.
+ *
+ * Вынесено не ради красоты: в этом расчёте уже дважды пряталась ошибка,
+ * которую не увидеть, не проиграв десяток отправок по часам. Чистой функции
+ * можно подсунуть любое «сейчас» и проверить всю лестницу за миллисекунду.
+ */
+export function decide(
+  record: Record,
+  now: number,
+): { decision: Decision; next: Record } {
+  if (now < record.blockedUntil) {
+    return {
+      decision: { ok: false, seconds: Math.ceil((record.blockedUntil - now) / 1000) },
+      next: record,
+    };
   }
 
-  hits.set(key, [...times, now]);
-  return { ok: true };
+  // Серия — только недавние отправки. Всё, что старше окна, к «подряд»
+  // отношения не имеет и на счёт не идёт.
+  const times = record.times.filter((time) => now - time < BURST_WINDOW_MS);
+
+  // Вёл себя прилично достаточно долго — прошлые паузы прощаются.
+  const pauses =
+    record.lastPauseAt && now - record.lastPauseAt > FORGIVE_MS ? 0 : record.pauses;
+
+  if (times.length >= BURST) {
+    const step = Math.min(pauses, PAUSES_MS.length - 1);
+    const wait = PAUSES_MS[step];
+
+    return {
+      decision: { ok: false, seconds: Math.ceil(wait / 1000) },
+      next: { times: [], pauses: pauses + 1, lastPauseAt: now, blockedUntil: now + wait },
+    };
+  }
+
+  return {
+    decision: { ok: true },
+    next: { ...record, pauses, times: [...times, now] },
+  };
 }
 
 /*
@@ -76,12 +161,13 @@ export async function takeSubmitSlot(): Promise<
 */
 const sweeper = setInterval(() => {
   const now = Date.now();
-  for (const [key, times] of hits) {
-    const left = recent(times, now);
-    if (left.length === 0) hits.delete(key);
-    else hits.set(key, left);
+  for (const [key, record] of hits) {
+    const times = record.times.filter((time) => now - time < BURST_WINDOW_MS);
+    const stale = now - Math.max(record.lastPauseAt, ...record.times, 0) > MEMORY_MS;
+    if (times.length === 0 && now > record.blockedUntil && stale) hits.delete(key);
+    else hits.set(key, { ...record, times });
   }
-}, WINDOW_MS);
+}, MEMORY_MS);
 
 // Иначе процесс не завершится: таймер держит его открытым.
 sweeper.unref?.();
