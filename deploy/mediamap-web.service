@@ -1,0 +1,35 @@
+# Сайт. Ставится в /etc/systemd/system/, включается systemctl enable --now.
+[Unit]
+Description=MediaMap — сайт
+# Требуется сеть: без неё Next не займёт порт, а мы получим падение при
+# загрузке машины, когда интерфейсы ещё не подняты.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mediamap
+WorkingDirectory=/srv/mediamap/web
+EnvironmentFile=/srv/mediamap/web/.env
+Environment=NODE_ENV=production
+
+# Слушаем только петлю: наружу пускает Caddy, он же держит TLS. Открытый
+# 3000 на внешнем адресе — это обход и сертификата, и ограничений прокси.
+#
+# Адрес задаётся флагом, а не переменной HOSTNAME: Next 16 её не смотрит.
+# Проверено — с переменной сервер поднимается на всех интерфейсах и отвечает
+# по внешнему адресу, то есть ровно то, чего мы избегаем.
+ExecStart=/srv/mediamap/web/node_modules/.bin/next start -H 127.0.0.1 -p 3000
+
+Restart=always
+RestartSec=5
+
+# Писать сайту можно ровно в две вещи: вложения и базу. Всё остальное
+# только на чтение — если его пробьют, переписать код он не сможет.
+ProtectSystem=strict
+ReadWritePaths=/srv/mediamap/web/uploads /srv/mediamap/web/prisma
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

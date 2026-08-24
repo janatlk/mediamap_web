@@ -1,0 +1,36 @@
+# ML-сервис: разбор нарушений и перевод новостей.
+[Unit]
+Description=MediaMap — ML-сервис
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mediamap
+WorkingDirectory=/srv/mediamap/ml
+EnvironmentFile=/srv/mediamap/ml/.env
+# Кириллица в журнале иначе превращается в вопросительные знаки.
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONPATH=/srv/mediamap/ml:/srv/mediamap/ml/src
+
+# --host 127.0.0.1 здесь не для красоты. У сервиса нет ни пароля, ни счётчика
+# запросов: кто до него дотянется, тот и тратит наш ключ OpenAI. Наружу он не
+# смотрит никогда, ходит к нему только сайт с этой же машины.
+ExecStart=/srv/mediamap/ml/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000
+
+Restart=always
+RestartSec=10
+
+# Модель перевода занимает около трёх гигабайт. Потолок с запасом: если
+# сервис начнёт течь, машину он с собой не утащит.
+MemoryMax=5G
+
+ProtectSystem=strict
+# Кэш моделей Hugging Face — единственное, что сервису нужно писать.
+ReadWritePaths=/srv/mediamap/ml/.cache
+Environment=HF_HOME=/srv/mediamap/ml/.cache
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
