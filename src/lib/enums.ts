@@ -48,6 +48,33 @@ export const isStaff = (role: string | null | undefined): boolean =>
 export const canEditContent = (role: string | null | undefined): boolean =>
   role === ROLE.ADMIN || role === ROLE.SUPERADMIN;
 
+/**
+ * Доверие к источнику.
+ *
+ * Четыре значения, и UNKNOWN среди них не «пока не разобрались», а
+ * нормальное состояние: аккаунт встретился один раз, и сказать о нём
+ * нечего. Большая часть реестра так и останется в UNKNOWN — это правильно.
+ * Чёрный список, куда попадает всякий встреченный, не список, а свалка.
+ *
+ * WATCH стоит между: замечен за плохим, но на приговор не набрано.
+ * Без него всякое сомнение округлялось бы до UNTRUSTED.
+ */
+export const SOURCE_STATUS = {
+  /** Просто встретился. Ничего не утверждаем. */
+  UNKNOWN: "UNKNOWN",
+  /** Проверяли, материалы подтверждаются. Белый список. */
+  TRUSTED: "TRUSTED",
+  /** Есть вопросы, решения пока нет. */
+  WATCH: "WATCH",
+  /** Подтверждённые нарушения. Чёрный список. */
+  UNTRUSTED: "UNTRUSTED",
+} as const;
+
+export type SourceStatus = (typeof SOURCE_STATUS)[keyof typeof SOURCE_STATUS];
+
+/** Оценка, которую нельзя ставить без письменного обоснования. */
+export const NEEDS_REASON: string[] = [SOURCE_STATUS.UNTRUSTED, SOURCE_STATUS.WATCH];
+
 export const ATTACHMENT_KIND = {
   /** Снимок экрана или фотография. */
   IMAGE: "IMAGE",

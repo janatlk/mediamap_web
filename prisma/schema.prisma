@@ -49,6 +49,9 @@ model User {
   sessions Session[]
   accounts Account[]
 
+  /// Оценки источников, которые поставил этот сотрудник.
+  decidedSources Source[]
+
   @@map("users")
 }
 
@@ -128,6 +131,11 @@ model Report {
 
   mediaLink        String?
   authorComment    String?
+
+  /// Чей это материал. Проставляется при подаче по ссылке; пусто, если
+  /// ссылки не было или из неё ничего не вычиталось.
+  sourceId Int?
+  source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
   /// Короткий заголовок случая для списка и карточки.
   ///
@@ -236,6 +244,93 @@ model Report {
 ///
 /// Самих файлов в базе нет, только ключ хранилища. Складывать двадцать
 /// мегабайт видео в SQLite — способ получить базу, которую нельзя открыть.
+/// Источник: аккаунт, канал или издание, о котором к нам приходят сообщения.
+///
+/// Заводится сам, когда в сообщении есть ссылка: разбор адреса в
+/// src/lib/platforms.ts достаёт площадку и имя аккаунта. Заводится в
+/// состоянии UNKNOWN — то есть «просто встретился», без всякой оценки.
+/// Оценку ставит человек.
+///
+/// key — то, по чему источник узнаётся при следующей встрече. Собирается из
+/// устойчивого номера, если площадка его показала, иначе из имени. Разница
+/// принципиальная: у источника с номером переименование видно сразу, у
+/// источника с именем переименовавшийся аккаунт приезжает как новый, и
+/// связать их может только проверяющий.
+model Source {
+  id  Int    @id @default(autoincrement())
+  key String @unique
+
+  /// instagram | facebook | tiktok | youtube | telegram | twitter | vk |
+  /// odnoklassniki | web — см. src/lib/platforms.ts.
+  platform String
+
+  /// Номер аккаунта у площадки. Есть редко, но если есть — не меняется.
+  externalId String?
+
+  /// Имя, под которым аккаунт известен сейчас. История — в SourceHandle.
+  handle String?
+
+  /// Домен. У источников без имени он единственное, что о них известно.
+  host String
+
+  /// Как называет себя аккаунт: «Кактус медиа». Тоже меняется.
+  displayName String?
+
+  /// UNKNOWN | TRUSTED | WATCH | UNTRUSTED — см. src/lib/enums.ts.
+  ///
+  /// По умолчанию UNKNOWN, и это не то же самое, что «сомнительный».
+  /// Встреченный один раз аккаунт не обвинён ни в чём.
+  status String @default("UNKNOWN")
+
+  /// Чем решение обосновано. Без него запись в чёрном списке — это слух:
+  /// через полгода никто не вспомнит, за что аккаунт туда попал.
+  reason String?
+
+  /// Кто поставил оценку и когда. Решение всегда чьё-то, а не «системы».
+  decidedById Int?
+  decidedBy   User? @relation(fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  handles SourceHandle[]
+  reports Report[]
+
+  @@index([status])
+  @@index([platform])
+  @@map("sources")
+}
+
+/// История имён одного источника: что и когда мы у него видели.
+///
+/// Ради этого реестр и заводился. Аккаунт, у которого имя меняется четыре
+/// раза за месяц, — сам по себе повод присмотреться, даже если каждое
+/// отдельное имя ни о чём не говорит.
+///
+/// firstSeenAt и lastSeenAt, а не одна дата: имя может вернуться обратно,
+/// и «видели с марта по май, потом снова в августе» честнее, чем две
+/// одинаковые строки.
+model SourceHandle {
+  id       Int    @id @default(autoincrement())
+  sourceId Int
+  source   Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  /// HANDLE — имя в адресе, NAME — как аккаунт подписан.
+  kind  String @default("HANDLE")
+  value String
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  /// Откуда узнали: link — из ссылки в сообщении, manual — вписал человек.
+  origin String @default("link")
+
+  @@unique([sourceId, kind, value])
+  @@index([value])
+  @@map("source_handles")
+}
+
 model Attachment {
   id String @id @default(cuid())
 

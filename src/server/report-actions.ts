@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 
 import { currentUser } from "@/lib/auth";
+import { noteSourceFromLink } from "./sources-data";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma";
 import { ruleFor } from "@/lib/attachment-rules";
@@ -200,9 +201,23 @@ export async function submitReport(
   */
   const author = await currentUser();
 
+  /*
+    Источник — аккаунт, чей это материал. Заводится в реестре сам, в
+    состоянии «просто встретился», без всякой оценки: оценку ставит человек
+    в панели. Здесь только отметка о встрече и запись имени, под которым
+    аккаунт был виден сегодня, — из неё потом собирается история
+    переименований.
+
+    Ссылки нет или из неё ничего не вычиталось — вернётся null, и сообщение
+    примется как раньше. Реестр тут дело десятое, ронять из-за него подачу
+    нельзя.
+  */
+  const sourceId = await noteSourceFromLink(data.link ? data.link : null);
+
   const fields = {
     authorId: author?.id ?? null,
     violationTypeId: type.id,
+    sourceId,
     mediaLink: data.link ? data.link : null,
     authorComment: data.story,
     city: data.city ? data.city : null,
