@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { Readable } from "node:stream";
 
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -45,9 +44,17 @@ export async function GET(request: NextRequest, { params }: Params) {
     return new NextResponse(null, { status: 404 });
   }
 
-  // Node отдаёт свой ReadableStream, а Response ждёт браузерный. Это один
-  // и тот же поток, расходятся только описания типов.
-  const stream = Readable.toWeb(read(file.key)) as unknown as ReadableStream;
+  /*
+    Файла может не оказаться: ключ есть в базе, а в хранилище пусто. На
+    диске так бывает после переноса, в ведре — если файл убрали мимо нас.
+    Отвечаем 404, как чужому: «файл есть, но не отдаётся» — тоже ответ.
+  */
+  let stream: ReadableStream;
+  try {
+    stream = await read(file.key);
+  } catch {
+    return new NextResponse(null, { status: 404 });
+  }
 
   return new NextResponse(stream, {
     headers: {
