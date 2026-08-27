@@ -20,7 +20,7 @@ PALETTE = {
     "border":      "#848D8A",
     "signal":      "#B3122A",
     "hate":        "#5A3E85",
-    "disinfo":     "#1F5673",
+    "disinfo":     "#0E7490",
     "fraud":       "#8A5710",
     "other":       "#4F5956",
 }

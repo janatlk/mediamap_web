@@ -26,6 +26,21 @@ export const formatMonth = (date: Date, lang: Lang): string =>
     timeZone: TIME_ZONE,
   }).format(date);
 
+/** Месяц с годом покороче: «ноя. 2024». Для плиток и границ периода. */
+export const formatMonthYearShort = (date: Date, lang: Lang): string =>
+  new Intl.DateTimeFormat(LOCALES[lang], {
+    month: "short",
+    year: "numeric",
+    timeZone: TIME_ZONE,
+  }).format(date);
+
+/** Короткий месяц: «ноя.». Для подписей под столбиками графика. */
+export const formatMonthShort = (date: Date, lang: Lang): string =>
+  new Intl.DateTimeFormat(LOCALES[lang], {
+    month: "short",
+    timeZone: TIME_ZONE,
+  }).format(date);
+
 // Домен вместо полного адреса: «facebook.com» читается, а строка на
 // двести символов — нет.
 export const hostFromUrl = (url: string | null): string | null => {
