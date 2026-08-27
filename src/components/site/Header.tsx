@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LogIn, Menu, UserRound, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, LogIn, Menu, Search, UserRound, X } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { Dictionary, Lang } from "@/lib/i18n";
@@ -12,7 +12,21 @@ import type { Dictionary, Lang } from "@/lib/i18n";
 // 1. Шапка ниже всего, что перекрывает страницу. Была выше модалок —
 //    крестик закрытия физически прятался под ней.
 // 2. Ничего не меняет размер от наведения. Кнопка поиска разъезжалась
-//    с 40 до 240px и толкала соседей.
+//    с 40 до 240px и толкала соседей. Поэтому поиск здесь — значок-ссылка
+//    на отдельную страницу, а не поле, растущее на месте.
+//
+// Рубрик стало десять, и в строку они не встают: на 1024px после названия,
+// поиска, языка, входа и красной кнопки под них остаётся около пятисот
+// точек. Поэтому на виду только частые, остальные — под «Ещё».
+//
+// Частых три или четыре, смотря по ширине: «Медиа-дайджест» — самая длинная
+// подпись, и на 1024 она была лишней. Ровно на ней красная кнопка ломалась
+// на две строки и распирала шапку выше её шестнадцати единиц — та же беда,
+// которую уже чинили на телефоне. Поэтому кнопке запрещено переноситься, а
+// дайджест до 1280 живёт в «Ещё».
+//
+// В меню на телефоне никакого «Ещё» нет: там места по вертикали сколько
+// угодно, и прятать половину сайта во второй уровень незачем.
 
 type Account = { name: string; staff: boolean } | null;
 
@@ -24,18 +38,62 @@ export default function Header({ dict, lang, account }: Props) {
   const accountHref = account?.staff ? "/admin" : `/${lang}/account`;
   const accountLabel = account?.staff ? dict.nav.panel : dict.nav.account;
   const [isOpen, setIsOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   // Иначе на телефоне меню висит поверх новой страницы.
-  useEffect(() => setIsOpen(false), [pathname]);
+  useEffect(() => {
+    setIsOpen(false);
+    setIsMoreOpen(false);
+  }, [pathname]);
 
-  const items = [
+  /*
+    «Ещё» закрывается щелчком мимо и клавишей Escape.
+
+    Без первого оно остаётся висеть, когда человек передумал и нажал в
+    пустоту; без второго его нечем закрыть с клавиатуры, а туда уходит
+    половина разделов сайта.
+  */
+  useEffect(() => {
+    if (!isMoreOpen) return;
+
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setIsMoreOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMoreOpen(false);
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isMoreOpen]);
+
+  const primary = [
     { href: `/${lang}/cases`, label: dict.nav.cases },
     { href: `/${lang}/types`, label: dict.nav.types },
-    { href: `/${lang}/news`, label: dict.nav.news },
+    { href: `/${lang}/analytics`, label: dict.nav.analytics },
+  ];
+
+  /** Показывается в строке только с 1280 — ниже уезжает в «Ещё». */
+  const wide = { href: `/${lang}/news`, label: dict.nav.news };
+
+  const secondary = [
+    { href: `/${lang}/resources`, label: dict.nav.resources },
+    { href: `/${lang}/glossary`, label: dict.nav.glossary },
+    { href: `/${lang}/quiz`, label: dict.nav.quiz },
     { href: `/${lang}/about`, label: dict.nav.about },
     { href: `/${lang}/contacts`, label: dict.nav.contacts },
   ];
+
+  const linkClass = (href: string) =>
+    `flex h-11 items-center text-sm transition-colors hover:text-signal ${
+      pathname === href ? "text-ink" : "text-muted"
+    }`;
 
   return (
     <header className="sticky top-0 z-[100] border-b border-line bg-paper">
@@ -47,22 +105,65 @@ export default function Header({ dict, lang, account }: Props) {
           {dict.brand}
         </Link>
 
-        <nav className="hidden flex-1 items-center gap-7 lg:flex">
-          {items.map((item) => (
+        <nav className="hidden flex-1 items-center gap-6 lg:flex">
+          {primary.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               aria-current={pathname === item.href ? "page" : undefined}
-              className={`flex h-11 items-center text-sm transition-colors hover:text-signal ${
-                pathname === item.href ? "text-ink" : "text-muted"
-              }`}
+              className={`${linkClass(item.href)} whitespace-nowrap`}
             >
               {item.label}
             </Link>
           ))}
+
+          <Link
+            href={wide.href}
+            aria-current={pathname === wide.href ? "page" : undefined}
+            className={`${linkClass(wide.href)} hidden whitespace-nowrap xl:flex`}
+          >
+            {wide.label}
+          </Link>
+
+          <div className="relative" ref={moreRef}>
+            <button
+              type="button"
+              onClick={() => setIsMoreOpen((value) => !value)}
+              aria-expanded={isMoreOpen}
+              className="flex h-11 items-center gap-1 text-sm text-muted transition-colors hover:text-signal"
+            >
+              {dict.nav.more}
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            {isMoreOpen ? (
+              <ul className="absolute top-full left-0 min-w-52 border border-line bg-paper py-1 shadow-sm">
+                {[wide, ...secondary].map((item) => (
+                  <li key={item.href} className={item === wide ? "xl:hidden" : ""}>
+                    <Link
+                      href={item.href}
+                      aria-current={pathname === item.href ? "page" : undefined}
+                      className="flex min-h-11 items-center px-4 text-sm whitespace-nowrap transition-colors hover:text-signal"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          <Link
+            href={`/${lang}/search`}
+            title={dict.nav.search}
+            className="flex h-11 w-11 items-center justify-center rounded-xs border border-border transition-colors hover:bg-surface"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">{dict.nav.search}</span>
+          </Link>
+
           <LanguageSwitcher
             current={lang}
             label={dict.nav.language}
@@ -88,7 +189,7 @@ export default function Header({ dict, lang, account }: Props) {
 
           <Link
             href={`/${lang}/report`}
-            className="hidden h-11 items-center rounded-xs bg-signal px-4 text-sm font-medium text-surface transition-colors hover:bg-signal-deep sm:flex"
+            className="hidden h-11 items-center rounded-xs bg-signal px-4 text-sm font-medium whitespace-nowrap text-surface transition-colors hover:bg-signal-deep sm:flex"
           >
             {dict.nav.report}
           </Link>
@@ -108,7 +209,7 @@ export default function Header({ dict, lang, account }: Props) {
       {isOpen ? (
         <nav className="border-t border-line bg-paper lg:hidden">
           <ul className="mx-auto max-w-[1400px] px-4 py-2 sm:px-6">
-            {items.map((item) => (
+            {[...primary, wide, ...secondary].map((item) => (
               <li key={item.href} className="border-b border-line">
                 <Link href={item.href} className="block py-3.5 text-base">
                   {item.label}
