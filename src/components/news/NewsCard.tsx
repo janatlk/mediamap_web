@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { ArrowUpRight, Languages } from "lucide-react";
 
 import type { Dictionary } from "@/lib/i18n";
-import { translateNews } from "@/server/translate-actions";
 import type { Translated } from "@/server/translate";
 
 /*
@@ -46,12 +45,23 @@ export default function NewsCard({ dict, item, to }: Props) {
   const [translated, setTranslated] = useState<Translated | null>(null);
   const [failed, setFailed] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [pending, start] = useTransition();
+  const [pending, setPending] = useState(false);
 
   const shown = translated && !showOriginal ? translated : item;
 
-  const run = () => {
-    if (!to) return;
+  /*
+    Обычный fetch, а не серверное действие и не useTransition.
+
+    Серверные действия в Next идут одной очередью вместе с переходами по
+    сайту: пока перевод считается, нажатие на любую ссылку молча ждёт, и
+    страница выглядит зависшей. У NLLB это секунды, а первый перевод после
+    запуска — до двадцати секунд, пока грузится модель.
+
+    Обычный запрос в эту очередь не встаёт: пока переводится одна заметка,
+    сайтом можно пользоваться.
+  */
+  const run = async () => {
+    if (!to || pending) return;
 
     // Уже переводили — сервис не тревожим, просто переключаем показ.
     if (translated) {
@@ -60,11 +70,26 @@ export default function NewsCard({ dict, item, to }: Props) {
     }
 
     setFailed(false);
-    start(async () => {
-      const result = await translateNews(item.id, to);
-      if (result.status === "ok") setTranslated(result.text);
+    setPending(true);
+    try {
+      const response = await fetch("/api/news/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, lang: to }),
+      });
+      const result = (await response.json()) as
+        | { status: "ok"; text: Translated }
+        | { status: "error" };
+
+      if (response.ok && result.status === "ok") setTranslated(result.text);
       else setFailed(true);
-    });
+    } catch {
+      // Сеть отвалилась или ответ не разобрался — человеку одинаково важно
+      // только то, что перевода не будет.
+      setFailed(true);
+    } finally {
+      setPending(false);
+    }
   };
 
   const label = pending

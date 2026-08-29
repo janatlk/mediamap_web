@@ -1,0 +1,23 @@
+# Расписание обхода лент.
+#
+#   systemctl enable --now mediamap-news.timer
+#   systemctl list-timers mediamap-news   — когда сработает в следующий раз
+#   journalctl -u mediamap-news -n 30     — что сказал прошлый обход
+
+[Unit]
+Description=MediaMap — обход лент дайджеста по расписанию
+
+[Timer]
+# Раз в час. Чаще незачем: издания выходят реже, а Google News отдаёт ту же
+# сотню заметок, и лишние обходы это только запросы к чужим серверам.
+OnCalendar=hourly
+
+# Разброс до пяти минут. Без него все наши машины постучались бы к 24.kg
+# ровно в ноль минут каждого часа — узнаваемый и невежливый рисунок.
+RandomizedDelaySec=300
+
+# Машина была выключена — обойти сразу после запуска, а не ждать часа.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

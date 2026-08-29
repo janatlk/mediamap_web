@@ -59,15 +59,21 @@ export default async function AboutPage({
           <p className="mt-3 text-muted">{about.soon}</p>
         </section>
 
-        {/* Донорская строка. Формулировку про CARAVAN, Internews и
-            Евросоюз оставляем как есть — это обязательство перед теми,
-            кто финансирует проект, а не наш текст. */}
+        {/* Донорская строка. Текст прислан проектом дословно и правится
+            только проектом — это обязательство перед теми, кто финансирует
+            работу, а не наш материал.
+
+            Оговорка об ответственности отбита линейкой и набрана мельче:
+            это правовая приписка, а не продолжение рассказа. */}
         <section className="mt-10 border-t border-line pt-8">
           <h2 className="text-2xl">{about.supportTitle}</h2>
-          <p className="mt-3 text-muted">
-            {about.supportIntro}{" "}
-            <span className="text-ink">{about.supportCaravan}</span>
-            {about.supportBody}
+          {about.supportBody.map((paragraph) => (
+            <p key={paragraph.slice(0, 40)} className="mt-3 text-muted">
+              {paragraph}
+            </p>
+          ))}
+          <p className="mt-6 border-t border-line pt-4 text-sm text-muted">
+            {about.supportDisclaimer}
           </p>
         </section>
 

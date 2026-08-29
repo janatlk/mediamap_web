@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LogIn, Menu, UserRound, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, LogIn, Menu, Search, UserRound, X } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { Dictionary, Lang } from "@/lib/i18n";
@@ -24,18 +24,59 @@ export default function Header({ dict, lang, account }: Props) {
   const accountHref = account?.staff ? "/admin" : `/${lang}/account`;
   const accountLabel = account?.staff ? dict.nav.panel : dict.nav.account;
   const [isOpen, setIsOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   // Иначе на телефоне меню висит поверх новой страницы.
-  useEffect(() => setIsOpen(false), [pathname]);
+  useEffect(() => {
+    setIsOpen(false);
+    setIsMoreOpen(false);
+  }, [pathname]);
 
-  const items = [
+  /*
+    Рубрик стало десять. Все в строку не встают даже на широком экране, а
+    сжимать их до нечитаемого — хуже, чем спрятать половину: пять частых
+    остаются на виду, остальные уходят под «Ещё».
+
+    Список под «Ещё» закрывается по клику мимо и по Esc. Без этого он
+    оставался висеть, когда человек передумал, и перекрывал страницу.
+  */
+  useEffect(() => {
+    if (!isMoreOpen) return;
+
+    const outside = (event: MouseEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setIsMoreOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMoreOpen(false);
+    };
+
+    document.addEventListener("mousedown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [isMoreOpen]);
+
+  const primary = [
     { href: `/${lang}/cases`, label: dict.nav.cases },
     { href: `/${lang}/types`, label: dict.nav.types },
+    { href: `/${lang}/analytics`, label: dict.nav.analytics },
     { href: `/${lang}/news`, label: dict.nav.news },
+  ];
+
+  const secondary = [
+    { href: `/${lang}/resources`, label: dict.nav.resources },
+    { href: `/${lang}/glossary`, label: dict.nav.glossary },
+    { href: `/${lang}/quiz`, label: dict.nav.quiz },
     { href: `/${lang}/about`, label: dict.nav.about },
     { href: `/${lang}/contacts`, label: dict.nav.contacts },
   ];
+
+  // В телефонном меню места хватает — там показываем всё подряд.
+  const items = [...primary, ...secondary];
 
   return (
     <header className="sticky top-0 z-[100] border-b border-line bg-paper">
@@ -47,22 +88,67 @@ export default function Header({ dict, lang, account }: Props) {
           {dict.brand}
         </Link>
 
-        <nav className="hidden flex-1 items-center gap-7 lg:flex">
-          {items.map((item) => (
+        <nav className="hidden flex-1 items-center gap-6 lg:flex">
+          {primary.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               aria-current={pathname === item.href ? "page" : undefined}
-              className={`flex h-11 items-center text-sm transition-colors hover:text-signal ${
+              className={`flex h-11 items-center whitespace-nowrap text-sm transition-colors hover:text-signal ${
                 pathname === item.href ? "text-ink" : "text-muted"
               }`}
             >
               {item.label}
             </Link>
           ))}
+
+          <div className="relative" ref={moreRef}>
+            <button
+              type="button"
+              onClick={() => setIsMoreOpen((value) => !value)}
+              aria-expanded={isMoreOpen}
+              className={`flex h-11 items-center gap-1 text-sm transition-colors hover:text-signal ${
+                secondary.some((item) => item.href === pathname)
+                  ? "text-ink"
+                  : "text-muted"
+              }`}
+            >
+              {dict.nav.more}
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            {isMoreOpen ? (
+              <ul className="absolute left-0 top-full z-10 min-w-52 border border-line bg-paper py-1 shadow-sm">
+                {secondary.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={pathname === item.href ? "page" : undefined}
+                      className={`block px-4 py-2.5 text-sm transition-colors hover:bg-surface ${
+                        pathname === item.href ? "text-ink" : "text-muted"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          {/* Поиск значком, без поля: поле в шапке съедало место, которое
+              нужнее рубрикам, а страница поиска всё равно своя. */}
+          <Link
+            href={`/${lang}/search`}
+            title={dict.nav.search}
+            className="flex h-11 w-11 items-center justify-center rounded-xs border border-border transition-colors hover:bg-surface"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">{dict.nav.search}</span>
+          </Link>
+
           <LanguageSwitcher
             current={lang}
             label={dict.nav.language}
@@ -115,6 +201,15 @@ export default function Header({ dict, lang, account }: Props) {
                 </Link>
               </li>
             ))}
+            <li className="border-b border-line">
+              <Link
+                href={`/${lang}/search`}
+                className="flex items-center gap-2 py-3.5 text-base"
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                {dict.nav.search}
+              </Link>
+            </li>
             <li className="border-b border-line">
               <Link
                 href={account ? accountHref : `/${lang}/account/login`}

@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 const LINKS = [
   { href: "/admin", label: "Сообщения" },
   { href: "/admin/ai", label: "Контроль ИИ" },
+  { href: "/admin/news", label: "Дайджест" },
   { href: "/admin/texts", label: "Тексты сайта" },
 ];
 

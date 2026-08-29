@@ -1,0 +1,33 @@
+# Обход лент дайджеста. Запускается таймером, не постоянно.
+#
+# Ставится в /etc/systemd/system/ вместе с mediamap-news.timer:
+#   systemctl enable --now mediamap-news.timer
+#
+# Сам по себе включать не нужно: это разовая работа, а не служба.
+[Unit]
+Description=MediaMap — обход лент дайджеста
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=mediamap
+WorkingDirectory=/srv/mediamap/web
+EnvironmentFile=/srv/mediamap/web/.env
+Environment=NODE_ENV=production
+
+ExecStart=/srv/mediamap/web/node_modules/.bin/tsx scripts/collect-news.ts
+
+# Обход девяти лент занимает секунд десять. Минута — с запасом на медленный
+# ответ издания; дольше ждать незачем, следующий запуск всё доберёт.
+TimeoutStartSec=180
+
+# Прав ровно столько же, сколько у сайта: пишем в ту же базу.
+ProtectSystem=strict
+ReadWritePaths=/srv/mediamap/web/prisma
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
