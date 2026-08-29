@@ -57,7 +57,7 @@ export default function Partners({ dict }: { dict: Dictionary }) {
               <p className="text-sm text-ink sm:pt-2.5">
                 {row.id === "donors" ? dict.partners.donors : dict.partners.partners}
               </p>
-              <ul className="flex flex-wrap items-center gap-x-8">
+              <ul className="flex flex-wrap items-center gap-x-8 gap-y-2">
                 {row.items.map((item) => (
                   <Plate
                     key={item.name}

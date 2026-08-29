@@ -39,7 +39,17 @@ export default function Footer({ dict, lang }: Props) {
           </nav>
         </div>
 
-        <p className="mt-10 border-t border-line pt-6 font-mono text-2xs text-muted">
+        {/* Дисклеймер донора. Отбит линейкой и стоит над строкой с годом:
+            это условие финансирования, а не приписка к копирайту.
+
+            Читается мельче основного текста, но не мельче копирайта —
+            набирать обязательство перед донором самым мелким кеглем на
+            странице было бы ровно тем, чего доноры и опасаются. */}
+        <p className="mt-10 max-w-3xl border-t border-line pt-6 text-xs text-muted">
+          {dict.footer.disclaimer}
+        </p>
+
+        <p className="mt-4 font-mono text-2xs text-muted">
           © {year} · {dict.footer.rights}
         </p>
       </div>
