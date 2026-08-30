@@ -65,27 +65,26 @@ export const DETECTORS: DetectorInfo[] = [
     id: "hive",
     name: "Hive AI",
     console: "https://thehive.ai/",
-    docs: "https://docs.thehive.ai/docs/ai-image-and-video-detection",
+    docs:
+      "https://docs.thehive.ai/docs/ai-generated-and-deepfake-content-detection-playground",
     fields: [
       {
         name: "secret_key",
         label: "Secret Key",
         hint:
           "Именно секрет, вторая строка пары. Access Key ID не нужен: " +
-          "подписывает секрет. Проверено опытом — публичная документация " +
-          "описывает старый ключ проекта, которого в консоли уже нет.",
+          "подписывает секрет.",
       },
     ],
-    free: "100 запросов в день",
+    free: "100 запросов в сутки",
     price: "$6 за 1000 изображений; видео — $6 за 1000 кадров",
     video: true,
     jurisdiction: "США",
     note:
       "Знает больше семидесяти генераторов и называет, каким именно сделано. " +
-      "Отдаёт заодно и C2PA — то, что мы и так читаем сами. Модель разбора " +
-      "изображений на новой учётной записи по умолчанию закрыта: ключ " +
-      "работает, а в ответ приходит «This model cannot be accessed via " +
-      "API». Открывают по запросу в Hive.",
+      "Отдельной оценкой отвечает про подделку лица — это не то же самое, " +
+      "что «сгенерировано»: настоящее видео с подменённым лицом ничем не " +
+      "нарисовано. Видео разбирает покадрово, до 60 секунд.",
   },
   {
     id: "reality-defender",
