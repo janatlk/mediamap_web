@@ -33,6 +33,16 @@ type Props = {
   basis?: "image" | "link" | "story";
   /** Заявитель оставил ссылку — про неё нужна отдельная оговорка. */
   hasLink?: boolean;
+  /**
+   * Кто читает: заявитель или посторонний на странице опубликованного случая.
+   *
+   * От этого зависят слова. Заявителю карточка говорит «решение по вашему
+   * сообщению» — постороннему это неправда, случай не его. И заметку
+   * проверяющего снаружи карточка не показывает: на странице случая она уже
+   * стоит отдельным полем, и дублировать её значит показать дважды одно и
+   * то же под разными подписями.
+   */
+  audience?: "author" | "public";
 };
 
 /*
@@ -80,9 +90,12 @@ export default function AssessmentCard({
   reviewSummary,
   basis = "story",
   hasLink = false,
+  audience = "author",
 }: Props) {
   const words = dict.assessment;
   const chosenCheck = checks?.[chosenType];
+  // Читает посторонний — значит обращение на «вы» тут неуместно.
+  const isPublic = audience === "public";
 
   /*
     Ответили ли мы вообще про то, о чём спросили.
@@ -147,7 +160,11 @@ export default function AssessmentCard({
       <header className="flex flex-wrap items-center gap-2 border-b border-line px-6 py-4">
         <Bot className="h-4 w-4 text-muted" aria-hidden="true" />
         <h2 className="text-base font-medium">
-          {reviewed ? words.titleReviewed : words.title}
+          {audience === "public"
+            ? words.titlePublic
+            : reviewed
+              ? words.titleReviewed
+              : words.title}
         </h2>
         <span className="font-mono text-2xs text-muted">
           {reviewed
@@ -183,8 +200,12 @@ export default function AssessmentCard({
           {basis === "image"
             ? words.checkedImage
             : basis === "link"
-              ? words.checkedLink
-              : words.checkedStory}
+              ? isPublic
+                ? words.checkedLinkPublic
+                : words.checkedLink
+              : isPublic
+                ? words.checkedStoryPublic
+                : words.checkedStory}
           {/* Ссылка была, но открыть её не вышло — про это надо сказать
               отдельно, иначе человек решит, что публикацию посмотрели. */}
           {basis === "story" && hasLink ? ` ${words.checkedLinkFailed}` : ""}
@@ -207,7 +228,13 @@ export default function AssessmentCard({
               уточнить. Говорим об этом сразу, чтобы не выглядело спором. */}
           {!isUnclear ? (
             <p className="mt-1 text-sm text-muted">
-              {matchesChoice ? words.verdictMatches : words.verdictDiffers}
+              {matchesChoice
+                ? isPublic
+                  ? words.verdictMatchesPublic
+                  : words.verdictMatches
+                : isPublic
+                  ? words.verdictDiffersPublic
+                  : words.verdictDiffers}
             </p>
           ) : null}
         </div>

@@ -7,7 +7,9 @@ import { formatDate } from "@/lib/format";
 import { isReadyLanguage, violationText } from "@/lib/i18n";
 import { getContent } from "@/server/content";
 import { typeColor } from "@/lib/violation-types";
+import AssessmentCard from "@/components/report/AssessmentCard";
 import { loadCase } from "@/server/case-data";
+import type { Verdict } from "@/server/ai-review";
 
 // Страница одного случая. Открывается по публичному номеру — тому, что
 // человек называет по телефону, а не по внутреннему id.
@@ -160,6 +162,45 @@ export default async function CasePage({
             )}
           </Field>
         </dl>
+
+        {/*
+          Разбор модели — теперь и здесь, по решению проекта.
+
+          Раньше его видел только заявитель на своей странице «принято».
+          Случай опубликован, и читатель со стороны вправе знать, на чём
+          стоит вывод: без этого публикация выглядит решением из ниоткуда.
+
+          Заметку проверяющего в карточку не передаём: она уже стоит выше
+          отдельным полем, и показывать её дважды под разными подписями
+          значит делать вид, что это два разных сведения.
+        */}
+        {item.ai ? (
+          <>
+            <AssessmentCard
+              dict={dict}
+              audience="public"
+              status="APPROVED"
+              chosenType={item.typeSlug}
+              checks={item.ai.checks}
+              reviewed
+              basis={item.basis}
+              hasLink={Boolean(item.link)}
+              assessment={{
+                verdict: item.ai.verdict as Verdict,
+                confidence: item.ai.confidence,
+                explanation: item.ai.explanation,
+                reasons: item.ai.reasons,
+                source: item.ai.source,
+              }}
+            />
+
+            {/* Кто и когда это писал. Без строки карточка читается как часть
+                решения редакции, а она — то, что ответила машина. */}
+            <p className="mt-3 max-w-prose text-sm text-muted">
+              {dict.assessment.publicNote}
+            </p>
+          </>
+        ) : null}
       </div>
     </div>
   );

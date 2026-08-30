@@ -23,6 +23,28 @@ export type CaseDetail = CaseListItem & {
   link: string | null;
   authorComment: string | null;
   moderatorComment: string | null;
+  /*
+    Разбор модели — теперь и на публичной странице, по решению проекта.
+
+    Раньше его видел только заявитель на своей странице «принято». Логика
+    была в том, что это ответ ему; но случай опубликован, и человек со
+    стороны вправе знать, на чём стоит вывод, — иначе публикация выглядит
+    решением из ниоткуда.
+
+    Пусто у старых записей и у тех, где разбора не было.
+  */
+  ai: CaseAssessment | null;
+  /** По чему судила модель: снимок, ссылка или пересказ заявителя. */
+  basis: "image" | "link" | "story";
+};
+
+export type CaseAssessment = {
+  verdict: string;
+  confidence: number;
+  reasons: string[];
+  explanation: string | null;
+  source: "rules" | "model";
+  checks: Partial<Record<ViolationSlug, TypeCheck>>;
 };
 
 export const PER_PAGE = 20;
@@ -93,6 +115,51 @@ export async function loadCase(publicId: string): Promise<CaseDetail | null> {
     link: row.mediaLink,
     authorComment: row.authorComment,
     moderatorComment: row.moderatorComment,
+    basis:
+      row.aiBasis === "image" || row.aiBasis === "link" ? row.aiBasis : "story",
+    ai: assessmentOf(row),
+  };
+}
+
+/*
+  Оценка, приведённая к виду для показа.
+
+  Правка проверяющего идёт вместо оценки модели, а не рядом: читателю нужен
+  ответ, а не протокол разногласий внутри редакции. След модели никуда не
+  девается — он в колонках ai* и в журнале проверок.
+
+  Тот же расчёт делает loadReceipt для страницы «принято». Держать его в
+  одном месте нельзя без ещё одного слоя, а два вызова с разными типами
+  строк дороже, чем это повторение; если появится третий — вынести.
+*/
+function assessmentOf(row: {
+  aiVerdict: string | null;
+  aiConfidence: number | null;
+  aiSummary: string | null;
+  aiSource: string | null;
+  aiTypeChecks: string | null;
+  reviewVerdict: string | null;
+  reviewConfidence: number | null;
+  reviewSummary: string | null;
+}): CaseAssessment | null {
+  const verdict = row.reviewVerdict ?? row.aiVerdict;
+  const confidence = row.reviewConfidence ?? row.aiConfidence;
+  if (!verdict || confidence === null) return null;
+
+  return {
+    verdict,
+    confidence,
+    // У разбора по словам в aiSummary лежат коды через запятую, у модели —
+    // связный текст. Резать его по запятым нельзя: выходили обрывки
+    // предложений, поданные как список причин.
+    reasons:
+      row.reviewSummary || row.aiSource === "model"
+        ? []
+        : (row.aiSummary ?? "").split(",").filter(Boolean),
+    explanation:
+      row.reviewSummary ?? (row.aiSource === "model" ? row.aiSummary : null),
+    source: row.aiSource === "model" ? "model" : "rules",
+    checks: parseChecks(row.aiTypeChecks),
   };
 }
 
