@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { currentUser } from "@/lib/auth";
 import { signOut } from "@/server/auth-actions";
+import { countPending } from "@/server/reports-data";
+import Nav from "./nav";
 import "./admin.css";
 
 /*
@@ -54,23 +55,25 @@ export default async function AdminLayout({
       <body suppressHydrationWarning>
         {user ? (
           <div className="topbar">
-            <b>MediaMap · панель</b>
-            {LINKS.map((link) => (
-              <span key={link.href}>
-                {" | "}
-                <Link href={link.href}>{link.label}</Link>
-              </span>
-            ))}
-            {" | "}
-            <a href={SITE}>← На сайт</a>
-            {" | "}
-            <span className="note">{user.name ?? user.email}</span>{" "}
-            {/* Настоящий выход, а не ссылка на главную: в старой панели
-                кнопка «выйти» просто уводила на сайт, оставляя сессию. */}
-            <form action={signOut} style={{ display: "inline" }}>
-              <button type="submit">Выйти</button>
-            </form>
-            <hr />
+            {/*
+              Разделы и учётная запись — две разные вещи, и раньше они шли
+              одной строкой через палочку: «Тексты сайта | ← На сайт |
+              Локальный админ [Выйти]». Кнопка выхода стояла вплотную к
+              названию раздела, а понять, в каком разделе ты находишься,
+              было нельзя вовсе — открытый пункт выглядел такой же ссылкой,
+              как остальные.
+            */}
+            <Nav links={LINKS} pending={await countPending()} />
+
+            <div className="who">
+              <a href={SITE}>Открыть сайт</a>
+              <span className="note">{user.name ?? user.email}</span>
+              {/* Настоящий выход, а не ссылка на главную: в старой панели
+                  кнопка «выйти» просто уводила на сайт, оставляя сессию. */}
+              <form action={signOut}>
+                <button type="submit">Выйти</button>
+              </form>
+            </div>
           </div>
         ) : null}
 

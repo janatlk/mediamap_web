@@ -63,20 +63,15 @@ export default async function AdminNewsPage() {
         подошли под ключевые слова. Сейчас в базе: {total}.
       </p>
 
-      <div className="warn">
-        <p>
-          <b>Не подошло — не сохранили.</b> Заметка, не попавшая ни под одно
-          слово, в базу не пишется вовсе. Поэтому новое слово начнёт работать
-          со следующего обхода и на уже вышедшие публикации не подействует:
-          вернуть их будет неоткуда.
-        </p>
-        <p>
-          Слова сравниваются <b>с начала слова, окончание любое</b>. Пишите
-          основу: «мошенничеств» поймает и «мошенничество», и
-          «мошенничества». Целое слово писать не нужно, а слишком короткую
-          основу брать опасно.
-        </p>
-      </div>
+      {/*
+        Осталось одно, зато то, что меняет решение: новое слово не вернёт
+        уже вышедшее. Правило про сравнение с начала слова переехало под
+        поле ввода — туда, где его читают в момент, когда оно нужно.
+      */}
+      <p className="warn">
+        <b>Не подошло — не сохранили.</b> Новое слово работает со следующего
+        обхода: старые публикации им не вернуть.
+      </p>
 
       <CollectButton />
 
@@ -88,12 +83,15 @@ export default async function AdminNewsPage() {
 
       <table>
         <thead>
+          {/* Столбцов было шесть, и таблица не влезала в экран: последний
+              уезжал за край, а весь лист получал горизонтальную прокрутку.
+              «Состояние» слито с «Последним обходом» — это про один и тот же
+              обход и читается вместе. */}
           <tr>
             <th>Название</th>
             <th>Язык</th>
             <th>Отбор</th>
             <th>Последний обход</th>
-            <th>Состояние</th>
             <th />
           </tr>
         </thead>
@@ -103,22 +101,10 @@ export default async function AdminNewsPage() {
               <td>
                 {source.enabled ? <b>{source.name}</b> : source.name}
                 <br />
-                <span className="id">{source.feedUrl}</span>
+                <span className="id url">{source.feedUrl}</span>
               </td>
               <td>{NEWS_LANG_NAMES[source.lang as NewsLang] ?? source.lang}</td>
               <td>{source.takeAll ? "брать всё" : "по словам"}</td>
-              <td>
-                {source.lastRunAt ? дата.format(source.lastRunAt) : "не было"}
-                {source.lastItemAt ? (
-                  <>
-                    <br />
-                    <span className="id">
-                      свежая заметка: {день.format(source.lastItemAt)}
-                      {stale(source.lastItemAt)}
-                    </span>
-                  </>
-                ) : null}
-              </td>
               <td>
                 {!source.enabled ? (
                   "выключен"
@@ -131,6 +117,13 @@ export default async function AdminNewsPage() {
                 ) : (
                   "ещё не обходили"
                 )}
+                <br />
+                <span className="id">
+                  {source.lastRunAt ? дата.format(source.lastRunAt) : "обхода не было"}
+                  {source.lastItemAt
+                    ? ` · свежая заметка ${день.format(source.lastItemAt)}${stale(source.lastItemAt)}`
+                    : ""}
+                </span>
               </td>
               <td>
                 <form>
@@ -140,7 +133,7 @@ export default async function AdminNewsPage() {
                   </button>{" "}
                   {/* Заметки при удалении остаются: человек убирает ленту,
                       а не полгода собранного дайджеста. */}
-                  <button type="submit" formAction={removeSource}>
+                  <button type="submit" className="danger" formAction={removeSource}>
                     Удалить
                   </button>
                 </form>
@@ -185,7 +178,7 @@ export default async function AdminNewsPage() {
                           <button type="submit" formAction={toggleKeyword}>
                             {word.enabled ? "Выключить" : "Включить"}
                           </button>{" "}
-                          <button type="submit" formAction={removeKeyword}>
+                          <button type="submit" className="danger" formAction={removeKeyword}>
                             Удалить
                           </button>
                         </form>

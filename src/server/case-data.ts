@@ -292,7 +292,7 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
  * версия сервиса, и её формат может отличаться; лишиться из-за этого всей
  * страницы «принято» — цена несоразмерная тому, что мы теряем.
  */
-function parseChecks(raw: string | null): Partial<Record<ViolationSlug, TypeCheck>> {
+export function parseChecks(raw: string | null): Partial<Record<ViolationSlug, TypeCheck>> {
   if (!raw) return {};
 
   try {

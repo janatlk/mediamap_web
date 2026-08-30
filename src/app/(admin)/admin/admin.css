@@ -25,13 +25,58 @@ body {
   padding: 0 1em;
 }
 
+/*
+  Шапка. Две группы: разделы и учётная запись. Раньше всё шло одной строкой
+  через палочку, и «Выйти» стояло вплотную к названию раздела.
+*/
 .topbar {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4em 1.5em;
+  padding-top: 0.6em;
+  padding-bottom: 0.6em;
+  border-bottom: 2px solid #000;
+  margin-bottom: 1em;
 }
 
-.topbar hr {
-  margin: 0.5em 0 0;
+.topbar .sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 1.1em;
+}
+
+/* Открытый раздел: подчёркнут снизу, как вкладка. Жирности мало — среди
+   пяти пунктов её замечаешь, только если ищешь. */
+.topbar .sections b,
+.tabs b {
+  border-bottom: 2px solid #000;
+}
+
+/* Учётная запись уезжает вправо: это не шестой раздел. */
+.topbar .who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.8em;
+  margin-left: auto;
+}
+
+.topbar .who form {
+  display: inline;
+}
+
+/* --- вкладки очереди --- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 1.1em;
+  margin: 1em 0 0.6em;
+}
+
+.search {
+  margin-bottom: 1.5em;
 }
 
 .panel {
@@ -40,7 +85,7 @@ body {
 
 h1 {
   font-size: 1.4em;
-  margin: 0.8em 0 0.2em;
+  margin: 0.6em 0 0.2em;
 }
 
 h2 {
@@ -66,6 +111,15 @@ textarea {
 table {
   border-collapse: collapse;
   margin: 0.5em 0 1em;
+  /* Раньше таблица источников уезжала за край и весь экран получал
+     горизонтальную прокрутку — из-за длинных адресов лент в ячейке. */
+  width: 100%;
+  table-layout: auto;
+}
+
+/* Только адреса. break-all рвал бы и русские слова посреди слога. */
+.url {
+  overflow-wrap: anywhere;
 }
 
 th,
@@ -90,20 +144,41 @@ th.num {
 
 article {
   border: 1px solid #999;
-  margin: 0 0 1em;
-  padding: 0.5em 0.8em;
+  /* Ждущее проверки — полосой слева. Это очередь работы, и её видно с
+     первого взгляда, не читая слова «ждёт». */
+  border-left: 4px solid #000;
+  margin: 0 0 1.2em;
+  padding: 0.6em 0.9em;
+}
+
+/* Рассмотренное приглушено: читать, а не переделывать. */
+article.decided {
+  border-left-color: #ccc;
 }
 
 article > header {
   border-bottom: 1px solid #ccc;
-  padding-bottom: 0.3em;
-  margin-bottom: 0.5em;
+  padding-bottom: 0.4em;
+  margin-bottom: 0.6em;
 }
 
 article > footer {
   border-top: 1px solid #ccc;
-  padding-top: 0.4em;
-  margin-top: 0.5em;
+  padding-top: 0.6em;
+  margin-top: 0.8em;
+}
+
+/* Свёрнутая форма решения у рассмотренного. Отбита так же, как footer,
+   чтобы «Изменить решение» читалось как продолжение карточки. */
+article > details {
+  border-top: 1px solid #ccc;
+  padding-top: 0.5em;
+  margin-top: 0.8em;
+}
+
+article > details > footer {
+  border-top: none;
+  padding-top: 0;
 }
 
 article p {
@@ -119,16 +194,52 @@ article p {
   font-size: 0.9em;
 }
 
+/* .status — просто выделенное слово: ошибка ленты, отказ сервиса. */
 .status {
   font-weight: bold;
 }
 
+/*
+  Состояние сообщения — плашкой. Раньше это было такое же жирное слово, как
+  всё прочее жирное на карточке, и очередь читалась только построчно.
+*/
+.badge {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 0.05em;
+  border: 1px solid #999;
+  padding: 0.05em 0.4em;
+  white-space: nowrap;
+}
+
+/* Ждущее — чёрной рамкой, решённое — серой: очередь видно, не читая слов. */
+.badge.pending {
+  border-color: #000;
+}
+
+.badge.rejected {
+  color: #555;
+}
+
+/* Пустой список, состояние сервиса — просто врезка. */
 .empty,
+.ok,
 .warn {
   border: 1px solid #999;
   background: #eee;
   padding: 0.5em 0.8em;
   margin: 0.8em 0;
+}
+
+/*
+  Предупреждение — с полосой слева. Раньше «сервис отвечает» и «сервис не
+  отвечает» выглядели одинаковыми серыми рамками, и различить их можно было
+  только прочитав.
+*/
+.warn {
+  border-left: 4px solid #000;
+  background: #fff;
 }
 
 /* --- разбор ИИ --- */
@@ -190,4 +301,69 @@ section form label {
 section form input,
 section form textarea {
   width: 100%;
+}
+
+/* --- кнопки ---
+   Раньше все были одинаковые, включая ту, что решает судьбу сообщения.
+   Отличаем главную, а откат отбиваем от решений. */
+
+button {
+  padding: 0.25em 0.8em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+  align-items: center;
+  margin-top: 1em;
+}
+
+.actions .primary {
+  font-weight: bold;
+  border: 2px solid #000;
+}
+
+/*
+  Удаление. Не красная кнопка — в панели нет цвета, — но и не та же самая
+  кнопка, что «Выключить» рядом. Отличается видом: без рамки, подчёркнутая,
+  чтобы рука не нажимала её по привычке к соседней.
+*/
+button.danger {
+  border: none;
+  background: none;
+  padding: 0.25em 0.2em;
+  color: #555;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Откат отбит от решений пустотой и линейкой: это другая операция. */
+.undo {
+  border-top: 1px solid #ccc;
+  padding-top: 0.8em;
+  margin-top: 1.2em;
+}
+
+/* --- поля формы решения ---
+   Подписи над полями, а не сбоку: строка «Вердикт [ ] Уверенность [ ] %»
+   читалась как одно поле с четырьмя частями. */
+
+footer form > p {
+  margin: 0.8em 0;
+}
+
+footer form label {
+  color: #333;
+}
+
+/* --- оглавление словаря --- */
+
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em 1.1em;
+  border: 1px solid #999;
+  padding: 0.6em 0.8em;
+  margin: 1em 0 2em;
 }

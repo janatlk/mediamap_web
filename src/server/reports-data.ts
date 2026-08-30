@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS, type ReportStatus } from "@/lib/enums";
 import { hostFromUrl } from "@/lib/format";
+import { parseChecks } from "./case-data";
+import type { TypeCheck } from "./ml-service";
 
 /*
   Список сообщений для панели.
@@ -41,6 +43,16 @@ export type ReportRow = {
   reviewSummary: string | null;
   /** Текст, который модель списала с приложенной картинки. */
   aiExtractedText: string | null;
+  /**
+   * Ответ модели по каждому виду в отдельности.
+   *
+   * Проверяющему это нужнее общего вердикта. Заявитель выбирает вид сам, и
+   * на «цифровое мошенничество» надо отвечать про мошенничество — а общее
+   * пояснение приходит от той головы, которая ответила первой. В панели это
+   * читалось так: человек заявил об обмане, а под разбором стояло «текст не
+   * направлен против какой-либо группы людей».
+   */
+  checks: Partial<Record<string, TypeCheck>>;
   claim: string | null;
   factVerdict: string | null;
   sources: string[];
@@ -158,6 +170,7 @@ function toRow(row: {
   reviewConfidence: number | null;
   reviewSummary: string | null;
   aiExtractedText: string | null;
+  aiTypeChecks: string | null;
   violationType: { slug: string };
   reviewedBy: { name: string | null; email: string } | null;
   attachments: { id: string; kind: string; name: string; mime: string }[];
@@ -189,6 +202,7 @@ function toRow(row: {
     reviewConfidence: row.reviewConfidence,
     reviewSummary: row.reviewSummary,
     aiExtractedText: row.aiExtractedText,
+    checks: parseChecks(row.aiTypeChecks),
     claim: check?.claim ?? null,
     factVerdict: check?.factVerdict ?? null,
     // В базе ссылки одной строкой через перенос — массивов в SQLite нет.

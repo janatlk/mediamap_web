@@ -101,11 +101,15 @@ export default function DetectorCard({ info, state }: Props) {
 
       <form action={save}>
         <input type="hidden" name="service" value={info.id} />
+        {/* Каждое поле — отдельным абзацем. Раньше метки шли подряд, а label
+            строчный: подсказка под первым полем и метка второго слипались в
+            одну строку — «число, например 123456789API secret:». */}
         {info.fields.map((field) => (
-          <label key={field.name}>
-            {field.label}:
+          <p key={field.name}>
+            <label htmlFor={`${info.id}-${field.name}`}>{field.label}</label>
             <br />
             <input
+              id={`${info.id}-${field.name}`}
               name={field.name}
               type="password"
               size={50}
@@ -119,7 +123,7 @@ export default function DetectorCard({ info, state }: Props) {
                 <span className="note">{field.hint}</span>
               </>
             ) : null}
-          </label>
+          </p>
         ))}
 
         <p>

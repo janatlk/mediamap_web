@@ -12,7 +12,8 @@ export const metadata = { title: "Тексты сайта" };
 //
 // Поиска и разбивки по страницам нет намеренно: строк несколько сотен, они
 // сгруппированы по разделам, и браузерный поиск по странице справляется
-// лучше, чем ещё одно поле ввода.
+// лучше, чем ещё одно поле ввода. Но пролистывать четыреста строк, чтобы
+// добраться до подвала, тоже нельзя — отсюда оглавление наверху.
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ const SECTIONS: Record<string, string> = {
   a11y: "Для скринридеров",
 };
 
-function Row({ entry }: { entry: TextEntry }) {
+function Row({ entry, section }: { entry: TextEntry; section: string }) {
   // Длинному тексту нужно поле в несколько строк, короткому — одна.
   const isLong = entry.ru.length > 90;
 
@@ -42,9 +43,12 @@ function Row({ entry }: { entry: TextEntry }) {
     <form>
       <input type="hidden" name="key" value={entry.key} />
 
+      {/* У разделов из одной строки ключ совпадает с ключом раздела, и в
+          заголовке он уже написан — повторять его строкой ниже незачем. */}
       <p className="id">
-        {entry.key}
-        {entry.changed ? " · изменено" : ""}
+        {entry.key === section ? "" : entry.key}
+        {entry.changed ? (entry.key === section ? "" : " · ") : ""}
+        {entry.changed ? <b>изменено</b> : ""}
       </p>
 
       <label>
@@ -94,24 +98,37 @@ export default async function TextsPage() {
   }
 
   const changed = entries.filter((entry) => entry.changed).length;
+  const changedIn = (rows: TextEntry[]) => rows.filter((row) => row.changed).length;
 
   return (
     <div className="panel">
       <h1>Тексты сайта</h1>
       <p className="lead">
         Правка заменяет текст из кода. Изменено {changed} из {entries.length}.
-        Кнопка «вернуть исходный» убирает правку и возвращает текст,
-        заложенный в сайт.
       </p>
 
+      {/*
+        Оглавление. Строк четыреста с лишним, и до подвала приходилось
+        крутить весь словарь. Рядом с разделом — сколько в нём правленого:
+        иначе найти собственную вчерашнюю правку можно было только глазами.
+      */}
+      <nav className="toc">
+        {[...groups].map(([section, rows]) => (
+          <a key={section} href={`#${section}`}>
+            {SECTIONS[section] ?? section}
+            {changedIn(rows) > 0 ? ` (${changedIn(rows)})` : ""}
+          </a>
+        ))}
+      </nav>
+
       {[...groups].map(([section, rows]) => (
-        <section key={section}>
+        <section key={section} id={section}>
           <h2>
             {SECTIONS[section] ?? section} <span className="id">{section}</span>
           </h2>
 
           {rows.map((entry) => (
-            <Row key={entry.key} entry={entry} />
+            <Row key={entry.key} entry={entry} section={section} />
           ))}
         </section>
       ))}

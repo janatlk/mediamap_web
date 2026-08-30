@@ -64,19 +64,20 @@ export default async function AiControlPage({
         ей вообще стоит доверять.
       </p>
 
-      <p>
-        Период:{" "}
-        {PERIODS.map((value, index) => (
-          <span key={value}>
-            {index > 0 ? " | " : ""}
-            {value === days ? (
-              <b>{value} дней</b>
-            ) : (
-              <Link href={`/admin/ai?days=${value}`}>{value} дней</Link>
-            )}
-          </span>
-        ))}
-      </p>
+      {/* Тот же вид, что у вкладок очереди: открытое — не ссылка. */}
+      <nav className="tabs">
+        {PERIODS.map((value) =>
+          value === days ? (
+            <b key={value} aria-current="page">
+              {value} дней
+            </b>
+          ) : (
+            <Link key={value} href={`/admin/ai?days=${value}`}>
+              {value} дней
+            </Link>
+          ),
+        )}
+      </nav>
 
       <ServiceState />
 
@@ -127,7 +128,7 @@ async function ServiceState() {
   }
 
   return (
-    <p className="empty">
+    <p className="ok">
       Сервис отвечает. Модели: <code>{state.model}</code>. Поиск:{" "}
       <code>{state.search}</code>.
       {state.cache ? ` Память: ${state.cache}.` : ""}

@@ -85,26 +85,26 @@ function asStatus(raw: string | undefined): Filter["status"] {
 function Filters({ filter, counts }: { filter: Filter; counts: Record<string, number> }) {
   return (
     <>
-      <p>
-        {TABS.map((tab, index) => (
-          <span key={tab.value}>
-            {index > 0 ? " | " : ""}
-            {tab.value === filter.status ? (
-              <b>
-                {tab.label} ({counts[tab.value] ?? 0})
-              </b>
-            ) : (
-              <Link href={link({ ...filter, status: tab.value, page: 1 })}>
-                {tab.label} ({counts[tab.value] ?? 0})
-              </Link>
-            )}
-          </span>
-        ))}
-      </p>
+      {/* Открытая вкладка — не ссылка: переход, которого не будет. Раньше
+          все четыре выглядели одинаково, и различить открытую можно было
+          только по жирности среди четырёх синих подчёркиваний подряд. */}
+      <nav className="tabs">
+        {TABS.map((tab) =>
+          tab.value === filter.status ? (
+            <b key={tab.value} aria-current="page">
+              {tab.label} ({counts[tab.value] ?? 0})
+            </b>
+          ) : (
+            <Link key={tab.value} href={link({ ...filter, status: tab.value, page: 1 })}>
+              {tab.label} ({counts[tab.value] ?? 0})
+            </Link>
+          ),
+        )}
+      </nav>
 
       {/* Поиск обычной формой на GET: адрес остаётся ссылкой, которой можно
           поделиться с коллегой. */}
-      <form action="/admin" method="get">
+      <form className="search" action="/admin" method="get">
         <input type="hidden" name="status" value={filter.status} />
         <input
           type="search"
@@ -121,19 +121,22 @@ function Filters({ filter, counts }: { filter: Filter; counts: Record<string, nu
 }
 
 function Report({ row }: { row: ReportRow }) {
+  const decided = row.status !== REPORT_STATUS.PENDING;
+
   return (
-    <article>
+    <article className={decided ? "decided" : undefined}>
       <header>
-        <span className="status">{STATUS_NAME[row.status] ?? row.status}</span>
-        {" · "}
+        <span className={`badge ${row.status.toLowerCase()}`}>
+          {STATUS_NAME[row.status] ?? row.status}
+        </span>{" "}
         {row.headline ?? typeName(row.typeSlug)}
         {row.headline ? ` · ${typeName(row.typeSlug)}` : ""}
-        {" · "}
-        <Assessment row={row} />
         <br />
         <span className="id">
           {row.publicId}, {formatDate(row.createdAt, DEFAULT_LANG)}
         </span>
+        {" · "}
+        <Assessment row={row} />
         {/* Ссылки на само нарушение. В списке по двадцать пять карточек, и без
             них нельзя было ни открыть дело отдельно, ни переслать коллеге, ни
             посмотреть, что по этому сообщению видит заявитель. */}
@@ -184,7 +187,21 @@ function Report({ row }: { row: ReportRow }) {
         </p>
       </div>
 
-      <Decide row={row} />
+      {/*
+        У рассмотренного форма спрятана. На вкладке «Подтверждены» их
+        шестьдесят с лишним, и каждое разворачивало пять полей и три кнопки:
+        экран был занят правкой того, что править никто не собирался.
+        Решение уже принято, и по умолчанию его надо читать, а не
+        переписывать.
+      */}
+      {decided ? (
+        <details>
+          <summary>Изменить решение</summary>
+          <Decide row={row} />
+        </details>
+      ) : (
+        <Decide row={row} />
+      )}
     </article>
   );
 }
@@ -210,15 +227,38 @@ function Assessment({ row }: { row: ReportRow }) {
       {/* Расхождение с выбором заявителя — главное, ради чего оценка нужна
           проверяющему: значит вид, скорее всего, надо поменять. */}
       {!agrees && finalVerdict !== "unclear" ? " · заявитель выбрал другой вид" : ""}
+      {edited ? "" : chosenNote(row, finalVerdict)}
       {row.aiSource === "rules" && !edited ? " · по словарю, не моделью" : ""}
     </span>
   );
 }
 
+/**
+ * Ответ по тому виду, о котором заявил человек.
+ *
+ * Общий вердикт отвечает на вопрос «что модель нашла», а заявитель спрашивал
+ * другое: «то, о чём я написал, — это оно?». Числа у этих вопросов разные, и
+ * без второго выходило, что на заявку о мошенничестве панель показывала 99%
+ * уверенности в том, что перед нами не язык вражды.
+ *
+ * Число здесь — вероятность нарушения заявленного вида, а не уверенность
+ * модели в своём ответе. Молчим только когда сказать нечего: этот вид не
+ * проверяли или он и есть общий вердикт, уже показанный выше.
+ */
+function chosenNote(row: ReportRow, finalVerdict: string | null): string {
+  const check = row.checks?.[row.typeSlug];
+  if (!check || finalVerdict === row.typeSlug) return "";
+
+  return ` · ${typeName(row.typeSlug)}: ${Math.round(check.confidence * 100)}%`;
+}
+
 /** Разбор целиком: почему так решено, что проверить и чем кончилась проверка. */
 function Reasoning({ row }: { row: ReportRow }) {
   const summary = readable(row.aiSummary);
-  if (!summary && !row.claim && !row.aiExtractedText) return null;
+  // Разбор по заявленному виду. Идёт первым и подписан: это ответ на вопрос
+  // заявителя, а summary — ответ той головы, которая отработала первой.
+  const chosen = readable(row.checks?.[row.typeSlug]?.explanation ?? null);
+  if (!summary && !chosen && !row.claim && !row.aiExtractedText) return null;
 
   return (
     <details>
@@ -233,7 +273,13 @@ function Reasoning({ row }: { row: ReportRow }) {
         </p>
       ) : null}
 
-      {summary ? <p>{summary}</p> : null}
+      {chosen ? (
+        <p>
+          <i>{typeName(row.typeSlug)}:</i> {chosen}
+        </p>
+      ) : null}
+
+      {summary && summary !== chosen ? <p>{summary}</p> : null}
 
       {row.claim ? (
         <p>
@@ -277,10 +323,22 @@ function Reasoning({ row }: { row: ReportRow }) {
 function Decide({ row }: { row: ReportRow }) {
   const decided = row.status !== REPORT_STATUS.PENDING;
 
+  // Что стоит сейчас — чтобы сказать это словами в пустом пункте списка.
+  // «как решил ИИ» не отвечало на вопрос «а как он решил»: чтобы узнать,
+  // приходилось поднимать глаза в шапку карточки.
+  const aiName =
+    row.aiVerdict === null
+      ? "оценки нет"
+      : row.aiVerdict === "unclear"
+        ? "вид не определён"
+        : typeName(row.aiVerdict);
+
   return (
     <footer>
       <form>
         <input type="hidden" name="id" value={row.id} />
+
+        <p className="note">Пустое поле — остаётся то, что решил ИИ.</p>
 
         <p>
           <label htmlFor={`headline-${row.id}`}>Заголовок случая</label>
@@ -305,7 +363,7 @@ function Decide({ row }: { row: ReportRow }) {
             {/* Пустой пункт — не «ничего», а «оставить как решила модель».
                 Без него правка вердикта стала бы обязательной на каждом
                 сообщении, включая те, где с моделью и так согласны. */}
-            <option value="">как решил ИИ</option>
+            <option value="">оставить: {aiName}</option>
             <option value="unclear">вид не определён</option>
             {VIOLATION_SLUGS.map((slug) => (
               <option key={slug} value={slug}>
@@ -339,7 +397,7 @@ function Decide({ row }: { row: ReportRow }) {
         </p>
 
         <p>
-          <label htmlFor={`summary-${row.id}`}>Из чего сложился вывод</label>
+          <label htmlFor={`summary-${row.id}`}>Пояснение для заявителя</label>
           <br />
           {/* Текст модели можно переписать целиком: его читает заявитель, а
               модель формулирует то коряво, то мимо сути. Пусто — остаётся
@@ -350,7 +408,7 @@ function Decide({ row }: { row: ReportRow }) {
             rows={3}
             cols={70}
             defaultValue={row.reviewSummary ?? ""}
-            placeholder={readable(row.aiSummary) || "Пояснение для заявителя"}
+            placeholder={readable(row.aiSummary) || "Пусто — заявитель прочитает разбор ИИ"}
           />
         </p>
 
@@ -367,24 +425,32 @@ function Decide({ row }: { row: ReportRow }) {
           />
         </p>
 
-        <p>
-          <button type="submit" formAction={approveReport}>
+        {/*
+          Три кнопки в ряд, одинаковые с виду, — и любая из них решала судьбу
+          сообщения. Теперь видно, какая главная: подтверждение выделено,
+          отказ стоит рядом обычной кнопкой, а возврат в очередь отбит вправо
+          — он не про решение, а про откат.
+        */}
+        <p className="actions">
+          <button type="submit" className="primary" formAction={approveReport}>
             {decided ? "Сохранить как подтверждённое" : "Подтвердить"}
-          </button>{" "}
+          </button>
           <button type="submit" formAction={rejectReport}>
             {decided ? "Сохранить как отклонённое" : "Отклонить"}
           </button>
-          {decided ? (
-            <>
-              {" "}
-              {/* Возврат в очередь правки в полях не сохраняет — он про
-                  статус. Сначала сохраните, потом возвращайте. */}
-              <button type="submit" formAction={reopenReport}>
-                Вернуть в очередь
-              </button>
-            </>
-          ) : null}
         </p>
+
+        {/* Отдельной строкой, а не третьей кнопкой в ряду: возврат правки в
+            полях не сохраняет — он про статус. Стоял рядом с решениями, и
+            нажимался вместо «Сохранить». */}
+        {decided ? (
+          <p className="undo">
+            <button type="submit" formAction={reopenReport}>
+              Вернуть в очередь
+            </button>{" "}
+            <span className="note">правки в полях не сохранятся</span>
+          </p>
+        ) : null}
 
         {decided ? (
           <p className="note">
