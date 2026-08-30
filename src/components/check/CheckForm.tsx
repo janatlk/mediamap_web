@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImageUp, Loader2, ShieldCheck } from "lucide-react";
+import { ImageUp, Loader2 } from "lucide-react";
 
 import { detectorById } from "@/lib/detectors";
 import type { Dictionary } from "@/lib/i18n";
@@ -14,8 +14,9 @@ import type { Origin, ProvenanceResult } from "@/server/provenance";
   секунды, а действия в Next делят очередь с переходами по сайту — страница
   на это время замирала бы.
 
-  Файл никуда не сохраняется. Так и написано на странице: рубрика открыта
-  всем, и обещание стоит того, чтобы быть правдой.
+  Файл никуда не сохраняется. Сказано это один раз — до загрузки, вместе с
+  тем, что он уходит сторонним сервисам. Повтор после ответа убран: человек
+  к этому времени уже решил, загружать или нет.
 */
 
 type DetectorScore = {
@@ -201,16 +202,16 @@ function Result({
           </div>
 
           {/*
-            Оговорка выбирается по нашему же разбору, а не пишется одна на
-            все случаи. Метаданные уцелели — файл не проходил через соцсеть,
-            и числу можно доверять больше; стёрты — перед нами скриншот, а
-            на скриншотах эти сервисы и ошибаются.
+            Оговорка только там, где она меняет поведение: файл прошёл через
+            соцсеть или снят с экрана — на таких сервисы и ошибаются. Парная
+            к ней («метаданные на месте, тут они точны») убрана: человеку она
+            ничего не давала, а занимала столько же места.
           */}
-          <p className="mt-4 max-w-prose text-sm text-muted">
-            {found(data.origin)
-              ? words.detectorsNoteClean
-              : words.detectorsNoteStripped}
-          </p>
+          {found(data.origin) ? null : (
+            <p className="mt-4 max-w-prose text-sm text-muted">
+              {words.detectorsNoteStripped}
+            </p>
+          )}
 
           {/*
             Прямое расхождение со свидетельством. Молчать о нём нельзя:
@@ -224,10 +225,6 @@ function Result({
         </div>
       ) : null}
 
-      <p className="mt-8 flex items-start gap-2 text-sm text-muted">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        {words.notStored}
-      </p>
     </section>
   );
 }

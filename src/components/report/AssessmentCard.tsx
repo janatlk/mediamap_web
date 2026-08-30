@@ -100,9 +100,9 @@ export default function AssessmentCard({
   /*
     Ответили ли мы вообще про то, о чём спросили.
 
-    Головы у нас есть не на все виды: цифровое мошенничество не проверяет
-    никто. Тогда ни числа, ни разбора по этому виду нет — и подставлять на их
-    место ответ другой головы нельзя. Человек читает «не берусь ответить», а
+    Голова по выбранному виду могла не отработать — сервис был недоступен
+    или оценку снял разбор по словам. Тогда ни числа, ни разбора по этому
+    виду нет — и подставлять на их место ответ другой головы нельзя. Человек читает «не берусь ответить», а
     ниже — рассуждение про язык вражды, которого он не спрашивал.
   */
   const answeredChosen = Boolean(chosenCheck);
@@ -276,28 +276,14 @@ export default function AssessmentCard({
         </div>
       </div>
 
-      {/* Модель отвечает связным текстом, разбор по словам — перечнем примет.
-          Одно другим не заменяется: список из обрывков предложений читался
-          как набор бессвязных пунктов. */}
+      {/* Разбор словами — и только он. Перечень примет, которым отвечал
+          разбор по словам, отсюда убран: он говорил про устройство нашего
+          подсчёта («Описание подробное»), а не про случай человека. Нечего
+          сказать — блока просто нет. */}
       {explanation ? (
         <div className="border-t border-line px-6 py-5">
           <p className="text-sm text-muted">{words.reasonsLabel}</p>
           <p className="mt-3 max-w-prose text-base">{explanation}</p>
-        </div>
-      ) : assessment.reasons.length ? (
-        <div className="border-t border-line px-6 py-5">
-          <p className="text-sm text-muted">{words.reasonsLabel}</p>
-          <ul className="mt-3 space-y-2">
-            {assessment.reasons.map((reason) => (
-              <li key={reason} className="flex items-start gap-2 text-base">
-                <Check
-                  className="mt-1 h-4 w-4 shrink-0 text-muted"
-                  aria-hidden="true"
-                />
-                {words.reasons[reason as keyof typeof words.reasons] ?? reason}
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
 
