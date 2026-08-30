@@ -68,12 +68,12 @@ export const DETECTORS: DetectorInfo[] = [
     docs: "https://docs.thehive.ai/docs/ai-image-and-video-detection",
     fields: [
       {
-        name: "token",
-        label: "Project API key",
+        name: "secret_key",
+        label: "Secret Key",
         hint:
-          "В панели проекта: кнопка «Integration & API Keys». Одна " +
-          "строка. Пара «Access Key ID + Secret Key» — это другой ключ, " +
-          "от их новой площадки, и разбору изображений он не подходит.",
+          "Именно секрет, вторая строка пары. Access Key ID не нужен: " +
+          "подписывает секрет. Проверено опытом — публичная документация " +
+          "описывает старый ключ проекта, которого в консоли уже нет.",
       },
     ],
     free: "100 запросов в день",
@@ -82,7 +82,10 @@ export const DETECTORS: DetectorInfo[] = [
     jurisdiction: "США",
     note:
       "Знает больше семидесяти генераторов и называет, каким именно сделано. " +
-      "Отдаёт заодно и C2PA — то, что мы и так читаем сами.",
+      "Отдаёт заодно и C2PA — то, что мы и так читаем сами. Модель разбора " +
+      "изображений на новой учётной записи по умолчанию закрыта: ключ " +
+      "работает, а в ответ приходит «This model cannot be accessed via " +
+      "API». Открывают по запросу в Hive.",
   },
   {
     id: "reality-defender",

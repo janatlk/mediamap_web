@@ -9,37 +9,45 @@ import {
 } from "./types";
 
 /*
-  Hive AI.
+  Hive AI, версия API v3.
 
-  Синхронная задача: один запрос, ответ сразу. Ключ идёт заголовком
-  «authorization: token …» — именно так, без слова Bearer; это их
-  собственное написание из документации.
+  Про подпись пришлось выяснять опытом: публичная документация описывает
+  старый v2 с однострочным ключом проекта и заголовком «authorization:
+  token …», а консоль сейчас выдаёт пару «Access Key ID + Secret Key» с
+  правами вида sf1:*, va1:*. Под v2 эта пара не подходит ни в каком
+  сочетании — все шесть проверенных дают 403.
 
-  Ответ вложен глубоко:
-    status[0].response.output[0].classes[] — список пар «класс, оценка»,
-    среди которых ai_generated и not_ai_generated, а во второй голове
-    название генератора.
+  Работает вот что:
 
-  Что здесь подтверждено документацией, а что взято по их общему обычаю:
-  адрес, заголовок и путь к оценке — из документации. Имя поля с файлом
-  (media) — обычная для Hive форма, но отдельной страницы с примером я не
-  нашёл. Ровно для этого на странице панели и стоит кнопка проверки: живой
-  запрос покажет, угадал ли переходник, за один щелчок.
+    Authorization: Bearer <Secret Key>
+    POST https://api.thehive.ai/api/v3/hive/<модель>
+    тело — multipart, поле media
+
+  Access Key ID при этом не нужен вовсе: подписывает секрет. Нашлось это
+  по адресу /api/v3/auth/token — единственная схема, на которую он
+  ответил не «401 неверный токен», а жалобой на Content-Type, то есть
+  проверку прав прошёл.
+
+  Имя модели — часть адреса. Неизвестное имя даёт 400 «Bad Request», и по
+  этому же признаку модель и нашлась перебором: visual-moderation
+  отвечает 200, ai-generated-detection — 403 «This model cannot be
+  accessed via API», всё остальное 400.
+
+  Ответ v3 площе, чем был в v2:
+    { "task_id": …, "model": "hive/…", "output": [ { "classes": [
+        { "class": "ai_generated", "score": 0.99 }, … ] } ] }
 */
 
-const ENDPOINT = "https://api.thehive.ai/api/v2/task/sync";
+const ENDPOINT = "https://api.thehive.ai/api/v3/hive/ai-generated-detection";
 
 type HiveClass = { class?: string; score?: number };
-type HiveOutput = { classes?: HiveClass[] };
 type Reply = {
-  status?: {
-    status?: { code?: string; message?: string };
-    response?: { output?: HiveOutput[] };
-  }[];
+  task_id?: string;
+  model?: string;
+  output?: { classes?: HiveClass[] }[];
   message?: string;
 };
 
-/** Оценка класса из плоского списка пар. */
 const scoreOf = (classes: HiveClass[], name: string): number | null => {
   const found = classes.find((item) => item.class === name);
   return typeof found?.score === "number" ? found.score : null;
@@ -60,7 +68,7 @@ async function ask(
     response = await fetch(ENDPOINT, {
       method: "POST",
       headers: {
-        authorization: `token ${headerSafe(creds.token ?? "", "API key")}`,
+        authorization: `Bearer ${headerSafe(creds.secret_key ?? "", "Secret Key")}`,
         accept: "application/json",
       },
       body: form,
@@ -71,31 +79,30 @@ async function ask(
   }
 
   const text = await response.text();
+
   if (!response.ok) {
     /*
-      «Invalid Auth Token» чаще всего означает не опечатку, а не тот вид
-      ключа. В консоли Hive выдаются два разных: пара «Access Key ID +
-      Secret Key» с правами вида sf1:*, va1:* — это их новая площадка, и
-      разбор изображений её не знает; и один project API key из раздела
-      «Integration & API Keys» в панели проекта — вот он и нужен.
-
-      Проверено вживую: пара «ключ и секрет» получает 403 во всех
-      сочетаниях, а адрес v3 отвечает одинаковым «Bad Request» даже на
-      заведомо несуществующий путь, то есть ничего не подтверждает.
-
-      Без этой подсказки человек видит «Invalid Auth Token» при верно
-      скопированном ключе и ищет опечатку там, где её нет.
+      Три отказа означают три разные вещи, и человеку надо сказать, какую
+      именно. Без этого он видит номер ошибки и ищет опечатку в ключе,
+      которого она не касается.
     */
-    const wrongKind =
-      response.status === 403 && text.includes("Invalid Auth Token");
-    throw new DetectorError(
-      wrongKind
-        ? "ключ не подошёл — похоже, взят не тот: разбору изображений " +
-          "нужен project API key из раздела «Integration & API Keys» в " +
-          "панели проекта, а не пара «Access Key ID + Secret Key»"
-        : `сервис ответил ${response.status}`,
-      text.slice(0, 200),
-    );
+    if (response.status === 403 && text.includes("cannot be accessed via API")) {
+      throw new DetectorError(
+        "ключ верный, но модель разбора изображений для вашей учётной " +
+          "записи не открыта — её включают по запросу в Hive",
+        text.slice(0, 200),
+      );
+    }
+    if (response.status === 401) {
+      throw new DetectorError(
+        "ключ не подошёл — нужен Secret Key, а не Access Key ID",
+        text.slice(0, 200),
+      );
+    }
+    if (response.status === 429) {
+      throw new DetectorError("слишком часто — сервис просит подождать");
+    }
+    throw new DetectorError(`сервис ответил ${response.status}`, text.slice(0, 200));
   }
 
   let body: Reply;
@@ -105,21 +112,18 @@ async function ask(
     throw new DetectorError("ответ не разобрался", text.slice(0, 200));
   }
 
-  const outputs = body.status?.[0]?.response?.output ?? [];
-  const classes = outputs.flatMap((item) => item.classes ?? []);
-
+  const classes = (body.output ?? []).flatMap((item) => item.classes ?? []);
   if (classes.length === 0) {
-    // Ответ пришёл, а классов в нём нет: либо путь к ним другой, либо
-    // задача не та. Молча вернуть «ничего» нельзя — это выглядело бы
-    // добросовестной оценкой.
+    // Ответ пришёл, а оценок в нём нет. Молча вернуть «ничего» нельзя:
+    // это выглядело бы добросовестным разбором.
     throw new DetectorError(
       "в ответе нет оценок — похоже, переходник разбирает не тот путь",
       text.slice(0, 300),
     );
   }
 
-  // Название генератора — вторая голова: там пары вида "flux": 0.98,
-  // а класс none означает «не берусь назвать».
+  // Название генератора приходит отдельными классами рядом с оценкой
+  // «сгенерировано»; none означает «не берусь назвать».
   const generator = classes
     .filter(
       (item) =>
