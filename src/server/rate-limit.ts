@@ -69,7 +69,38 @@ export type Record = {
   blockedUntil: number;
 };
 
+/*
+  Настройки вынесены в объект, потому что счётчик теперь не один.
+
+  Подача сообщения и проверка изображения — разные действия с разной ценой,
+  и мешать их в одном счёте нельзя: человек, проверивший пять картинок, не
+  должен обнаружить, что ему закрыли и подачу заявки. Числа для проверки
+  мягче: она никого не беспокоит и ничего не публикует, но стоит нам
+  запроса к модели.
+*/
+export type Limits = {
+  burst: number;
+  windowMs: number;
+  pausesMs: number[];
+  forgiveMs: number;
+};
+
+export const SUBMIT_LIMITS: Limits = {
+  burst: BURST,
+  windowMs: BURST_WINDOW_MS,
+  pausesMs: PAUSES_MS,
+  forgiveMs: FORGIVE_MS,
+};
+
+export const CHECK_LIMITS: Limits = {
+  burst: 10,
+  windowMs: 5 * 60 * 1000,
+  pausesMs: [30 * 1000, 60 * 1000, 5 * 60 * 1000],
+  forgiveMs: 10 * 60 * 1000,
+};
+
 const hits = new Map<string, Record>();
+const checks = new Map<string, Record>();
 
 /**
  * Адрес отправителя.
@@ -102,11 +133,26 @@ export const fresh = (): Record => ({
  * «нельзя ещё полминуты».
  */
 export async function takeSubmitSlot(): Promise<Decision> {
+  return take(hits, SUBMIT_LIMITS);
+}
+
+/**
+ * Можно ли проверить ещё одно изображение.
+ *
+ * Свой счёт, отдельно от подачи сообщений: проверка открыта всем и без
+ * входа, и её щедрость не должна отражаться на том, кто хочет сообщить о
+ * нарушении.
+ */
+export async function takeCheckSlot(): Promise<Decision> {
+  return take(checks, CHECK_LIMITS);
+}
+
+async function take(store: Map<string, Record>, limits: Limits): Promise<Decision> {
   const key = await callerFingerprint();
   const now = Date.now();
 
-  const { decision, next } = decide(hits.get(key) ?? fresh(), now);
-  hits.set(key, next);
+  const { decision, next } = decide(store.get(key) ?? fresh(), now, limits);
+  store.set(key, next);
   return decision;
 }
 
@@ -122,6 +168,7 @@ export type Decision = { ok: true } | { ok: false; seconds: number };
 export function decide(
   record: Record,
   now: number,
+  limits: Limits = SUBMIT_LIMITS,
 ): { decision: Decision; next: Record } {
   if (now < record.blockedUntil) {
     return {
@@ -132,15 +179,15 @@ export function decide(
 
   // Серия — только недавние отправки. Всё, что старше окна, к «подряд»
   // отношения не имеет и на счёт не идёт.
-  const times = record.times.filter((time) => now - time < BURST_WINDOW_MS);
+  const times = record.times.filter((time) => now - time < limits.windowMs);
 
   // Вёл себя прилично достаточно долго — прошлые паузы прощаются.
   const pauses =
-    record.lastPauseAt && now - record.lastPauseAt > FORGIVE_MS ? 0 : record.pauses;
+    record.lastPauseAt && now - record.lastPauseAt > limits.forgiveMs ? 0 : record.pauses;
 
-  if (times.length >= BURST) {
-    const step = Math.min(pauses, PAUSES_MS.length - 1);
-    const wait = PAUSES_MS[step];
+  if (times.length >= limits.burst) {
+    const step = Math.min(pauses, limits.pausesMs.length - 1);
+    const wait = limits.pausesMs[step];
 
     return {
       decision: { ok: false, seconds: Math.ceil(wait / 1000) },
@@ -161,13 +208,17 @@ export function decide(
 */
 const sweeper = setInterval(() => {
   const now = Date.now();
-  for (const [key, record] of hits) {
+  for (const store of [hits, checks]) sweep(store, now);
+}, MEMORY_MS);
+
+function sweep(store: Map<string, Record>, now: number): void {
+  for (const [key, record] of store) {
     const times = record.times.filter((time) => now - time < BURST_WINDOW_MS);
     const stale = now - Math.max(record.lastPauseAt, ...record.times, 0) > MEMORY_MS;
-    if (times.length === 0 && now > record.blockedUntil && stale) hits.delete(key);
-    else hits.set(key, { ...record, times });
+    if (times.length === 0 && now > record.blockedUntil && stale) store.delete(key);
+    else store.set(key, { ...record, times });
   }
-}, MEMORY_MS);
+}
 
 // Иначе процесс не завершится: таймер держит его открытым.
 sweeper.unref?.();

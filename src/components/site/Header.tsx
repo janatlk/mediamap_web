@@ -68,6 +68,7 @@ export default function Header({ dict, lang, account }: Props) {
   ];
 
   const secondary = [
+    { href: `/${lang}/check`, label: dict.nav.check },
     { href: `/${lang}/resources`, label: dict.nav.resources },
     { href: `/${lang}/glossary`, label: dict.nav.glossary },
     { href: `/${lang}/quiz`, label: dict.nav.quiz },
