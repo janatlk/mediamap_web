@@ -72,7 +72,30 @@ async function ask(
 
   const text = await response.text();
   if (!response.ok) {
-    throw new DetectorError(`сервис ответил ${response.status}`, text.slice(0, 200));
+    /*
+      «Invalid Auth Token» чаще всего означает не опечатку, а не тот вид
+      ключа. В консоли Hive выдаются два разных: пара «Access Key ID +
+      Secret Key» с правами вида sf1:*, va1:* — это их новая площадка, и
+      разбор изображений её не знает; и один project API key из раздела
+      «Integration & API Keys» в панели проекта — вот он и нужен.
+
+      Проверено вживую: пара «ключ и секрет» получает 403 во всех
+      сочетаниях, а адрес v3 отвечает одинаковым «Bad Request» даже на
+      заведомо несуществующий путь, то есть ничего не подтверждает.
+
+      Без этой подсказки человек видит «Invalid Auth Token» при верно
+      скопированном ключе и ищет опечатку там, где её нет.
+    */
+    const wrongKind =
+      response.status === 403 && text.includes("Invalid Auth Token");
+    throw new DetectorError(
+      wrongKind
+        ? "ключ не подошёл — похоже, взят не тот: разбору изображений " +
+          "нужен project API key из раздела «Integration & API Keys» в " +
+          "панели проекта, а не пара «Access Key ID + Secret Key»"
+        : `сервис ответил ${response.status}`,
+      text.slice(0, 200),
+    );
   }
 
   let body: Reply;

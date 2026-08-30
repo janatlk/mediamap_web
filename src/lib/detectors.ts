@@ -66,7 +66,16 @@ export const DETECTORS: DetectorInfo[] = [
     name: "Hive AI",
     console: "https://thehive.ai/",
     docs: "https://docs.thehive.ai/docs/ai-image-and-video-detection",
-    fields: [{ name: "token", label: "API key", hint: "ключ версии v2" }],
+    fields: [
+      {
+        name: "token",
+        label: "Project API key",
+        hint:
+          "В панели проекта: кнопка «Integration & API Keys». Одна " +
+          "строка. Пара «Access Key ID + Secret Key» — это другой ключ, " +
+          "от их новой площадки, и разбору изображений он не подходит.",
+      },
+    ],
     free: "100 запросов в день",
     price: "$6 за 1000 изображений; видео — $6 за 1000 кадров",
     video: true,
