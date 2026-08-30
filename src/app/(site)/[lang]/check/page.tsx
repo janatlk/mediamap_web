@@ -51,9 +51,8 @@ export default async function CheckPage({
 
         <section className="mt-8 border-l-2 border-line pl-5">
           <h2 className="text-lg">{words.limitsTitle}</h2>
-          <p className="mt-2 max-w-prose text-muted">{words.limitsBody}</p>
+          <p className="mt-2 max-w-prose text-muted">{words.limitsFile}</p>
           <p className="mt-3 max-w-prose text-muted">{words.limitsGuess}</p>
-          <p className="mt-3 max-w-prose text-muted">{words.limitsScreenshot}</p>
           {/* Файл уходит третьим лицам. Обещание «мы не храним» правдиво, но
               неполно, а неполная правда тут хуже полного молчания. */}
           <p className="mt-3 max-w-prose text-muted">{words.limitsThirdParty}</p>

@@ -185,29 +185,26 @@ function Result({
       ) : null}
 
       {detectors.length > 0 ? (
-        <div className="mt-8 border border-line p-5">
+        <div className="mt-8">
           <h3 className="eyebrow">{words.detectorsTitle}</h3>
 
-          <ul className="mt-4">
+          <div className="mt-4 grid gap-px bg-line">
             {detectors.map((item) => (
-              <li key={item.service} className="mt-2 text-sm">
-                <span className="text-ink">
-                  {detectorById(item.service)?.name ?? item.service}
-                </span>
-                <span className="text-muted">
-                  {" — "}
-                  {said(words, item.score)}
-                  {item.generator ? `, ${item.generator}` : ""}
-                </span>
-              </li>
+              <ServiceCard
+                key={item.service}
+                words={words}
+                name={detectorById(item.service)?.name ?? item.service}
+                score={item.score}
+                generator={item.generator}
+              />
             ))}
-          </ul>
+          </div>
 
           {/*
             Оговорка выбирается по нашему же разбору, а не пишется одна на
-            все случаи. Если метаданные уцелели, файл не проходил через
-            соцсеть и оценке можно доверять больше; если стёрты — перед нами
-            скриншот, а на скриншотах эти сервисы и ошибаются.
+            все случаи. Метаданные уцелели — файл не проходил через соцсеть,
+            и числу можно доверять больше; стёрты — перед нами скриншот, а
+            на скриншотах эти сервисы и ошибаются.
           */}
           <p className="mt-4 max-w-prose text-sm text-muted">
             {found(data.origin)
@@ -220,7 +217,7 @@ function Result({
             человек видит два ответа рядом и вправе знать, какому верить.
           */}
           {disagrees(data, detectors) ? (
-            <p className="mt-3 max-w-prose border-l-2 border-line pl-4 text-sm text-muted">
+            <p className="mt-3 max-w-prose border-l-2 border-signal pl-4 text-sm text-muted">
               {words.detectorsDisagree}
             </p>
           ) : null}
@@ -235,7 +232,68 @@ function Result({
   );
 }
 
-/** Оценка словами. Проценты обещали бы точность, которой тут нет. */
+/*
+  Ответ одного сервиса: слово, число и полоса.
+
+  Слово говорит, что это значит, число — насколько сервис уверен. Порознь
+  они хуже: одно слово скрывает разницу между 0.51 и 0.99, одно число
+  ничего не значит человеку, который не знает шкалы.
+
+  Полоса нужна ровно для того, чтобы разницу было видно не читая. Цвет у
+  неё один на все значения — тёмный. Красить высокие оценки тревожным
+  цветом было бы обвинением: сгенерированное изображение само по себе не
+  нарушение, а страницу открывают и просто из любопытства.
+*/
+function ServiceCard({
+  words,
+  name,
+  score,
+  generator,
+}: {
+  words: Dictionary["checkPage"];
+  name: string;
+  score: number;
+  generator: string | null;
+}) {
+  const percent = Math.round(score * 100);
+
+  return (
+    <div className="bg-surface p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+        <p className="text-lg">{said(words, score)}</p>
+        <p className="font-mono text-sm text-muted">{name}</p>
+      </div>
+
+      <p className="mt-4 text-sm text-muted">{words.detectorScale}</p>
+
+      <div className="mt-2 flex items-center gap-3">
+        <div
+          className="h-2 flex-1 overflow-hidden rounded-full bg-line"
+          role="img"
+          aria-label={`${words.detectorScale}: ${percent}%`}
+        >
+          {/* Минимум в один процент: при 0.006 полоса иначе исчезает
+              совсем, и человек решает, что её не нарисовали. */}
+          <span
+            className="block h-full rounded-full bg-ink"
+            style={{ width: `${Math.max(1, percent)}%` }}
+          />
+        </div>
+        <span className="w-12 text-right font-mono text-sm tabular-nums">
+          {percent}%
+        </span>
+      </div>
+
+      {generator ? (
+        <p className="mt-3 text-sm text-muted">
+          {words.detectorGenerator} {generator}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Ответ словом. Число рядом — в карточке. */
 function said(words: Dictionary["checkPage"], score: number): string {
   if (score >= 0.9) return words.detectorSure;
   if (score >= 0.5) return words.detectorLikely;
