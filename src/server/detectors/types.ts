@@ -56,14 +56,26 @@ export type Detector = {
 };
 
 /*
-  Картинка для проверки ключа: 1×1 пиксель, 68 байт.
+  Картинка для проверки ключа: 16x16, 132 байта.
 
-  Настоящее изображение, а не пустой запрос: сервисы отвечают ошибкой
-  разбора на что угодно другое, и по такой ошибке не отличить «ключ не
-  подошёл» от «файл не тот».
+  Настоящее изображение, а не пустой запрос: на что угодно другое сервисы
+  отвечают ошибкой разбора, и по ней не отличить «ключ не подошёл» от
+  «файл не тот».
+
+  Размер выбран не наугад. Сначала здесь лежал один пиксель — самое
+  дешёвое, что можно послать, — и Sightengine отвечал на него «Media too
+  small, should be at least 8 pixels in height or width». Ключ при этом был
+  рабочий, но проверка показывала отказ, то есть врала ровно в том, ради
+  чего затевалась. Шестнадцать — с запасом над их порогом.
+
+  И не сплошная заливка, а градиент с узором: на однотонном квадрате часть
+  сервисов отвечает уже своей ошибкой, и мы бы поменяли одну ложную неудачу
+  на другую.
 */
 export const TINY_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAS0lEQVR42mNkYGAQYBAgHrEwCAgw" +
+    "MHxgYFAgkoRoUGBguMDAIMDAQJgNt4FYEm4DxJgJMAbcVHRxND8QZtPdD4QRnngQGI0Hsv0AANv8" +
+    "Wq4+gUAwAAAAAElFTkSuQmCC",
   "base64",
 );
 

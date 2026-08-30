@@ -16,6 +16,12 @@ import { compareDetectors, type CompareState } from "@/server/detector-actions";
   Смотреть надо прежде всего на настоящих фотографиях: ложное срабатывание
   для нас хуже пропуска. Назвать подлинный снимок подделкой значит помочь
   тому, кто хочет от него отмахнуться.
+
+  Рядом показывается наш собственный разбор — тот, что отвечает подписью и
+  метаданными. Первый же живой прогон это оправдал: на обычном снимке
+  рабочего стола сторонний сервис ответил «сгенерировано, 0.99», а наш —
+  «следов не осталось». Расхождение такого размера надо видеть на одном
+  экране.
 */
 
 /** Оценка словами. Проценты здесь были бы обманом точности. */
@@ -59,8 +65,27 @@ export default function DetectorCompare() {
 
       {state.error ? <p className="warn">{state.error}</p> : null}
 
+      {state.ours ? (
+        <>
+          <h3>Наш разбор</h3>
+          <p>
+            <span className="status">{state.ours.headline}</span>
+            {state.ours.generator ? ` · ${state.ours.generator}` : ""}
+          </p>
+          <ul>
+            {state.ours.evidence.map((item, index) => (
+              <li key={index} className="note">
+                {item.layer}: {item.detail.slice(0, 160)}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+      {state.oursError ? <p className="note">{state.oursError}</p> : null}
+
       {state.results ? (
         <>
+          <h3>Сторонние сервисы</h3>
           <p className="note">Файл: {state.fileName}</p>
           <table>
             <thead>

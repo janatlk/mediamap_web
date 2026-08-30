@@ -7,6 +7,7 @@ import { requireEditor } from "@/lib/guard";
 import { secretsKeyReady } from "@/lib/secret-box";
 import { ruleFor } from "@/lib/attachment-rules";
 import { ATTACHMENT_KIND } from "@/lib/enums";
+import { examineImage, provenanceEnabled, type ProvenanceResult } from "./provenance";
 import {
   compareAll,
   probeKey,
@@ -109,6 +110,16 @@ export type CompareState = {
   error?: string;
   fileName?: string;
   results?: Comparison[];
+  /**
+   * Наш собственный разбор того же файла.
+   *
+   * Показывается рядом со сторонними оценками намеренно. Первый же живой
+   * прогон это оправдал: на обычном снимке рабочего стола сервис ответил
+   * «сгенерировано, 0.99», а наш разбор — «следов не осталось». Видеть
+   * такое расхождение надо на одном экране, а не выяснять перепиской.
+   */
+  ours?: ProvenanceResult;
+  oursError?: string;
 };
 
 /**
@@ -136,11 +147,33 @@ export async function compareDetectors(
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const results = await compareAll(bytes, file.type);
+
+  /*
+    Свой разбор и чужие оценки спрашиваем разом. Наблюдения модели не
+    просим: здесь сравниваются доказательства с догадками, а наблюдения —
+    третье, и они стоят секунд и денег.
+  */
+  const [results, ours] = await Promise.all([
+    compareAll(bytes, file.type),
+    provenanceEnabled()
+      ? examineImage(bytes, file.type, { observe: false }).catch((error) => {
+          console.error("свой разбор не удался:", error);
+          return null;
+        })
+      : Promise.resolve(null),
+  ]);
 
   if (results.length === 0) {
-    return { error: "Нет ни одного включённого сервиса с рабочим ключом" };
+    return {
+      error: "Нет ни одного включённого сервиса с рабочим ключом",
+      ours: ours ?? undefined,
+    };
   }
 
-  return { fileName: file.name, results };
+  return {
+    fileName: file.name,
+    results,
+    ours: ours ?? undefined,
+    oursError: ours ? undefined : "свой разбор не ответил",
+  };
 }
