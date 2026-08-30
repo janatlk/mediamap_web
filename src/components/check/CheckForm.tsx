@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ImageUp, Loader2, ShieldCheck } from "lucide-react";
 
+import { detectorById } from "@/lib/detectors";
 import type { Dictionary } from "@/lib/i18n";
 import type { Origin, ProvenanceResult } from "@/server/provenance";
 
@@ -17,8 +18,14 @@ import type { Origin, ProvenanceResult } from "@/server/provenance";
   всем, и обещание стоит того, чтобы быть правдой.
 */
 
+type DetectorScore = {
+  service: string;
+  score: number;
+  generator: string | null;
+};
+
 type Answer =
-  | { kind: "ok"; result: ProvenanceResult }
+  | { kind: "ok"; result: ProvenanceResult; detectors: DetectorScore[] }
   | { kind: "error"; code: string; seconds?: number };
 
 /*
@@ -50,11 +57,18 @@ export default function CheckForm({ dict }: { dict: Dictionary }) {
     try {
       const response = await fetch("/api/check", { method: "POST", body });
       const data = (await response.json()) as
-        | { status: "ok"; result: ProvenanceResult }
+        | { status: "ok"; result: ProvenanceResult; detectors?: DetectorScore[] }
         | { status: "error"; error: string; seconds?: number };
 
-      if (data.status === "ok") setAnswer({ kind: "ok", result: data.result });
-      else setAnswer({ kind: "error", code: data.error, seconds: data.seconds });
+      if (data.status === "ok") {
+        setAnswer({
+          kind: "ok",
+          result: data.result,
+          detectors: data.detectors ?? [],
+        });
+      } else {
+        setAnswer({ kind: "error", code: data.error, seconds: data.seconds });
+      }
     } catch {
       setAnswer({ kind: "error", code: "failed" });
     } finally {
@@ -106,12 +120,22 @@ export default function CheckForm({ dict }: { dict: Dictionary }) {
         </p>
       ) : null}
 
-      {answer?.kind === "ok" ? <Result dict={dict} data={answer.result} /> : null}
+      {answer?.kind === "ok" ? (
+        <Result dict={dict} data={answer.result} detectors={answer.detectors} />
+      ) : null}
     </div>
   );
 }
 
-function Result({ dict, data }: { dict: Dictionary; data: ProvenanceResult }) {
+function Result({
+  dict,
+  data,
+  detectors,
+}: {
+  dict: Dictionary;
+  data: ProvenanceResult;
+  detectors: DetectorScore[];
+}) {
   const words = dict.checkPage;
 
   return (
@@ -160,10 +184,74 @@ function Result({ dict, data }: { dict: Dictionary; data: ProvenanceResult }) {
         </div>
       ) : null}
 
+      {detectors.length > 0 ? (
+        <div className="mt-8 border border-line p-5">
+          <h3 className="eyebrow">{words.detectorsTitle}</h3>
+
+          <ul className="mt-4">
+            {detectors.map((item) => (
+              <li key={item.service} className="mt-2 text-sm">
+                <span className="text-ink">
+                  {detectorById(item.service)?.name ?? item.service}
+                </span>
+                <span className="text-muted">
+                  {" — "}
+                  {said(words, item.score)}
+                  {item.generator ? `, ${item.generator}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/*
+            Оговорка выбирается по нашему же разбору, а не пишется одна на
+            все случаи. Если метаданные уцелели, файл не проходил через
+            соцсеть и оценке можно доверять больше; если стёрты — перед нами
+            скриншот, а на скриншотах эти сервисы и ошибаются.
+          */}
+          <p className="mt-4 max-w-prose text-sm text-muted">
+            {found(data.origin)
+              ? words.detectorsNoteClean
+              : words.detectorsNoteStripped}
+          </p>
+
+          {/*
+            Прямое расхождение со свидетельством. Молчать о нём нельзя:
+            человек видит два ответа рядом и вправе знать, какому верить.
+          */}
+          {disagrees(data, detectors) ? (
+            <p className="mt-3 max-w-prose border-l-2 border-line pl-4 text-sm text-muted">
+              {words.detectorsDisagree}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <p className="mt-8 flex items-start gap-2 text-sm text-muted">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         {words.notStored}
       </p>
     </section>
   );
+}
+
+/** Оценка словами. Проценты обещали бы точность, которой тут нет. */
+function said(words: Dictionary["checkPage"], score: number): string {
+  if (score >= 0.9) return words.detectorSure;
+  if (score >= 0.5) return words.detectorLikely;
+  if (score >= 0.1) return words.detectorUnlikely;
+  return words.detectorNo;
+}
+
+/**
+ * Спорит ли сервис с тем, что записано в файле.
+ *
+ * Спор только в одну сторону считаем спором: файл говорит «снято камерой»
+ * или «подписано как съёмка», а сервис — «сгенерировано». Обратный случай
+ * (в файле след генератора, сервис молчит) спором не является: сервис
+ * метаданных не читает и знать про них не может.
+ */
+function disagrees(data: ProvenanceResult, detectors: DetectorScore[]): boolean {
+  const saysCamera = data.origin === "camera" || data.origin === "screen";
+  return saysCamera && detectors.some((item) => item.score >= 0.5);
 }

@@ -4,6 +4,7 @@ import { ruleFor } from "@/lib/attachment-rules";
 import { ATTACHMENT_KIND } from "@/lib/enums";
 import { takeCheckSlot } from "@/server/rate-limit";
 import { examineImage, provenanceEnabled } from "@/server/provenance";
+import { compareAll } from "@/server/detectors";
 
 /*
   Проверка изображения из открытой рубрики.
@@ -61,13 +62,43 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const bytes = Buffer.from(await file.arrayBuffer());
 
-  try {
-    const result = await examineImage(bytes, file.type);
-    return NextResponse.json({ status: "ok", result });
-  } catch (error) {
-    // В журнал — с причиной, человеку — что проверка не вышла. Молча вернуть
-    // «следов не нашли» нельзя: это выглядело бы ответом, а не сбоем.
-    console.error("разбор происхождения не удался:", error);
-    return fail("failed", 502);
-  }
+  /*
+    Свой разбор и сторонние сервисы спрашиваем разом.
+
+    Свой отвечает свидетельством — подписью, метаданными — и молчит, когда
+    свидетельств нет. Сторонние смотрят на пиксели и отвечают всегда, в том
+    числе неправильно: на снимке рабочего стола один из них выдал
+    «сгенерировано, 0.99». Поэтому их ответ идёт отдельным блоком и никогда
+    не перебивает наш.
+
+    Сбой сторонних не роняет проверку: своё свидетельство от этого не хуже.
+    Обратное неверно — если упал свой разбор, отвечать одними догадками
+    нельзя, и это честный отказ.
+  */
+  const [result, detectors] = await Promise.all([
+    examineImage(bytes, file.type).catch((error) => {
+      console.error("разбор происхождения не удался:", error);
+      return null;
+    }),
+    compareAll(bytes, file.type).catch((error) => {
+      console.error("сторонние сервисы не ответили:", error);
+      return [];
+    }),
+  ]);
+
+  if (!result) return fail("failed", 502);
+
+  return NextResponse.json({
+    status: "ok",
+    result,
+    // Наружу отдаём только то, что показываем: сырые ответы сервисов
+    // остаются в панели, человеку на странице они ни к чему.
+    detectors: detectors
+      .filter((item) => item.ok && item.score !== null)
+      .map((item) => ({
+        service: item.service,
+        score: item.score as number,
+        generator: item.generator,
+      })),
+  });
 }

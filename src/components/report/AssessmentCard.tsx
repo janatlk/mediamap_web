@@ -35,92 +35,6 @@ type Props = {
   hasLink?: boolean;
 };
 
-/** Ниже этого уверенность слишком мала, чтобы отвечать «нет». */
-const SURE_ENOUGH = 0.7;
-
-/**
- * Название вида внутрь фразы — со строчной буквы.
- *
- * В словаре виды записаны как заголовки: «Дезинформация», «Язык вражды». В
- * подписи к полю это верно, а в середине предложения получалось «это не
- * Дезинформация» — будто название организации.
- */
-const inSentence = (name: string) => name.charAt(0).toLowerCase() + name.slice(1);
-
-/*
-  Прямой ответ на то, что заявил человек.
-
-  Карточка объясняла, что решила модель, но не отвечала на вопрос, с которым
-  человек пришёл. Он выбрал «дезинформация» — и хотел услышать, дезинформация
-  это или нет. Вместо этого он читал «Вид не определён», а ниже разбор,
-  который до конца дочитывает не всякий.
-
-  Три возможных ответа, и третий не хуже первых двух: «не берусь». Он
-  честнее, чем «нет» на пустом месте, а к тому же прямо ведёт к тому, что
-  сообщение всё равно смотрит человек.
-*/
-function Conclusion({
-  dict,
-  chosenType,
-  check,
-  verdict,
-  source,
-}: {
-  dict: Dictionary;
-  chosenType: string;
-  check?: TypeCheck;
-  verdict: Assessment["verdict"];
-  source: Assessment["source"];
-}) {
-  const words = dict.assessment.conclusion;
-  const chosenName = inSentence(violationText(dict, chosenType)?.name ?? chosenType);
-
-  // Вид, который модель всё-таки нашла, если он не тот, что выбрал человек.
-  const other =
-    verdict !== "unclear" && verdict !== chosenType
-      ? inSentence(violationText(dict, verdict)?.name ?? verdict)
-      : null;
-
-  const answer = ((): { text: string; sure: boolean } => {
-    // Оценку снимал разбор по словам: у него нет мнения о видах, есть
-    // совпадения слов. Выдавать это за ответ модели нельзя.
-    if (source === "rules" || !check) {
-      return { text: words.notChecked, sure: false };
-    }
-    if (check.found) {
-      return { text: words.yes.replace("{type}", chosenName), sure: true };
-    }
-    if (check.confidence < SURE_ENOUGH) {
-      return { text: words.unsure, sure: false };
-    }
-    return { text: words.no.replace("{type}", chosenName), sure: true };
-  })();
-
-  return (
-    <div className="border-b border-line px-6 py-5">
-      <p className="text-sm text-muted">{words.title}</p>
-      <p className="mt-2 flex items-start gap-2 text-lg">
-        {/* Знак вопроса только у неуверенного ответа: у «да» и «нет» вид
-            нейтральный. Галочка рядом с «нет, это не дезинформация» читалась
-            бы как «всё в порядке», хотя мы не о том. */}
-        {answer.sure ? null : (
-          <HelpCircle
-            className="mt-1.5 h-4 w-4 shrink-0 text-muted"
-            aria-hidden="true"
-          />
-        )}
-        <span className="max-w-prose">{answer.text}</span>
-      </p>
-
-      {other ? (
-        <p className="mt-2 max-w-prose text-base text-muted">
-          {words.butOther.replace("{other}", other)}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 /*
   Уверенность — словом, без процентов.
 
@@ -245,42 +159,36 @@ export default function AssessmentCard({
       </header>
 
       {/*
-        Вывод — это ответ модели, и показывается он только пока ответ её.
+        Прямого ответа «да, это язык вражды» или «нет, это не он» здесь
+        больше нет — по решению проекта.
 
-        Проверяющий подтверждает разбор целиком, а не выбирает вид нарушения,
-        поэтому писать от его имени «подтвердил нарушение — дезинформация»
-        было неправдой: такого решения он не принимал. А если он переписал
-        вердикт, уверенность или пояснение, прежний вывод модели описывает
-        уже не тот ответ, что на странице, — и его нет.
+        Он читался как приговор заявке. Человек написал о чужой публикации,
+        а получал короткое «Нет, это не язык вражды» — от машины, которая
+        материала часто и не видела, ещё до того как на сообщение посмотрел
+        живой проверяющий. Отказ звучал окончательно, хотя окончательным не
+        был.
+
+        Остался разбор: что модель нашла, насколько уверена и на чём это
+        стоит. Он говорит ровно столько, сколько мы знаем, и не
+        притворяется решением.
+
+        Строка ниже — на чём разбор стоит. Она нужна ровно потому, что без
+        неё человек читает оценку как приговор материалу: он написал о
+        чужой публикации, а модель разбирала его собственные слова о ней.
+        Один раз так и вышло — заявитель спросил про видео в инстаграме, и
+        мы уверенно ответили про видео, которого никто не открывал.
       */}
       {overridden ? null : (
-        <>
-          <Conclusion
-            dict={dict}
-            chosenType={chosenType}
-            check={chosenCheck}
-            verdict={assessment.verdict}
-            source={assessment.source}
-          />
-
-          {/*
-            На чём стоит вывод. Строка нужна ровно потому, что без неё
-            человек читает вывод как приговор материалу: он написал о чужой
-            публикации, а модель разбирала его собственные слова о ней. Один
-            раз так и вышло — заявитель спросил про видео в инстаграме, и мы
-            уверенно ответили про видео, которого никто не открывал.
-          */}
-          <p className="border-b border-line px-6 py-3 text-sm text-muted">
-            {basis === "image"
-              ? words.checkedImage
-              : basis === "link"
-                ? words.checkedLink
-                : words.checkedStory}
-            {/* Ссылка была, но открыть её не вышло — про это надо сказать
-                отдельно, иначе человек решит, что публикацию посмотрели. */}
-            {basis === "story" && hasLink ? ` ${words.checkedLinkFailed}` : ""}
-          </p>
-        </>
+        <p className="border-b border-line px-6 py-3 text-sm text-muted">
+          {basis === "image"
+            ? words.checkedImage
+            : basis === "link"
+              ? words.checkedLink
+              : words.checkedStory}
+          {/* Ссылка была, но открыть её не вышло — про это надо сказать
+              отдельно, иначе человек решит, что публикацию посмотрели. */}
+          {basis === "story" && hasLink ? ` ${words.checkedLinkFailed}` : ""}
+        </p>
       )}
 
       <div className="grid gap-px bg-line sm:grid-cols-3">
