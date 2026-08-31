@@ -510,7 +510,12 @@ const en = {
   violations,
 
   footer: {
-    rights: "The MediaMap project",
+    /*
+      Строка копирайта. Название юридического лица прислано проектом и во
+      всех трёх языках стоит одинаково: это имя организации, а не текст,
+      который переводят. Печатается после «© <год> ·» — см. Footer.tsx.
+    */
+    rights: "Проект MediaMap.kg / ОФ «Фонд развития медиаконсалтинга в ЦА»",
     admin: "Staff sign-in",
     /*
       Donor disclaimer. Same sentence as on the About page, in the European

@@ -1,6 +1,6 @@
+import TextRow from "@/components/admin/TextRow";
 import { requireEditor } from "@/lib/guard";
 import { listTexts, type TextEntry } from "@/server/content";
-import { resetText, saveText } from "@/server/text-actions";
 
 export const metadata = { title: "Тексты сайта" };
 
@@ -34,67 +34,6 @@ const SECTIONS: Record<string, string> = {
   footer: "Подвал",
   a11y: "Для скринридеров",
 };
-
-function Row({ entry, section }: { entry: TextEntry; section: string }) {
-  // Длинному тексту нужно поле в несколько строк, короткому — одна.
-  const isLong = entry.ru.length > 90;
-
-  return (
-    <form>
-      <input type="hidden" name="key" value={entry.key} />
-
-      {/* У разделов из одной строки ключ совпадает с ключом раздела, и в
-          заголовке он уже написан — повторять его строкой ниже незачем. */}
-      <p className="id">
-        {entry.key === section ? "" : entry.key}
-        {entry.changed ? (entry.key === section ? "" : " · ") : ""}
-        {entry.changed ? <b>изменено</b> : ""}
-      </p>
-
-      <label>
-        Русский:
-        <br />
-        {isLong ? (
-          <textarea name="ru" rows={3} cols={70} defaultValue={entry.ru} />
-        ) : (
-          <input name="ru" size={70} defaultValue={entry.ru} />
-        )}
-      </label>
-      <br />
-      <label>
-        Кыргызча:
-        <br />
-        {isLong ? (
-          <textarea name="ky" rows={3} cols={70} defaultValue={entry.ky} />
-        ) : (
-          <input name="ky" size={70} defaultValue={entry.ky} />
-        )}
-      </label>
-      <br />
-      <label>
-        English:
-        <br />
-        {isLong ? (
-          <textarea name="en" rows={3} cols={70} defaultValue={entry.en} />
-        ) : (
-          <input name="en" size={70} defaultValue={entry.en} />
-        )}
-      </label>
-      <p>
-        <button type="submit" formAction={saveText}>
-          Сохранить
-        </button>{" "}
-        {/* Возврат к исходному тексту — не «очистить»: пустое поле оставило
-            бы страницу без слов, а тут возвращается текст из словаря. */}
-        {entry.changed ? (
-          <button type="submit" formAction={resetText}>
-            Вернуть исходный
-          </button>
-        ) : null}
-      </p>
-    </form>
-  );
-}
 
 export default async function TextsPage() {
   await requireEditor();
@@ -138,7 +77,7 @@ export default async function TextsPage() {
           </h2>
 
           {rows.map((entry) => (
-            <Row key={entry.key} entry={entry} section={section} />
+            <TextRow key={entry.key} entry={entry} section={section} />
           ))}
         </section>
       ))}
