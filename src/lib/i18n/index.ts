@@ -20,12 +20,14 @@ export const FORMS: Record<Lang, Record<string, Forms>> = {
     types: ["вид", "вида", "видов"],
     news: ["новость", "новости", "новостей"],
     sources: ["площадка", "площадки", "площадок"],
+    days: ["день", "дня", "дней"],
   },
   ky: {
     cases: ["учур", "учур", "учур"],
     types: ["түр", "түр", "түр"],
     news: ["жаңылык", "жаңылык", "жаңылык"],
     sources: ["аянтча", "аянтча", "аянтча"],
+    days: ["күн", "күн", "күн"],
   },
   // Английскому нужны две формы; третья повторяет вторую и не используется.
   en: {
@@ -33,6 +35,7 @@ export const FORMS: Record<Lang, Record<string, Forms>> = {
     types: ["type", "types", "types"],
     news: ["item", "items", "items"],
     sources: ["platform", "platforms", "platforms"],
+    days: ["day", "days", "days"],
   },
 };
 

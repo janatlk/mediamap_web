@@ -58,9 +58,8 @@ const en = {
        violation». Поэтому хвост здесь — не название само по себе, а его
        продолжение; иначе выходило «3 types violation types». */
     statCases: "verified",
-    statTypes: "of violation",
-    statNews: "collected",
-    statSources: "monitored",
+    statRecent: "in the past month",
+    statReviewDays: "— how long a review takes",
 
     casesTitle: "Verified cases",
     casesLead: "What we confirmed after review.",

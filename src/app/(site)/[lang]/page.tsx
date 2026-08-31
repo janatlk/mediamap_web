@@ -46,9 +46,8 @@ export default async function HomePage({
         dict={dict}
         lang={lang}
         caseCount={data.caseCount}
-        typeCount={data.types.length}
-        sourceCount={data.sourceCount}
-        newsCount={data.newsCount}
+        recentCount={data.recentCount}
+        reviewDays={data.reviewDays}
       />
 
       <ViolationTypes dict={dict} lang={lang} types={data.types} />

@@ -34,6 +34,51 @@ const countCases = () => db.report.count({ where: CONFIRMED });
 /** Сколько новостей собрано за всё время. */
 const countNews = () => db.newsItem.count();
 
+/** Сколько дней считаем «недавним». Месяц — привычная мерка. */
+const RECENT_DAYS = 30;
+
+/**
+ * Подтверждено за последний месяц.
+ *
+ * Общий итог говорит «проект жил когда-то», месячный — «жив сейчас». Ради
+ * этой разницы число и появилось: полоса из четырёх итогов за всё время не
+ * менялась месяцами и потому ничего не сообщала.
+ */
+const countRecent = () =>
+  db.report.count({
+    where: {
+      ...CONFIRMED,
+      reviewedAt: { gte: new Date(Date.now() - RECENT_DAYS * 86_400_000) },
+    },
+  });
+
+/**
+ * Сколько дней в среднем проходит от подачи до решения.
+ *
+ * Это обещание, которое мы и так даём словами: на форме написано «обычно
+ * несколько дней». Здесь то же самое числом — то есть проверяемо.
+ *
+ * null, пока рассмотренных меньше трёх: среднее по двум — не среднее, а
+ * пересказ двух случаев, и первая же долгая проверка удвоит его.
+ */
+async function averageReviewDays(): Promise<number | null> {
+  const rows = await db.report.findMany({
+    where: { ...CONFIRMED, reviewedAt: { not: null } },
+    select: { createdAt: true, reviewedAt: true },
+  });
+
+  if (rows.length < 3) return null;
+
+  const days = rows.map(
+    (row) => (row.reviewedAt!.getTime() - row.createdAt.getTime()) / 86_400_000,
+  );
+  const average = days.reduce((sum, value) => sum + value, 0) / days.length;
+
+  // Меньше суток округлилось бы в ноль, а «проверяем за 0 дней» — неправда
+  // даже когда приятная.
+  return Math.max(1, Math.round(average));
+}
+
 /** Последние подтверждённые случаи. */
 async function loadCases(limit: number): Promise<CaseRow[]> {
   const rows = await db.report.findMany({
@@ -109,6 +154,10 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
 
 export type HomeData = {
   caseCount: number;
+  /** Подтверждено за последний месяц. */
+  recentCount: number;
+  /** Средний срок проверки в днях. null — рассмотренных ещё слишком мало. */
+  reviewDays: number | null;
   newsCount: number;
   sourceCount: number;
   types: ViolationType[];
@@ -120,9 +169,11 @@ const CASES_ON_PAGE = 8;
 const NEWS_ON_PAGE = 5;
 
 export async function getHomeData(): Promise<HomeData> {
-  const [caseCount, newsCount, sourceCount, types, cases, news] =
+  const [caseCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news] =
     await Promise.all([
       countCases(),
+      countRecent(),
+      averageReviewDays(),
       countNews(),
       countSources(),
       loadViolationTypes(),
@@ -130,5 +181,14 @@ export async function getHomeData(): Promise<HomeData> {
       loadNews(NEWS_ON_PAGE),
     ]);
 
-  return { caseCount, newsCount, sourceCount, types, cases, news };
+  return {
+    caseCount,
+    recentCount,
+    reviewDays,
+    newsCount,
+    sourceCount,
+    types,
+    cases,
+    news,
+  };
 }

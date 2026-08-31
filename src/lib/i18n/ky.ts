@@ -48,9 +48,8 @@ const ky: typeof ru = {
     slogan: "Биз таанып, текшерип, коргойбуз",
 
     statCases: "текшерилди",
-    statTypes: "бузуунун түрү",
-    statNews: "чогултулган",
-    statSources: "байкоодо",
+    statRecent: "акыркы айда",
+    statReviewDays: "— текшерүү ушунча убакыт алат",
 
     casesTitle: "Текшерилген учурлар",
     casesLead: "Текшерүүдөн кийин тастыктаганыбыз.",

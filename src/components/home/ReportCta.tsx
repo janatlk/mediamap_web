@@ -23,7 +23,11 @@ export default function ReportCta({
       <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl">{dict.home.ctaTitle}</h2>
+            {/* Цвет задан прямо, и это не лишнее. Заголовкам в globals.css
+                назначен свой цвет — тёмный, для светлых страниц, — и он
+                сильнее унаследованного от секции. На тёмной плашке
+                заголовок из-за этого пропадал. */}
+            <h2 className="text-2xl text-surface">{dict.home.ctaTitle}</h2>
             <p className="mt-2 text-surface/75">{dict.home.ctaBody}</p>
           </div>
           <Link
