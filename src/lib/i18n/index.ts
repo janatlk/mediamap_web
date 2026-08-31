@@ -1,13 +1,14 @@
 import ru from "./ru";
 import type violationsRu from "./violations-ru";
 import ky from "./ky";
+import en from "./en";
 import type { Lang } from "./languages";
 
 export * from "./languages";
 
 export type Dictionary = typeof ru;
 
-const DICTIONARIES: Record<Lang, Dictionary> = { ru, ky };
+const DICTIONARIES: Record<Lang, Dictionary> = { ru, ky, en };
 
 export const getDictionary = (lang: Lang): Dictionary => DICTIONARIES[lang];
 
@@ -25,6 +26,13 @@ export const FORMS: Record<Lang, Record<string, Forms>> = {
     types: ["түр", "түр", "түр"],
     news: ["жаңылык", "жаңылык", "жаңылык"],
     sources: ["аянтча", "аянтча", "аянтча"],
+  },
+  // Английскому нужны две формы; третья повторяет вторую и не используется.
+  en: {
+    cases: ["case", "cases", "cases"],
+    types: ["type", "types", "types"],
+    news: ["item", "items", "items"],
+    sources: ["platform", "platforms", "platforms"],
   },
 };
 

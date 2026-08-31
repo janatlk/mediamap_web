@@ -139,109 +139,136 @@ function Result({
 }) {
   const words = dict.checkPage;
 
+  /*
+    Ответ сервиса стоит первым и один.
+
+    Раньше страница начиналась с нашего собственного вывода по метаданным —
+    «Сказать нечего: следов не осталось» — и человек, пришедший спросить
+    «настоящее ли это фото», первым делом читал абзац о том, почему мы не
+    отвечаем. Ответ, за которым он пришёл, лежал третьим блоком ниже, да
+    ещё в двух экземплярах от двух сервисов с разными числами.
+
+    Теперь наоборот: сначала оценка, потом то, что записано в файле, —
+    сырыми строчками, без нашего пересказа.
+  */
+  const verdict = detectors[0] ?? null;
+
   return (
     <section className="mt-8 border-t border-line pt-8">
-      <span
-        className={`block h-1 w-16 ${found(data.origin) ? "bg-ink" : "bg-line"}`}
-        aria-hidden="true"
-      />
+      {verdict ? (
+        <Verdict
+          words={words}
+          name={detectorById(verdict.service)?.name ?? verdict.service}
+          score={verdict.score}
+          generator={verdict.generator}
+        />
+      ) : (
+        <p className="max-w-prose text-muted">{words.detectorNone}</p>
+      )}
 
-      <h2 className="mt-4 text-2xl">{data.headline}</h2>
-      <p className="mt-3 max-w-prose text-muted">{data.explain}</p>
+      {/*
+        Оговорка про скриншоты. Осталась одна и только там, где меняет
+        отношение к числу выше: файл прошёл через соцсеть или снят с
+        экрана — на таких сервис и ошибается.
+      */}
+      {verdict && !found(data.origin) ? (
+        <p className="mt-4 max-w-prose text-sm text-muted">
+          {words.detectorsNoteStripped}
+        </p>
+      ) : null}
 
-      {/* Улики. Показываем всегда, даже когда их нет: там тогда написано,
-          где именно мы смотрели, — иначе пустое место читается как поломка. */}
-      <h3 className="mt-8 eyebrow">{words.evidenceTitle}</h3>
-      <ul className="mt-3">
-        {data.evidence.map((item, index) => (
-          <li key={`${item.layer}-${index}`} className="border-b border-line py-3">
-            <p className="text-sm text-ink">{item.layer}</p>
-            <p className="mt-1 break-words text-sm text-muted">{item.detail}</p>
-          </li>
-        ))}
-      </ul>
+      <Metadata words={words} data={data} />
 
-      {/* Наблюдения модели. Отбиты и подписаны как подсказка, а не вывод:
-          иначе на них будут ссылаться как на заключение экспертизы. */}
-      {data.observationsAsked ? (
+      {/*
+        Наблюдения модели — только когда они есть. Пустой блок с подписью
+        «Модель ничего не отметила» занимал место и ничего не сообщал.
+      */}
+      {data.observations.length > 0 ? (
         <div className="mt-8 border border-line p-5">
           <h3 className="eyebrow">{words.observationsTitle}</h3>
           <p className="mt-2 max-w-prose text-sm text-muted">
             {words.observationsNote}
           </p>
-
-          {data.observations.length > 0 ? (
-            <ul className="mt-4">
-              {data.observations.map((item, index) => (
-                <li key={index} className="mt-2 text-sm">
-                  <span className="text-ink">{item.where}</span>
-                  <span className="text-muted"> — {item.what}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-4 text-sm text-muted">{words.observationsNone}</p>
-          )}
-        </div>
-      ) : null}
-
-      {detectors.length > 0 ? (
-        <div className="mt-8">
-          <h3 className="eyebrow">{words.detectorsTitle}</h3>
-
-          <div className="mt-4 grid gap-px bg-line">
-            {detectors.map((item) => (
-              <ServiceCard
-                key={item.service}
-                words={words}
-                name={detectorById(item.service)?.name ?? item.service}
-                score={item.score}
-                generator={item.generator}
-              />
+          <ul className="mt-4">
+            {data.observations.map((item, index) => (
+              <li key={index} className="mt-2 text-sm">
+                <span className="text-ink">{item.where}</span>
+                <span className="text-muted"> — {item.what}</span>
+              </li>
             ))}
-          </div>
-
-          {/*
-            Оговорка только там, где она меняет поведение: файл прошёл через
-            соцсеть или снят с экрана — на таких сервисы и ошибаются. Парная
-            к ней («метаданные на месте, тут они точны») убрана: человеку она
-            ничего не давала, а занимала столько же места.
-          */}
-          {found(data.origin) ? null : (
-            <p className="mt-4 max-w-prose text-sm text-muted">
-              {words.detectorsNoteStripped}
-            </p>
-          )}
-
-          {/*
-            Прямое расхождение со свидетельством. Молчать о нём нельзя:
-            человек видит два ответа рядом и вправе знать, какому верить.
-          */}
-          {disagrees(data, detectors) ? (
-            <p className="mt-3 max-w-prose border-l-2 border-signal pl-4 text-sm text-muted">
-              {words.detectorsDisagree}
-            </p>
-          ) : null}
+          </ul>
         </div>
       ) : null}
-
     </section>
   );
 }
 
 /*
-  Ответ одного сервиса: слово, число и полоса.
+  Что записано в самом файле — как есть.
+
+  Нашего разбора здесь больше нет: был вывод словами («следов не осталось»,
+  «так выглядит любой скриншот»), и он занимал верх страницы, повторяя одно
+  и то же почти на каждом файле. Показываем строки EXIF под их собственными
+  именами: марка камеры, выдержка, дата съёмки. Названия не переводим — они
+  одинаковы во всех программах, и человек, который их знает, узнаёт их
+  именно такими.
+*/
+function Metadata({
+  words,
+  data,
+}: {
+  words: Dictionary["checkPage"];
+  data: ProvenanceResult;
+}) {
+  const rows = Object.entries(data.camera ?? {});
+  const empty = rows.length === 0 && !data.generator && !data.signed;
+
+  return (
+    <div className="mt-8">
+      <h3 className="eyebrow">{words.metaTitle}</h3>
+
+      {empty ? (
+        <p className="mt-3 max-w-prose text-sm text-muted">{words.metaNone}</p>
+      ) : (
+        <dl className="mt-3">
+          {/* Подпись и генератор идут первыми: это не настройка съёмки, а
+              заявление файла о собственном происхождении. */}
+          {data.signed ? (
+            <Row name={words.metaSigned} value={words.metaSignedYes} />
+          ) : null}
+          {data.generator ? (
+            <Row name={words.metaGenerator} value={data.generator} />
+          ) : null}
+          {rows.map(([name, value]) => (
+            <Row key={name} name={name} value={value} />
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function Row({ name, value }: { name: string; value: string }) {
+  return (
+    <div className="flex flex-wrap gap-x-4 border-b border-line py-2">
+      <dt className="w-44 shrink-0 font-mono text-sm text-muted">{name}</dt>
+      <dd className="min-w-0 break-words text-sm">{value}</dd>
+    </div>
+  );
+}
+
+/*
+  Главный ответ: слово, число и полоса.
 
   Слово говорит, что это значит, число — насколько сервис уверен. Порознь
   они хуже: одно слово скрывает разницу между 0.51 и 0.99, одно число
   ничего не значит человеку, который не знает шкалы.
 
-  Полоса нужна ровно для того, чтобы разницу было видно не читая. Цвет у
-  неё один на все значения — тёмный. Красить высокие оценки тревожным
-  цветом было бы обвинением: сгенерированное изображение само по себе не
-  нарушение, а страницу открывают и просто из любопытства.
+  Цвет у полосы один на все значения — тёмный. Красить высокие оценки
+  тревожным цветом было бы обвинением: сгенерированное изображение само по
+  себе не нарушение, а страницу открывают и просто из любопытства.
 */
-function ServiceCard({
+function Verdict({
   words,
   name,
   score,
@@ -255,15 +282,10 @@ function ServiceCard({
   const percent = Math.round(score * 100);
 
   return (
-    <div className="bg-surface p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-        <p className="text-lg">{said(words, score)}</p>
-        <p className="font-mono text-sm text-muted">{name}</p>
-      </div>
+    <div>
+      <h2 className="text-2xl">{said(words, score)}</h2>
 
-      <p className="mt-4 text-sm text-muted">{words.detectorScale}</p>
-
-      <div className="mt-2 flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-3">
         <div
           className="h-2 flex-1 overflow-hidden rounded-full bg-line"
           role="img"
@@ -276,10 +298,14 @@ function ServiceCard({
             style={{ width: `${Math.max(1, percent)}%` }}
           />
         </div>
-        <span className="w-12 text-right font-mono text-sm tabular-nums">
+        <span className="w-12 text-right font-mono text-base tabular-nums">
           {percent}%
         </span>
       </div>
+
+      <p className="mt-2 text-sm text-muted">
+        {words.detectorScale} · {name}
+      </p>
 
       {generator ? (
         <p className="mt-3 text-sm text-muted">
@@ -290,23 +316,10 @@ function ServiceCard({
   );
 }
 
-/** Ответ словом. Число рядом — в карточке. */
+/** Ответ словом. Число рядом — на полосе. */
 function said(words: Dictionary["checkPage"], score: number): string {
   if (score >= 0.9) return words.detectorSure;
   if (score >= 0.5) return words.detectorLikely;
   if (score >= 0.1) return words.detectorUnlikely;
   return words.detectorNo;
-}
-
-/**
- * Спорит ли сервис с тем, что записано в файле.
- *
- * Спор только в одну сторону считаем спором: файл говорит «снято камерой»
- * или «подписано как съёмка», а сервис — «сгенерировано». Обратный случай
- * (в файле след генератора, сервис молчит) спором не является: сервис
- * метаданных не читает и знать про них не может.
- */
-function disagrees(data: ProvenanceResult, detectors: DetectorScore[]): boolean {
-  const saysCamera = data.origin === "camera" || data.origin === "screen";
-  return saysCamera && detectors.some((item) => item.score >= 0.5);
 }

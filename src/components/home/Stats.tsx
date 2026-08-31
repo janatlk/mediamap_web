@@ -37,7 +37,8 @@ export default function Stats({
         <div className="-mx-4 grid grid-cols-2 gap-px bg-line sm:-mx-6 sm:grid-cols-4 lg:-mx-10">
           {items.map((item) => (
             <div key={item.tail} className="bg-surface px-4 py-6 sm:px-6 sm:py-7 lg:px-10">
-              <p className="font-display text-3xl tabular-nums">{item.value}</p>
+              {/* Числа набраны тем же крупным начертанием, что заголовки, и цвет им нужен тот же: иначе четыре чёрных числа спорят с заголовком раздела. */}
+              <p className="font-display text-3xl text-display tabular-nums">{item.value}</p>
               <p className="mt-1 text-sm text-muted">
                 {item.word} {item.tail}
               </p>

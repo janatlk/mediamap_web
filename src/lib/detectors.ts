@@ -103,5 +103,15 @@ export const DETECTORS: DetectorInfo[] = [
   },
 ];
 
+/*
+  Чей ответ показывают на открытой странице проверки.
+
+  Один, а не все. Сервисы отвечают по-разному на один и тот же файл, и
+  выложить рядом два числа значит переложить на читателя вопрос, на который
+  у нас самих ответа нет: какому верить. Сравнение осталось там, где оно
+  для того и заведено, — в панели.
+*/
+export const PUBLIC_DETECTOR = "hive";
+
 export const detectorById = (id: string): DetectorInfo | undefined =>
   DETECTORS.find((item) => item.id === id);

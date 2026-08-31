@@ -155,9 +155,22 @@ export type Comparison = {
 export async function compareAll(
   bytes: Buffer,
   mime: string,
+  /*
+    Спросить один сервис вместо всех.
+
+    Открытая страница проверки показывает ответ одного — и спрашивать
+    остальные значит жечь чужую квоту ради числа, которого никто не увидит.
+    В панели сравнение по-прежнему идёт по всем: там смысл именно в том,
+    чтобы увидеть расхождение.
+  */
+  only?: string,
 ): Promise<Comparison[]> {
   const keys = (await loadKeys()).filter(
-    (item) => item.enabled && !item.broken && item.creds,
+    (item) =>
+      item.enabled &&
+      !item.broken &&
+      item.creds &&
+      (only === undefined || item.service === only),
   );
 
   return Promise.all(

@@ -1,4 +1,4 @@
-// Два готовы, три висят заглушками — видно, что работа идёт, но выбрать
+// Три готовы, два висят заглушками — видно, что работа идёт, но выбрать
 // нельзя. Обещать язык и отдать пустые строки хуже честного «скоро».
 //
 // Порядок в списке — это порядок в переключателе. Кыргызский первым: это
@@ -7,7 +7,7 @@
 export const LANGUAGES = [
   { code: "ky", name: "Кыргызча", short: "KY", ready: true },
   { code: "ru", name: "Русский", short: "RU", ready: true },
-  { code: "en", name: "English", short: "EN", ready: false },
+  { code: "en", name: "English", short: "EN", ready: true },
   { code: "uz", name: "Oʻzbekcha", short: "UZ", ready: false },
   { code: "kk", name: "Қазақша", short: "KK", ready: false },
 ] as const;
@@ -15,7 +15,7 @@ export const LANGUAGES = [
 export type LanguageCode = (typeof LANGUAGES)[number]["code"];
 
 /** Только у этих есть страницы. */
-export const READY_LANGUAGES = ["ky", "ru"] as const;
+export const READY_LANGUAGES = ["ky", "ru", "en"] as const;
 
 export type Lang = (typeof READY_LANGUAGES)[number];
 

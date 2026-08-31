@@ -3,7 +3,7 @@ import type { Lang } from "./i18n";
 // Всё, что показываем человеку, проходит отсюда. Одна функция — одно
 // преобразование.
 
-const LOCALES: Record<Lang, string> = { ru: "ru-RU", ky: "ky-KG" };
+const LOCALES: Record<Lang, string> = { ru: "ru-RU", ky: "ky-KG", en: "en-GB" };
 
 // Пояс прибит гвоздями: сервер может стоять в UTC, и запись, сделанная
 // вечером по Бишкеку, покажет вчерашнее число.

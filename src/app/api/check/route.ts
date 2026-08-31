@@ -5,6 +5,7 @@ import { ATTACHMENT_KIND } from "@/lib/enums";
 import { takeCheckSlot } from "@/server/rate-limit";
 import { examineImage, provenanceEnabled } from "@/server/provenance";
 import { compareAll } from "@/server/detectors";
+import { PUBLIC_DETECTOR } from "@/lib/detectors";
 
 /*
   Проверка изображения из открытой рубрики.
@@ -80,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       console.error("разбор происхождения не удался:", error);
       return null;
     }),
-    compareAll(bytes, file.type).catch((error) => {
+    compareAll(bytes, file.type, PUBLIC_DETECTOR).catch((error) => {
       console.error("сторонние сервисы не ответили:", error);
       return [];
     }),

@@ -8,15 +8,15 @@
 
 export type Region = {
   code: string;
-  name: { ru: string; ky: string };
+  name: { ru: string; ky: string; en: string };
 };
 
 export const KG_REGIONS: Region[] = [
-  { code: "batken", name: { ru: "Баткенская область", ky: "Баткен облусу" } },
-  { code: "chuy", name: { ru: "Чуйская область", ky: "Чүй облусу" } },
-  { code: "issyk-kul", name: { ru: "Иссык-Кульская область", ky: "Ысык-Көл облусу" } },
-  { code: "jalal-abad", name: { ru: "Джалал-Абадская область", ky: "Жалал-Абад облусу" } },
-  { code: "naryn", name: { ru: "Нарынская область", ky: "Нарын облусу" } },
-  { code: "osh", name: { ru: "Ошская область", ky: "Ош облусу" } },
-  { code: "talas", name: { ru: "Таласская область", ky: "Талас облусу" } },
+  { code: "batken", name: { ru: "Баткенская область", ky: "Баткен облусу", en: "Batken Region" } },
+  { code: "chuy", name: { ru: "Чуйская область", ky: "Чүй облусу", en: "Chuy Region" } },
+  { code: "issyk-kul", name: { ru: "Иссык-Кульская область", ky: "Ысык-Көл облусу", en: "Issyk-Kul Region" } },
+  { code: "jalal-abad", name: { ru: "Джалал-Абадская область", ky: "Жалал-Абад облусу", en: "Jalal-Abad Region" } },
+  { code: "naryn", name: { ru: "Нарынская область", ky: "Нарын облусу", en: "Naryn Region" } },
+  { code: "osh", name: { ru: "Ошская область", ky: "Ош облусу", en: "Osh Region" } },
+  { code: "talas", name: { ru: "Таласская область", ky: "Талас облусу", en: "Talas Region" } },
 ];
