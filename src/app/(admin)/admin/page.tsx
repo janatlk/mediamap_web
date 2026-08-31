@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import Attachments from "@/components/report/Attachments";
+import CaseFiles from "@/components/admin/CaseFiles";
 import { REPORT_STATUS } from "@/lib/enums";
 import { formatDate } from "@/lib/format";
 import { requireStaff } from "@/lib/guard";
@@ -179,8 +179,9 @@ function Report({ row }: { row: ReportRow }) {
         <p>{row.story}</p>
 
         {/* Приложенное — то, ради чего проверку вообще можно провести:
-            публикацию к этому времени часто уже удалили. */}
-        <Attachments items={row.attachments} title="Приложено" />
+            публикацию к этому времени часто уже удалили. Здесь же решается,
+            показывать ли файл на опубликованной странице случая. */}
+        <CaseFiles items={row.attachments} />
 
         <Reasoning row={row} />
 

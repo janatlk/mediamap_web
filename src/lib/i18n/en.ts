@@ -139,6 +139,7 @@ const en = {
     checkedAt: "Verified",
     number: "Case number",
     fromAuthor: "What the reporter told us",
+    attachments: "Attached to the case",
     fromTeam: "What the review established",
     noComment: "No explanation was left.",
     notFound: "No such case",

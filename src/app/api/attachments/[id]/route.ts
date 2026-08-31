@@ -15,10 +15,17 @@ import { read } from "@/server/storage";
 
   Кому можно:
     * сотруднику — всегда, он их и проверяет;
-    * всем — если случай подтверждён и опубликован;
+    * всем — если случай опубликован И файл отмечен как публичный;
     * подавшему — по личному ключу в ?t=, тому же, что открывает страницу
       «сообщение принято». Другого способа узнать себя у него нет: имени и
       почты мы не спрашивали.
+
+  Про отметку отдельно. Раньше публичным файл делал один статус случая: как
+  только его подтверждали, снимок открывался всякому, кто знает адрес.
+  Ссылок на него нигде не стояло, и это выглядело безопасным — но «никто не
+  догадается» защитой не является, а на снимке переписки бывает имя и
+  телефон заявителя. Теперь мало подтвердить случай: файл должен быть
+  отмечен человеком поимённо.
 
   Чужому отвечаем 404, а не 403: «здесь есть файл, но вам нельзя» — это
   тоже ответ, и по нему можно перебором составить список сообщений.
@@ -35,13 +42,14 @@ export async function GET(request: NextRequest, { params }: Params) {
       key: true,
       mime: true,
       size: true,
+      public: true,
       report: { select: { status: true, receiptToken: true } },
     },
   });
 
   if (!file) return new NextResponse(null, { status: 404 });
 
-  if (!(await mayRead(request, file.report))) {
+  if (!(await mayRead(request, file))) {
     return new NextResponse(null, { status: 404 });
   }
 
@@ -55,8 +63,10 @@ export async function GET(request: NextRequest, { params }: Params) {
       "Content-Length": String(file.size),
       // Опубликованное можно и закэшировать, остальное — никогда: доступ
       // держится на ключе, а кэш про ключи ничего не знает.
+      // Кэшируем только то, что и так открыто всем. Всё остальное держится
+      // на ключе или на сессии, а кэш про них ничего не знает.
       "Cache-Control":
-        file.report.status === REPORT_STATUS.APPROVED
+        file.public && file.report.status === REPORT_STATUS.APPROVED
           ? "public, max-age=3600"
           : "private, no-store",
       // Браузер не должен угадывать тип сам: угаданный HTML он выполнит.
@@ -67,12 +77,17 @@ export async function GET(request: NextRequest, { params }: Params) {
 
 async function mayRead(
   request: NextRequest,
-  report: { status: string; receiptToken: string | null },
+  file: {
+    public: boolean;
+    report: { status: string; receiptToken: string | null };
+  },
 ): Promise<boolean> {
-  if (report.status === REPORT_STATUS.APPROVED) return true;
+  if (file.public && file.report.status === REPORT_STATUS.APPROVED) return true;
 
   const token = request.nextUrl.searchParams.get("t");
-  if (token && report.receiptToken && token === report.receiptToken) return true;
+  if (token && file.report.receiptToken && token === file.report.receiptToken) {
+    return true;
+  }
 
   const user = await currentUser();
   return user !== null && isStaff(user.role);

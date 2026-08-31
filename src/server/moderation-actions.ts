@@ -125,3 +125,36 @@ export async function reopenReport(form: FormData): Promise<void> {
 
   revalidatePath("/", "layout");
 }
+
+/*
+  Показывать ли приложенный файл на опубликованной странице случая.
+
+  Решение поимённое, по каждому файлу, и по умолчанию — нет. Заявитель
+  присылал снимок нам на проверку, а на снимке переписки бывает его
+  собственное имя, номер телефона, список контактов. Согласие в форме
+  сказано «без моих личных данных» — а снимок как раз ими и полон, и
+  распространить то согласие на файлы значило бы прочитать его шире, чем
+  человек его давал.
+
+  Поэтому здесь ровно одно действие, и включает его человек, глядя на сам
+  файл.
+*/
+export async function toggleAttachment(form: FormData): Promise<void> {
+  await requireStaff();
+
+  const id = String(form.get("id") ?? "");
+  if (!id) return;
+
+  const file = await db.attachment.findUnique({
+    where: { id },
+    select: { public: true },
+  });
+  if (!file) return;
+
+  await db.attachment.update({ where: { id }, data: { public: !file.public } });
+
+  // Тип «page», а не «layout»: без него панель уезжает на случайную
+  // страницу из кэша маршрутизатора — на этом уже обжигались дважды.
+  revalidatePath("/admin", "page");
+  revalidatePath("/[lang]/cases/[id]", "page");
+}

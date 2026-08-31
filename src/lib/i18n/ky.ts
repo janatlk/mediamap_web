@@ -129,6 +129,7 @@ const ky: typeof ru = {
     checkedAt: "Текшерилди",
     number: "Учурдун номери",
     fromAuthor: "Кайрылуучу эмне билдирген",
+    attachments: "Учурга тиркелген",
     fromTeam: "Текшерүү эмнени аныктады",
     noComment: "Түшүндүрмө калтырылган эмес.",
     notFound: "Мындай учур жок",

@@ -59,7 +59,7 @@ export type ReportRow = {
   factVerdict: string | null;
   sources: string[];
 
-  attachments: { id: string; kind: string; name: string; mime: string }[];
+  attachments: { id: string; kind: string; name: string; mime: string; public: boolean }[];
 };
 
 export type Filter = {
@@ -90,7 +90,7 @@ export async function loadReports(filter: Filter): Promise<Page> {
         violationType: { select: { slug: true } },
         reviewedBy: { select: { name: true, email: true } },
         attachments: {
-          select: { id: true, kind: true, name: true, mime: true },
+          select: { id: true, kind: true, name: true, mime: true, public: true },
           orderBy: { createdAt: "asc" },
         },
         aiChecks: {
@@ -176,7 +176,7 @@ function toRow(row: {
   aiTypeChecks: string | null;
   violationType: { slug: string };
   reviewedBy: { name: string | null; email: string } | null;
-  attachments: { id: string; kind: string; name: string; mime: string }[];
+  attachments: { id: string; kind: string; name: string; mime: string; public: boolean }[];
   aiChecks: { claim: string | null; factVerdict: string | null; sources: string | null }[];
 }): ReportRow {
   const check = row.aiChecks[0];

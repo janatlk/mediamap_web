@@ -8,6 +8,7 @@ import { isReadyLanguage, violationText } from "@/lib/i18n";
 import { getContent } from "@/server/content";
 import { typeColor } from "@/lib/violation-types";
 import AssessmentCard from "@/components/report/AssessmentCard";
+import Attachments from "@/components/report/Attachments";
 import { loadCase } from "@/server/case-data";
 import type { Verdict } from "@/server/ai-review";
 
@@ -173,6 +174,13 @@ export default async function CasePage({
             )}
           </Field>
         </dl>
+
+        {/*
+          Приложенное — только то, что проверяющий открыл поимённо. Токена
+          здесь нет и быть не может: страница публичная, а личный ключ на
+          то и личный. Список пуст — блока просто нет.
+        */}
+        <Attachments items={item.attachments} title={dict.cases.attachments} />
 
         {/*
           Разбор модели — теперь и здесь, по решению проекта.

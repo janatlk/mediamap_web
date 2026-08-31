@@ -21,6 +21,14 @@ export type CaseListItem = {
 
 export type CaseDetail = CaseListItem & {
   /*
+    Приложенное — только то, что проверяющий открыл поимённо.
+
+    Не всё подряд: заявитель присылал снимок нам на проверку, а на снимке
+    переписки бывает его собственное имя и номер. Пустой список — обычное
+    состояние, а не поломка.
+  */
+  attachments: { id: string; kind: string; name: string; mime: string }[];
+  /*
     Когда произошло само нарушение. Пусто у сообщений, поданных до того, как
     в форме появилась дата: подставлять им дату подачи нельзя — она про
     другое, и у старого случая была бы неправдой.
@@ -111,13 +119,21 @@ export async function loadCasePage(
 export async function loadCase(publicId: string): Promise<CaseDetail | null> {
   const row = await db.report.findFirst({
     where: { publicId, ...CONFIRMED },
-    include: { violationType: true },
+    include: {
+      violationType: true,
+      attachments: {
+        where: { public: true },
+        select: { id: true, kind: true, name: true, mime: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
   if (!row) return null;
 
   return {
     ...toListItem(row),
+    attachments: row.attachments,
     happenedAt: row.happenedAt,
     link: row.mediaLink,
     authorComment: row.authorComment,
