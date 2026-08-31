@@ -6,7 +6,7 @@ import { AlertCircle, ArrowRight } from "lucide-react";
 
 import FilePicker from "./FilePicker";
 import { LIMITS as FILE_LIMITS, megabytes } from "@/lib/attachment-rules";
-import { LIMITS } from "@/lib/report-schema";
+import { LIMITS, today } from "@/lib/report-schema";
 import type { Dictionary, Lang } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import { submitReport, type SubmitState } from "@/server/report-actions";
@@ -361,6 +361,31 @@ export default function ReportForm({ dict, lang, types }: Props) {
       {/* items-end равняет поля по нижнему краю: у ссылки есть подсказка, у
           города нет, и без этого их рамки разъезжались по вертикали на
           строку — мелочь, от которой форма выглядит собранной кое-как. */}
+      {/* Дата стоит сразу под рассказом, а не среди необязательных полей
+          внизу: когда это случилось — такая же часть случая, как и что
+          случилось. Раньше её не было вовсе, и сообщить о чём-то прошлом
+          было нечем: временем случая становилось время подачи. */}
+      <div className="mt-8">
+        <label htmlFor="happenedAt" className="text-base font-medium">
+          {page.dateLabel}
+        </label>
+        <Hint text={page.dateHint} />
+        <input
+          id="happenedAt"
+          name="happenedAt"
+          type="date"
+          // Границы стоят и в браузере, и на сервере. Браузер подскажет
+          // сразу, но верить ему нельзя: форму отправляют и мимо него.
+          max={today()}
+          min={LIMITS.EARLIEST}
+          defaultValue={valueOf("happenedAt") || today()}
+          aria-describedby={errorFor("happenedAt") ? "date-error" : undefined}
+          aria-invalid={errorFor("happenedAt") ? true : undefined}
+          className={`${fieldStyle(Boolean(errorFor("happenedAt")))} sm:max-w-56`}
+        />
+        <FieldError text={errorFor("happenedAt")} id="date-error" />
+      </div>
+
       <div className="mt-8 grid gap-x-6 gap-y-8 sm:grid-cols-[1.6fr_1fr] sm:items-end">
         <div>
           <label htmlFor="link" className="text-base font-medium">

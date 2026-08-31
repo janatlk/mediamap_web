@@ -112,6 +112,17 @@ export default async function CasePage({
             <span className="font-mono">{item.publicId}</span>
           </Field>
 
+          {/* Когда произошло — раньше, чем когда проверили: читателю важнее
+              возраст случая, чем наша дата разбора. У сообщений, поданных до
+              появления поля, даты нет, и строки тоже нет. */}
+          {item.happenedAt ? (
+            <Field label={dict.cases.happenedAt}>
+              <span className="tabular-nums">
+                {formatDate(item.happenedAt, lang)}
+              </span>
+            </Field>
+          ) : null}
+
           <Field label={dict.cases.checkedAt}>
             <span className="tabular-nums">
               {formatDate(item.checkedAt, lang)}

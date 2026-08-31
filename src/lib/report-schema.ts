@@ -17,11 +17,30 @@ export const ERRORS = {
   consentRequired: "consentRequired",
   cityLong: "cityLong",
   regionUnknown: "regionUnknown",
+  dateInvalid: "dateInvalid",
+  dateFuture: "dateFuture",
+  dateAncient: "dateAncient",
 } as const;
 
 const STORY_MIN = 30;
 const STORY_MAX = 4000;
 const CITY_MAX = 80;
+
+/*
+  Нижняя граница даты. Раньше неё случаев у нас не бывает: соцсетей в
+  сегодняшнем виде не было, а число из такой глубины — почти наверняка
+  описка в годе. Верхней границей стоит сегодня: нарушение не может
+  произойти завтра.
+*/
+const EARLIEST = "2000-01-01";
+
+/** Сегодня по календарю, строкой YYYY-MM-DD — в том же виде, что даёт поле. */
+export function today(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
 
 export const reportSchema = z.object({
   /** Вид нарушения. Совпадение со списком проверяется отдельно, по базе. */
@@ -46,6 +65,30 @@ export const reportSchema = z.object({
     .max(STORY_MAX, ERRORS.storyLong),
 
   city: z.string().trim().max(CITY_MAX, ERRORS.cityLong).optional(),
+
+  /*
+    Когда это произошло.
+
+    Появилось по простому поводу: сообщить о случае двухлетней давности было
+    нечем. Даты в форме не было вовсе, и единственным временем у случая
+    оставалось время подачи — для вчерашнего поста это одно и то же, для
+    старого неправда.
+
+    Пустое поле — не ошибка: значит сегодня. Человек, который не стал
+    трогать дату, имел в виду именно это, и возвращать ему форму с
+    требованием заполнить то, что и так подставлено, незачем.
+  */
+  happenedAt: z
+    .union([
+      z.literal(""),
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, ERRORS.dateInvalid)
+        .refine((value) => !Number.isNaN(Date.parse(value)), ERRORS.dateInvalid)
+        .refine((value) => value <= today(), ERRORS.dateFuture)
+        .refine((value) => value >= EARLIEST, ERRORS.dateAncient),
+    ])
+    .optional(),
 
   /*
     Область — необязательна, но полезнее города: по ней строится карта.
@@ -75,4 +118,4 @@ export const reportSchema = z.object({
 
 export type ReportInput = z.infer<typeof reportSchema>;
 
-export const LIMITS = { STORY_MIN, STORY_MAX, CITY_MAX };
+export const LIMITS = { STORY_MIN, STORY_MAX, CITY_MAX, EARLIEST };

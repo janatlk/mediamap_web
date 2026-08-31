@@ -125,6 +125,7 @@ const ky: typeof ru = {
     linkGone:
       "Жарыя текшерүүдөн кийин өчүрүлгөн болушу мүмкүн — шилтеме биз аны " +
       "тапкан жерге алып барат.",
+    happenedAt: "Качан болгон",
     checkedAt: "Текшерилди",
     number: "Учурдун номери",
     fromAuthor: "Кайрылуучу эмне билдирген",
@@ -266,6 +267,9 @@ const ky: typeof ru = {
     storyHint: "",
     storyPlaceholder: "Эмне жазылган же көрсөтүлгөн, кайда жана качан",
 
+    dateLabel: "Бул качан болгон",
+    dateHint: "Демейки — бүгүнкү күн. Учур эски да болушу мүмкүн.",
+
     linkLabel: "Жарыяга шилтеме",
     linkHint: "",
     linkPlaceholder: "https://",
@@ -325,6 +329,9 @@ const ky: typeof ru = {
       consentRequired: "Макулдугуңузсуз учурду жарыялай албайбыз",
       cityLong: "Өтө узун",
       regionUnknown: "Тизмеден облусту тандаңыз",
+      dateInvalid: "Датаны текшериңиз",
+      dateFuture: "Дата келечекте — бузуу али болгон жок",
+      dateAncient: "Өтө эски. Жылын текшериңиз",
       filesTooMany: "Файлдар өтө көп — {files} ашпасын",
       fileType: "Мындай файлды биз кабыл албайбыз. JPG, PNG, WEBP, GIF, MP4, WEBM, MOV болот",
       fileTooBig: "Файл өтө оор: сүрөт {image} МБ чейин, видео {video} МБ чейин",

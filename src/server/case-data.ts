@@ -20,6 +20,12 @@ export type CaseListItem = {
 };
 
 export type CaseDetail = CaseListItem & {
+  /*
+    Когда произошло само нарушение. Пусто у сообщений, поданных до того, как
+    в форме появилась дата: подставлять им дату подачи нельзя — она про
+    другое, и у старого случая была бы неправдой.
+  */
+  happenedAt: Date | null;
   link: string | null;
   authorComment: string | null;
   moderatorComment: string | null;
@@ -112,6 +118,7 @@ export async function loadCase(publicId: string): Promise<CaseDetail | null> {
 
   return {
     ...toListItem(row),
+    happenedAt: row.happenedAt,
     link: row.mediaLink,
     authorComment: row.authorComment,
     moderatorComment: row.moderatorComment,

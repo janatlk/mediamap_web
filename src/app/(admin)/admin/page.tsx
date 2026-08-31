@@ -132,8 +132,17 @@ function Report({ row }: { row: ReportRow }) {
         {row.headline ?? typeName(row.typeSlug)}
         {row.headline ? ` · ${typeName(row.typeSlug)}` : ""}
         <br />
+        {/* Две даты, и путать их нельзя: когда произошло — про случай,
+            когда подано — про нашу очередь. У сообщений, поданных до
+            появления поля, первой нет, и подставлять туда дату подачи
+            значило бы выдумать возраст случая. */}
         <span className="id">
-          {row.publicId}, {formatDate(row.createdAt, STAFF_LANG)}
+          {row.publicId}
+          {row.happenedAt
+            ? ` · произошло ${formatDate(row.happenedAt, STAFF_LANG)}`
+            : ""}
+          {" · подано "}
+          {formatDate(row.createdAt, STAFF_LANG)}
         </span>
         {" · "}
         <Assessment row={row} />

@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma";
 import { ruleFor } from "@/lib/attachment-rules";
 import { ATTACHMENT_KIND, REPORT_STATUS } from "@/lib/enums";
-import { reportSchema } from "@/lib/report-schema";
+import { reportSchema, today } from "@/lib/report-schema";
 import type { ViolationSlug } from "@/lib/i18n";
 import { assess, type AssessRun } from "./ai-review";
 import { recordCheck } from "./ai-journal";
@@ -53,6 +53,16 @@ async function nextPublicId(): Promise<string> {
   return `${prefix}${String(lastNumber + 1).padStart(4, "0")}`;
 }
 
+/**
+ * Дата из формы во время.
+ *
+ * Полдень по UTC, а не полночь. Полночь при показе в часовом поясе западнее
+ * Гринвича съезжает на сутки назад, и случай, помеченный первым числом,
+ * читался бы как случившийся тридцать первого. Полдень такого сдвига не даёт
+ * ни в одном обитаемом поясе.
+ */
+const asDate = (value: string): Date => new Date(`${value}T12:00:00Z`);
+
 /** Ошибка уникальности — значит номер увели, пробуем следующий. */
 const isDuplicateId = (error: unknown): boolean =>
   typeof error === "object" &&
@@ -60,7 +70,14 @@ const isDuplicateId = (error: unknown): boolean =>
   "code" in error &&
   (error as { code?: string }).code === "P2002";
 
-const KEEP_ON_ERROR = ["typeSlug", "link", "story", "city", "regionCode"] as const;
+const KEEP_ON_ERROR = [
+  "typeSlug",
+  "link",
+  "story",
+  "city",
+  "regionCode",
+  "happenedAt",
+] as const;
 
 /** Что вернуть в форму, чтобы человек не набирал всё заново. */
 const submitted = (form: FormData): Record<string, string> =>
@@ -131,6 +148,7 @@ export async function submitReport(
     story: form.get("story") ?? "",
     city: form.get("city") ?? "",
     regionCode: form.get("regionCode") ?? "",
+    happenedAt: form.get("happenedAt") ?? "",
     consent: form.get("consent") ?? "",
     trap: form.get("trap") ?? "",
   });
@@ -207,6 +225,10 @@ export async function submitReport(
     authorComment: data.story,
     city: data.city ? data.city : null,
     regionCode: data.regionCode ? data.regionCode : null,
+
+    // Когда произошло. Пусто в форме — значит сегодня: поле подставлено
+    // сегодняшним числом, и не тронуть его — это ответ, а не молчание.
+    happenedAt: asDate(data.happenedAt || today()),
     // Публикуется сообщение только после проверки живым человеком.
     status: REPORT_STATUS.PENDING,
 

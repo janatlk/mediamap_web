@@ -29,6 +29,8 @@ export type ReportRow = {
   source: string | null;
   city: string | null;
   createdAt: Date;
+  /** Когда произошло само нарушение. Пусто у сообщений до появления поля. */
+  happenedAt: Date | null;
   reviewedAt: Date | null;
   reviewedBy: string | null;
   moderatorComment: string | null;
@@ -160,6 +162,7 @@ function toRow(row: {
   mediaLink: string | null;
   city: string | null;
   createdAt: Date;
+  happenedAt: Date | null;
   reviewedAt: Date | null;
   moderatorComment: string | null;
   aiVerdict: string | null;
@@ -190,6 +193,7 @@ function toRow(row: {
     source: hostFromUrl(row.mediaLink),
     city: row.city,
     createdAt: row.createdAt,
+    happenedAt: row.happenedAt,
     reviewedAt: row.reviewedAt,
     reviewedBy: row.reviewedBy?.name ?? row.reviewedBy?.email ?? null,
     moderatorComment: row.moderatorComment,
