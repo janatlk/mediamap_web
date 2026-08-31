@@ -19,7 +19,7 @@ export default function ReportCta({
   lang: Lang;
 }) {
   return (
-    <section className="bg-ink text-surface">
+    <section className="bg-deep text-surface">
       <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -28,7 +28,7 @@ export default function ReportCta({
           </div>
           <Link
             href={`/${lang}/report`}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xs bg-surface px-6 text-base font-medium text-ink transition-colors hover:bg-paper"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xs bg-surface px-6 text-base font-medium text-deep transition-colors hover:bg-paper"
           >
             {dict.home.ctaAction}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
