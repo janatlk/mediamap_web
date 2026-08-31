@@ -14,7 +14,7 @@ const ky: typeof ru = {
 
   nav: {
     home: "Башкы бет",
-    cases: "Учурлар",
+    cases: "Текшерилген",
     types: "Бузуулардын түрлөрү",
     news: "Медиа-дайджест",
     analytics: "Аналитика",

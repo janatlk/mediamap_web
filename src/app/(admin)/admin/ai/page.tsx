@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { formatDate } from "@/lib/format";
 import { requireStaff } from "@/lib/guard";
-import { DEFAULT_LANG } from "@/lib/i18n";
+import { STAFF_LANG } from "@/lib/i18n";
 import {
   loadAnalytics,
   type Analytics,
@@ -413,7 +413,7 @@ function Failures({ data }: { data: Analytics }) {
           {data.failures.map((failure) => (
             <tr key={failure.id}>
               <td>
-                {formatDate(failure.createdAt, DEFAULT_LANG)}
+                {formatDate(failure.createdAt, STAFF_LANG)}
                 {failure.latencyMs ? ` · ${seconds(failure.latencyMs)}` : ""}
               </td>
               <td>{failure.error}</td>

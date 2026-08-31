@@ -4,7 +4,7 @@ import Attachments from "@/components/report/Attachments";
 import { REPORT_STATUS } from "@/lib/enums";
 import { formatDate } from "@/lib/format";
 import { requireStaff } from "@/lib/guard";
-import { DEFAULT_LANG, VIOLATION_SLUGS, getDictionary, violationText } from "@/lib/i18n";
+import { STAFF_LANG, VIOLATION_SLUGS, getDictionary, violationText } from "@/lib/i18n";
 import { approveReport, rejectReport, reopenReport } from "@/server/moderation-actions";
 import { loadReports, type Filter, type ReportRow } from "@/server/reports-data";
 
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
   с возможностью вернуть решение назад.
 */
 
-const dict = getDictionary(DEFAULT_LANG);
+const dict = getDictionary(STAFF_LANG);
 const typeName = (slug: string) => violationText(dict, slug)?.name ?? slug;
 
 const TABS: { value: Filter["status"]; label: string }[] = [
@@ -133,7 +133,7 @@ function Report({ row }: { row: ReportRow }) {
         {row.headline ? ` · ${typeName(row.typeSlug)}` : ""}
         <br />
         <span className="id">
-          {row.publicId}, {formatDate(row.createdAt, DEFAULT_LANG)}
+          {row.publicId}, {formatDate(row.createdAt, STAFF_LANG)}
         </span>
         {" · "}
         <Assessment row={row} />
@@ -144,7 +144,7 @@ function Report({ row }: { row: ReportRow }) {
           <>
             {" · "}
             <a
-              href={`/${DEFAULT_LANG}/report/sent/${row.receiptToken}`}
+              href={`/${STAFF_LANG}/report/sent/${row.receiptToken}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -156,7 +156,7 @@ function Report({ row }: { row: ReportRow }) {
           <>
             {" · "}
             <a
-              href={`/${DEFAULT_LANG}/cases/${row.publicId}`}
+              href={`/${STAFF_LANG}/cases/${row.publicId}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -455,7 +455,7 @@ function Decide({ row }: { row: ReportRow }) {
         {decided ? (
           <p className="note">
             {STATUS_NAME[row.status]}
-            {row.reviewedAt ? ` ${formatDate(row.reviewedAt, DEFAULT_LANG)}` : ""}
+            {row.reviewedAt ? ` ${formatDate(row.reviewedAt, STAFF_LANG)}` : ""}
             {row.reviewedBy ? `, ${row.reviewedBy}` : ""}
           </p>
         ) : null}

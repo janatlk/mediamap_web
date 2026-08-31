@@ -16,17 +16,25 @@ export default function Footer({ dict, lang }: Props) {
   ];
 
   return (
-    <footer className="mt-20 border-t border-line">
-      <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+    /*
+      Подвал был высотой почти в экран, и держали эту высоту не слова, а
+      воздух: пять ссылок стояли столбиком по 44 пикселя каждая — одна
+      высота ссылок давала больше двухсот пикселей пустоты. Ссылки
+      выстроены в строку с переносом, отступы уменьшены. Палец по-прежнему
+      попадает: высота у ссылки та же, просто теперь она не съедает
+      вертикаль в одиночку.
+    */
+    <footer className="mt-16 border-t border-line">
+      <div className="mx-auto max-w-[1400px] px-4 py-7 sm:px-6 lg:px-10">
+        <div className="flex flex-col gap-x-10 gap-y-4 sm:flex-row sm:items-baseline sm:justify-between">
           <div>
             <p className="font-display text-base font-medium">{dict.brand}</p>
-            <p className="mt-1 max-w-xs text-sm text-muted">
+            <p className="mt-0.5 max-w-xs text-sm text-muted">
               {dict.brandTagline}
             </p>
           </div>
 
-          <nav className="flex flex-col text-sm">
+          <nav className="flex flex-wrap items-center gap-x-6 text-sm">
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -45,11 +53,11 @@ export default function Footer({ dict, lang }: Props) {
             Читается мельче основного текста, но не мельче копирайта —
             набирать обязательство перед донором самым мелким кеглем на
             странице было бы ровно тем, чего доноры и опасаются. */}
-        <p className="mt-10 max-w-3xl border-t border-line pt-6 text-xs text-muted">
+        <p className="mt-6 max-w-3xl border-t border-line pt-5 text-xs text-muted">
           {dict.footer.disclaimer}
         </p>
 
-        <p className="mt-4 font-mono text-2xs text-muted">
+        <p className="mt-3 font-mono text-2xs text-muted">
           © {year} · {dict.footer.rights}
         </p>
       </div>
