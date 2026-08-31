@@ -21,10 +21,11 @@ export async function saveText(form: FormData): Promise<void> {
   const key = String(form.get("key") ?? "");
   const valueRu = String(form.get("ru") ?? "").trim();
   const valueKy = String(form.get("ky") ?? "").trim();
+  const valueEn = String(form.get("en") ?? "").trim();
   if (!key) return;
 
   const path = key.split(".");
-  const read = (lang: "ru" | "ky") =>
+  const read = (lang: "ru" | "ky" | "en") =>
     String(
       path.reduce<unknown>(
         (value, part) =>
@@ -35,15 +36,16 @@ export async function saveText(form: FormData): Promise<void> {
       ) ?? "",
     );
 
-  const isDefault = valueRu === read("ru") && valueKy === read("ky");
+  const isDefault =
+    valueRu === read("ru") && valueKy === read("ky") && valueEn === read("en");
 
   if (isDefault) {
     await db.siteText.deleteMany({ where: { key } });
   } else {
     await db.siteText.upsert({
       where: { key },
-      create: { key, valueRu, valueKy, category: path[0] ?? "general" },
-      update: { valueRu, valueKy },
+      create: { key, valueRu, valueKy, valueEn, category: path[0] ?? "general" },
+      update: { valueRu, valueKy, valueEn },
     });
   }
 

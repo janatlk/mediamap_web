@@ -70,6 +70,16 @@ function Row({ entry, section }: { entry: TextEntry; section: string }) {
           <input name="ky" size={70} defaultValue={entry.ky} />
         )}
       </label>
+      <br />
+      <label>
+        English:
+        <br />
+        {isLong ? (
+          <textarea name="en" rows={3} cols={70} defaultValue={entry.en} />
+        ) : (
+          <input name="en" size={70} defaultValue={entry.en} />
+        )}
+      </label>
       <p>
         <button type="submit" formAction={saveText}>
           Сохранить

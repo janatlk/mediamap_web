@@ -448,6 +448,10 @@ model SiteText {
   key      String @id
   valueRu  String
   valueKy  String
+  /// Английский. С умолчанием, потому что колонка добавлена позже, когда
+  /// правки на двух языках уже лежали: у них здесь пусто, и страница
+  /// показывает словарное значение — то есть английский текст, а не чужой.
+  valueEn  String @default("")
   category String @default("general")
 
   updatedAt DateTime @updatedAt

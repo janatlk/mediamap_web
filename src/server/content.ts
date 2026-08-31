@@ -48,9 +48,19 @@ export async function getContent(lang: Lang): Promise<Dictionary> {
 
   if (rows.length === 0) return base;
 
+  /*
+    Правка берётся строго по языку страницы.
+
+    Запасного варианта нет намеренно. Пока языков было два, здесь стояло
+    «кыргызский — valueKy, иначе valueRu», и с появлением английского это
+    молча означало «англичанину показать русский текст»: заголовок на
+    /en был русским, потому что кто-то однажды поправил его в панели.
+    Пусто — значит остаётся словарное значение своего языка.
+  */
   const merged = structuredClone(base) as Dictionary;
   for (const row of rows) {
-    const value = lang === "ky" ? row.valueKy : row.valueRu;
+    const value =
+      lang === "ky" ? row.valueKy : lang === "en" ? row.valueEn : row.valueRu;
     if (value) writePath(merged, row.key.split("."), value);
   }
 
@@ -61,6 +71,7 @@ export type TextEntry = {
   key: string;
   ru: string;
   ky: string;
+  en: string;
   /** Значение из словаря — чтобы видеть, что правка изменила. */
   defaultRu: string;
   changed: boolean;
@@ -77,11 +88,15 @@ function collectPaths(source: unknown, prefix: string[] = []): string[] {
 }
 
 /**
- * Все правимые тексты: ключ, текущее значение на двух языках и признак
+ * Все правимые тексты: ключ, текущее значение на трёх языках и признак
  * того, что его меняли. Для экрана редактирования.
  */
 export async function listTexts(): Promise<TextEntry[]> {
-  const [ru, ky] = [getDictionary("ru"), getDictionary("ky")];
+  const [ru, ky, en] = [
+    getDictionary("ru"),
+    getDictionary("ky"),
+    getDictionary("en"),
+  ];
   const rows = await db.siteText.findMany();
   const overrides = new Map(rows.map((row) => [row.key, row]));
 
@@ -94,6 +109,7 @@ export async function listTexts(): Promise<TextEntry[]> {
       key,
       ru: override?.valueRu || defaultRu,
       ky: override?.valueKy || String(readPath(ky, path) ?? ""),
+      en: override?.valueEn || String(readPath(en, path) ?? ""),
       defaultRu,
       changed: Boolean(override),
     };
