@@ -202,6 +202,7 @@ export default async function CasePage({
               chosenType={item.typeSlug}
               checks={item.ai.checks}
               reviewed
+              terminology={item.terminology}
               basis={item.basis}
               hasLink={Boolean(item.link)}
               assessment={{

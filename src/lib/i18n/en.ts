@@ -272,6 +272,7 @@ const en = {
     adminRejected: "Not confirmed",
 
     reasonsLabel: "What the conclusion rests on",
+    terminologyLabel: "A note on terminology",
 
     disclaimerRules:
       "This is not a decision. The analysis was done by keyword search, " +

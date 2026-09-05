@@ -151,6 +151,7 @@ export default async function SentPage({
             moderatorComment={receipt.moderatorComment}
             reviewSummary={receipt.reviewSummary}
             overridden={receipt.overridden}
+            terminology={receipt.terminology}
             basis={receipt.basis}
             hasLink={Boolean(receipt.link)}
             assessment={{

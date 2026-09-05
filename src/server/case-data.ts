@@ -34,6 +34,8 @@ export type CaseDetail = CaseListItem & {
     другое, и у старого случая была бы неправдой.
   */
   happenedAt: Date | null;
+  /** Рекомендация по терминологии. Пусто — поводов не нашлось. */
+  terminology: string | null;
   link: string | null;
   authorComment: string | null;
   moderatorComment: string | null;
@@ -135,6 +137,7 @@ export async function loadCase(publicId: string): Promise<CaseDetail | null> {
     ...toListItem(row),
     attachments: row.attachments,
     happenedAt: row.happenedAt,
+    terminology: row.aiTerminology,
     link: row.mediaLink,
     authorComment: row.authorComment,
     moderatorComment: row.moderatorComment,
@@ -200,6 +203,8 @@ export type Receipt = {
   status: string;
   typeSlug: string;
   createdAt: Date;
+  /** Рекомендация по терминологии. Пусто — поводов не нашлось. */
+  terminology: string | null;
   /** То, что человек написал. Через день он этого уже не помнит. */
   story: string | null;
   link: string | null;
@@ -264,6 +269,7 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
     status: row.status,
     typeSlug: row.violationType.slug,
     createdAt: row.createdAt,
+    terminology: row.aiTerminology,
     story: row.authorComment,
     link: row.mediaLink,
     city: row.city,

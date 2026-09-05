@@ -56,6 +56,14 @@ export type MlVerdict = {
   modelVersion: string;
   /** Текст, извлечённый из ссылки или картинки. */
   extractedText: string | null;
+  /**
+   * Рекомендация по терминологии.
+   *
+   * Появляется, когда в тексте встретилось некорректное слово о людях с
+   * инвалидностью. К вердикту отношения не имеет: нейтральный текст с
+   * устаревшим словом остаётся нейтральным. Пусто — поводов не нашлось.
+   */
+  terminology: string | null;
   /*
     Что модель ответила по каждому виду в отдельности.
 
@@ -97,6 +105,7 @@ type ClassifyResponse = {
   sources: string[];
   model_version: string;
   extracted_text: string | null;
+  terminology?: string | null;
   checks?: Record<string, { found: boolean; confidence: number; explanation: string }>;
 };
 
@@ -149,6 +158,7 @@ function toVerdict(body: ClassifyResponse): MlVerdict {
     sources: Array.isArray(body.sources) ? body.sources : [],
     modelVersion: body.model_version ?? "",
     extractedText: body.extracted_text,
+    terminology: body.terminology ?? null,
     checks: toChecks(body.checks),
   };
 }

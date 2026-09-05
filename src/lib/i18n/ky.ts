@@ -248,6 +248,7 @@ const ky: typeof ru = {
     adminRejected: "Тастыкталган жок",
 
     reasonsLabel: "Жыйынтык эмнеден чыкты",
+    terminologyLabel: "Терминология боюнча сунуш",
 
     disclaimerRules:
       "Бул чечим эмес. Талдоо маанисин түшүнбөй, сөздөр боюнча жасалган — " +

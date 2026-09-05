@@ -25,6 +25,15 @@ type Props = {
   reviewed?: boolean;
   /** Его заметка к решению, если оставил. */
   moderatorComment?: string | null;
+  /**
+   * Рекомендация по терминологии.
+   *
+   * Отдельным блоком, а не строкой внутри разбора. Это не довод в пользу
+   * вердикта и не нарушение: текст мог остаться нейтральным, а слово в нём
+   * — устаревшим. Подмешать совет в разбор значило бы превратить подсказку
+   * автору в обвинение.
+   */
+  terminology?: string | null;
   /** Пояснение, переписанное проверяющим. Старше всех прочих. */
   reviewSummary?: string | null;
   /** Проверяющий поменял вердикт, уверенность или пояснение. */
@@ -87,6 +96,7 @@ export default function AssessmentCard({
   reviewed = false,
   overridden = false,
   moderatorComment,
+  terminology,
   reviewSummary,
   basis = "story",
   hasLink = false,
@@ -284,6 +294,13 @@ export default function AssessmentCard({
         <div className="border-t border-line px-6 py-5">
           <p className="text-sm text-muted">{words.reasonsLabel}</p>
           <p className="mt-3 max-w-prose text-base">{explanation}</p>
+        </div>
+      ) : null}
+
+      {terminology ? (
+        <div className="border-t border-line bg-paper px-6 py-5">
+          <p className="text-sm text-muted">{words.terminologyLabel}</p>
+          <p className="mt-3 max-w-prose text-base">{terminology}</p>
         </div>
       ) : null}
 

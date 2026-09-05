@@ -249,6 +249,8 @@ export async function submitReport(
     // Что модель списала с картинки. Без этого вердикт по снимку нечем
     // проверить: проверяющий видит вывод и не видит, из чего он сделан.
     aiExtractedText: assessment.details?.extractedText || null,
+    // Рекомендация по терминологии. Не часть вердикта — своя колонка.
+    aiTerminology: assessment.details?.terminology || null,
     // По чему судили. Заявителю это говорят на странице прямым текстом.
     aiBasis: run.basis,
     // Личный ключ страницы «принято». Случайный, потому что номер
