@@ -58,6 +58,15 @@ export type ReportRow = {
   claim: string | null;
   factVerdict: string | null;
   sources: string[];
+  /**
+   * Почему разбор не удался целиком или частично.
+   *
+   * Чаще всего это ссылка: площадка потребовала входа, запись закрыта,
+   * ролик удалён. На тестировании проверяющие видели «не смог по ссылке
+   * открыть» и шли спрашивать, сломался ли сервис, — причина всё это время
+   * лежала в журнале и никому не показывалась.
+   */
+  aiError: string | null;
 
   attachments: { id: string; kind: string; name: string; mime: string; public: boolean }[];
 };
@@ -97,7 +106,7 @@ export async function loadReports(filter: Filter): Promise<Page> {
           where: { ok: true },
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: { claim: true, factVerdict: true, sources: true },
+          select: { claim: true, factVerdict: true, sources: true, error: true },
         },
       },
     }),
@@ -177,7 +186,12 @@ function toRow(row: {
   violationType: { slug: string };
   reviewedBy: { name: string | null; email: string } | null;
   attachments: { id: string; kind: string; name: string; mime: string; public: boolean }[];
-  aiChecks: { claim: string | null; factVerdict: string | null; sources: string | null }[];
+  aiChecks: {
+    claim: string | null;
+    factVerdict: string | null;
+    sources: string | null;
+    error: string | null;
+  }[];
 }): ReportRow {
   const check = row.aiChecks[0];
 
@@ -211,6 +225,7 @@ function toRow(row: {
     factVerdict: check?.factVerdict ?? null,
     // В базе ссылки одной строкой через перенос — массивов в SQLite нет.
     sources: check?.sources ? check.sources.split("\n").filter(Boolean) : [],
+    aiError: check?.error ?? null,
 
     attachments: row.attachments,
   };

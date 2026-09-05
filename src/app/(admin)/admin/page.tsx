@@ -268,7 +268,9 @@ function Reasoning({ row }: { row: ReportRow }) {
   // Разбор по заявленному виду. Идёт первым и подписан: это ответ на вопрос
   // заявителя, а summary — ответ той головы, которая отработала первой.
   const chosen = readable(row.checks?.[row.typeSlug]?.explanation ?? null);
-  if (!summary && !chosen && !row.claim && !row.aiExtractedText) return null;
+  if (!summary && !chosen && !row.claim && !row.aiExtractedText && !row.aiError) {
+    return null;
+  }
 
   return (
     <details>
@@ -290,6 +292,15 @@ function Reasoning({ row }: { row: ReportRow }) {
       ) : null}
 
       {summary && summary !== chosen ? <p>{summary}</p> : null}
+
+      {/* Почему не сработало. Стоит первым: если ссылку не открыли, всё
+          ниже сделано по одному пересказу заявителя, и знать это надо
+          раньше, чем читать вывод. */}
+      {row.aiError ? (
+        <p>
+          <i>Не сработало:</i> {row.aiError}
+        </p>
+      ) : null}
 
       {row.claim ? (
         <p>
