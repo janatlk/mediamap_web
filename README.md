@@ -1,5 +1,7 @@
 # MediaMap
 
+> Developed under AGILE PROJECT No. M2AGL1023 — project “AI-Enhanced MediaMap.kg: Expansion of information pollution countermeasures for Marginalised Groups in Kyrgyzstan”, CFI / Media Consulting Development Foundation in Central Asia.
+
 Мониторинг нарушений в медиа Кыргызстана: язык вражды, дезинформация и
 цифровое мошенничество. Сообщения подаются публично и попадают в базу после
 проверки.

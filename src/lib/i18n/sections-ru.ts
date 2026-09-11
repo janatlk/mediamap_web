@@ -12,6 +12,7 @@ const sections = {
     title: "При поддержке",
     donors: "Доноры",
     partners: "Партнёры",
+    executor: "Исполнитель проекта",
   },
 
   analyticsPage: {

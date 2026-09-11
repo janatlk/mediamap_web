@@ -259,8 +259,17 @@ function chosenNote(row: ReportRow, finalVerdict: string | null): string {
   const check = row.checks?.[row.typeSlug];
   if (!check || finalVerdict === row.typeSlug) return "";
 
-  return ` · ${typeName(row.typeSlug)}: ${Math.round(check.confidence * 100)}%`;
+  // Ниже порога число не показываем: модель почти никогда не пишет ноль и
+  // на заведомо чистых текстах ставит 1-2%. Это её привычка, а не сомнение,
+  // и «язык вражды 1%» читалось как «немножко есть». Решение проекта.
+  const percent = Math.round(check.confidence * 100);
+  if (percent < NOTHING_BELOW) return ` · ${typeName(row.typeSlug)}: признаков нет`;
+
+  return ` · ${typeName(row.typeSlug)}: ${percent}%`;
 }
+
+/** Порог «признаков нет», в процентах. */
+const NOTHING_BELOW = 3;
 
 /** Разбор целиком: почему так решено, что проверить и чем кончилась проверка. */
 function Reasoning({ row }: { row: ReportRow }) {

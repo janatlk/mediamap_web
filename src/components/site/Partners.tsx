@@ -48,16 +48,16 @@ function Plate({ item, external }: { item: Partner; external: string }) {
 export default function Partners({ dict }: { dict: Dictionary }) {
   return (
     <section className="border-t border-line">
-      <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10">
         <h2 className="eyebrow">{dict.partners.title}</h2>
 
-        <div className="mt-6 grid gap-8 sm:grid-cols-[auto_1fr] sm:gap-x-12">
+        <div className="mt-4 grid gap-x-12 gap-y-3 sm:grid-cols-[auto_1fr]">
           {PARTNER_ROWS.map((row) => (
             <div key={row.id} className="contents">
               <p className="text-sm text-ink sm:pt-2.5">
-                {row.id === "donors" ? dict.partners.donors : dict.partners.partners}
+                {dict.partners[row.id]}
               </p>
-              <ul className="flex flex-wrap items-center gap-x-8 gap-y-2">
+              <ul className="flex flex-wrap items-center gap-x-8 gap-y-1">
                 {row.items.map((item) => (
                   <Plate
                     key={item.name}

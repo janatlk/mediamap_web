@@ -29,10 +29,17 @@ export type Partner = {
 };
 
 export type PartnerRow = {
-  id: "donors" | "partners";
+  id: "donors" | "partners" | "executor";
   items: Partner[];
 };
 
+/*
+  Состав по указанию проекта (сентябрь 2026): донор один — Европейский
+  союз; партнёры — AGILE, CFI и АОСМИ; исполнитель — Фонд развития
+  медиаконсалтинга в ЦА. Остальных участников консорциума Agile (Internews,
+  Thomson Media, ARTICLE 19, Fojo) в блоке не упоминаем — так попросил
+  проект.
+*/
 export const PARTNER_ROWS: PartnerRow[] = [
   {
     id: "donors",
@@ -42,23 +49,22 @@ export const PARTNER_ROWS: PartnerRow[] = [
         url: "https://european-union.europa.eu",
         logo: "/partners/eu.png",
       },
-      {
-        name: "Canal France International (CFI)",
-        url: "https://www.cfi.fr",
-        logo: "/partners/cfi.svg",
-      },
-      { name: "Internews", url: "https://internews.org" },
     ],
   },
   {
     id: "partners",
     items: [
       { name: "AGILE", logo: "/partners/agile.png" },
-      { name: "Фонд развития медиаконсалтинга в ЦА" },
+      {
+        name: "Canal France International (CFI)",
+        url: "https://www.cfi.fr",
+        logo: "/partners/cfi.svg",
+      },
       { name: "Ассоциация общественных СМИ Кыргызстана (АОСМИ)" },
-      { name: "Thomson Media", url: "https://www.thomsonmedia.de" },
-      { name: "ARTICLE 19", url: "https://www.article19.org" },
-      { name: "Fojo Media Institute", url: "https://fojo.se" },
     ],
+  },
+  {
+    id: "executor",
+    items: [{ name: "Фонд развития медиаконсалтинга в ЦА" }],
   },
 ];

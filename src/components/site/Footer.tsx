@@ -24,9 +24,9 @@ export default function Footer({ dict, lang }: Props) {
       попадает: высота у ссылки та же, просто теперь она не съедает
       вертикаль в одиночку.
     */
-    <footer className="mt-16 border-t border-line">
-      <div className="mx-auto max-w-[1400px] px-4 py-7 sm:px-6 lg:px-10">
-        <div className="flex flex-col gap-x-10 gap-y-4 sm:flex-row sm:items-baseline sm:justify-between">
+    <footer className="mt-10 border-t border-line">
+      <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 lg:px-10">
+        <div className="flex flex-col gap-x-10 gap-y-2 sm:flex-row sm:items-baseline sm:justify-between">
           <div>
             <p className="font-display text-base font-medium">{dict.brand}</p>
             <p className="mt-0.5 max-w-xs text-sm text-muted">
@@ -39,7 +39,7 @@ export default function Footer({ dict, lang }: Props) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex min-h-11 items-center text-muted transition-colors hover:text-signal"
+                className="flex min-h-11 items-center text-muted transition-colors hover:text-signal sm:min-h-8"
               >
                 {link.label}
               </Link>
@@ -53,11 +53,11 @@ export default function Footer({ dict, lang }: Props) {
             Читается мельче основного текста, но не мельче копирайта —
             набирать обязательство перед донором самым мелким кеглем на
             странице было бы ровно тем, чего доноры и опасаются. */}
-        <p className="mt-6 max-w-3xl border-t border-line pt-5 text-xs text-muted">
+        <p className="mt-4 max-w-3xl border-t border-line pt-4 text-xs text-muted">
           {dict.footer.disclaimer}
         </p>
 
-        <p className="mt-3 font-mono text-2xs text-muted">
+        <p className="mt-2 font-mono text-2xs text-muted">
           © {year} · {dict.footer.rights}
         </p>
       </div>

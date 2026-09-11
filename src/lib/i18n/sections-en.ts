@@ -12,6 +12,7 @@ const sections = {
     title: "Supported by",
     donors: "Donors",
     partners: "Partners",
+    executor: "Project implementer",
   },
 
   analyticsPage: {

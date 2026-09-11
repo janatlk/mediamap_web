@@ -11,6 +11,7 @@ const sections = {
     title: "Колдоо менен",
     donors: "Донорлор",
     partners: "Өнөктөштөр",
+    executor: "Долбоордун аткаруучусу",
   },
 
   analyticsPage: {
