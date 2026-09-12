@@ -43,6 +43,32 @@ export const percent = (part: number, whole: number): number =>
   whole === 0 ? 0 : Math.round((part / whole) * 100);
 
 /*
+  Доли, которые в сумме дают ровно 100.
+
+  Округление каждой по отдельности давало 43 + 29 + 29 = 101 — мелочь, но
+  на сайте про проверку фактов читатель такое замечает первым. Сначала
+  округляем вниз, недостающие проценты отдаём долям с самым большим
+  остатком.
+*/
+export function shares(parts: number[]): number[] {
+  const whole = parts.reduce((sum, part) => sum + part, 0);
+  if (whole === 0) return parts.map(() => 0);
+
+  const exact = parts.map((part) => (part / whole) * 100);
+  const result = exact.map(Math.floor);
+  let left = 100 - result.reduce((sum, value) => sum + value, 0);
+  const byRemainder = exact
+    .map((value, index) => [value - Math.floor(value), index] as const)
+    .sort((a, b) => b[0] - a[0]);
+  for (const [, index] of byRemainder) {
+    if (left <= 0) break;
+    result[index] += 1;
+    left -= 1;
+  }
+  return result;
+}
+
+/*
   Расшифровка HTML-мнемоник в заголовках новостей.
 
   Ленты отдают заголовок уже с мнемониками: 24.kg присылает

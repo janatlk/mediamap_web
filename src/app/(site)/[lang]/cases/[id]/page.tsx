@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  TriangleAlert,
+} from "lucide-react";
 
 import { formatDate } from "@/lib/format";
 import { isReadyLanguage, violationText } from "@/lib/i18n";
 import { getContent } from "@/server/content";
-import { typeColor } from "@/lib/violation-types";
+import { typeBorder, typeColor } from "@/lib/violation-types";
 import AssessmentCard from "@/components/report/AssessmentCard";
 import Translated from "@/components/report/Translated";
 import Attachments from "@/components/report/Attachments";
@@ -85,38 +92,178 @@ export default async function CasePage({
     );
   }
 
+  const typeName = violationText(dict, item.typeSlug)?.name ?? item.typeSlug;
+  const words = dict.cases;
+  const warning =
+    words.quoteWarning[item.typeSlug as keyof typeof words.quoteWarning] ??
+    words.quoteWarning.other;
+  /*
+    «Почему» под вердиктом. Заметка проверяющего — слово редакции, она
+    главнее; нет её — начало разбора модели, целиком он ниже.
+  */
+  const why = item.moderatorComment ?? item.ai?.explanation ?? null;
+
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
-      <Link
-        href={`/${lang}/cases`}
-        className="inline-flex min-h-11 items-center gap-2 py-2 text-sm text-signal hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        {dict.cases.backToList}
-      </Link>
+      {/* Крошки вместо одной ссылки «назад»: видно и раздел, и вид, и по
+          виду можно перейти к таким же случаям. */}
+      <nav aria-label={words.breadcrumbs} className="text-sm">
+        <ol className="flex flex-wrap items-center gap-x-2 text-muted">
+          <li>
+            <Link
+              href={`/${lang}/cases`}
+              className="inline-flex min-h-11 items-center text-signal hover:underline"
+            >
+              {dict.nav.cases}
+            </Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li>
+            <Link
+              href={`/${lang}/cases?type=${item.typeSlug}`}
+              className="inline-flex min-h-11 items-center text-signal hover:underline"
+            >
+              {typeName}
+            </Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="font-mono">
+            {item.publicId}
+          </li>
+        </ol>
+      </nav>
 
-      {/* Заголовок говорит, что произошло. Раньше здесь стояло название вида,
-          и у всех случаев одного вида страница называлась одинаково. Вид никуда
-          не делся — он ушёл в строку над заголовком, вместе с точкой цвета. */}
-      <div className="mt-6 max-w-3xl">
-        <p className="eyebrow flex items-center gap-2">
-          <span
-            className={`h-2.5 w-2.5 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
-            aria-hidden="true"
-          />
-          {violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
-        </p>
-
-        <h1 className="mt-3 text-3xl sm:text-4xl">
+      <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-16">
+      <div className="max-w-3xl">
+        {/* Заголовок говорит, что произошло. Раньше здесь стояло название вида,
+            и у всех случаев одного вида страница называлась одинаково. */}
+        <h1 className="text-3xl sm:text-4xl">
           {item.headline ? (
             <Translated text={item.headline} lang={lang} lines={1} />
           ) : (
-            violationText(dict, item.typeSlug)?.name ?? item.typeSlug
+            typeName
           )}
         </h1>
 
-        <dl className="mt-10">
-          <Field label={dict.cases.number}>
+        {/*
+          Вердикт — сразу под заголовком, раньше самого текста.
+
+          Прежде он стоял на полтора экрана ниже, после полного пересказа
+          сообщения. Страница о фейке сначала пересказывала фейк, и тот, кто
+          дальше не долистал, уносил с неё именно его.
+        */}
+        <section
+          aria-labelledby="verdict"
+          className={`mt-8 border-l-4 bg-surface px-5 py-5 sm:px-6 ${typeBorder(item.typeSlug)}`}
+        >
+          <p className="text-sm text-muted">{words.verdictLabel}</p>
+          <p id="verdict" className="mt-1 flex items-center gap-2 text-2xl">
+            <span
+              className={`h-3 w-3 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
+              aria-hidden="true"
+            />
+            {typeName}
+          </p>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+            <Check className="h-4 w-4 text-signal" aria-hidden="true" />
+            {words.verdictConfirmed}
+          </p>
+
+          {why ? (
+            <p className="mt-4 line-clamp-4 max-w-prose text-base">
+              <Translated text={why} lang={lang} lines={3} />
+            </p>
+          ) : null}
+          {item.ai ? (
+            <a
+              href="#analysis"
+              className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm text-signal hover:underline"
+            >
+              {words.readAnalysis}
+              <ArrowDown className="h-4 w-4" aria-hidden="true" />
+            </a>
+          ) : null}
+        </section>
+
+        {/*
+          Текст заявителя — под катом и с пометкой, что в нём. Пересказ
+          нарушения нужен как доказательство, но не как первое, что читают.
+          Пусто — блока нет: подпись без содержимого выглядит недоделкой.
+        */}
+        {item.authorComment ? (
+          <section className="mt-10">
+            <h2 className="text-sm text-muted">{words.fromAuthor}</h2>
+            <details className="group mt-3 border border-line bg-surface">
+              <summary className="flex min-h-11 cursor-pointer list-none items-start gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+                <TriangleAlert
+                  className="mt-0.5 h-5 w-5 shrink-0 text-trust-mid"
+                  aria-hidden="true"
+                />
+                <span className="flex-1">
+                  <span className="block text-base">{warning}</span>
+                  <span className="mt-2 inline-flex items-center gap-1 text-sm text-signal group-open:hidden">
+                    {words.quoteShow}
+                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                </span>
+              </summary>
+              <blockquote className="border-t border-line px-5 py-4 text-base whitespace-pre-line text-muted">
+                {item.authorComment}
+              </blockquote>
+            </details>
+          </section>
+        ) : null}
+
+        {/*
+          Приложенное — только то, что проверяющий открыл поимённо. Токена
+          здесь нет и быть не может: страница публичная, а личный ключ на
+          то и личный. Список пуст — блока просто нет.
+        */}
+        <Attachments items={item.attachments} title={words.attachments} />
+
+        {/*
+          Разбор модели — подробности к вердикту выше. Заметку проверяющего
+          в карточку не передаём: она уже стоит в плашке вердикта.
+        */}
+        {item.ai ? (
+          <div id="analysis" className="scroll-mt-24">
+            <AssessmentCard
+              dict={dict}
+              lang={lang}
+              audience="public"
+              status="APPROVED"
+              chosenType={item.typeSlug}
+              checks={item.ai.checks}
+              reviewed
+              terminology={item.terminology}
+              basis={item.basis}
+              hasLink={Boolean(item.link)}
+              assessment={{
+                verdict: item.ai.verdict as Verdict,
+                confidence: item.ai.confidence,
+                explanation: item.ai.explanation,
+                reasons: item.ai.reasons,
+                source: item.ai.source,
+              }}
+            />
+
+            {/* Кто и когда это писал. Без строки карточка читается как часть
+                решения редакции, а она — то, что ответила машина. */}
+            <p className="mt-3 max-w-prose text-sm text-muted">
+              {dict.assessment.publicNote}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      {/*
+        Служебное — номер, даты, площадка — в боковой колонке. На телефоне
+        она уходит вниз: сначала ответ, потом реквизиты.
+      */}
+      <aside className="mt-12 lg:sticky lg:top-24 lg:mt-0 lg:self-start">
+        <h2 className="eyebrow">{words.details}</h2>
+        <dl className="mt-3">
+          <Field label={words.number}>
             <span className="font-mono">{item.publicId}</span>
           </Field>
 
@@ -168,69 +315,8 @@ export default async function CasePage({
             ) : null}
           </Field>
           ) : null}
-
-          <Field label={dict.cases.fromAuthor}>
-            {item.authorComment ?? (
-              <span className="text-muted">{dict.cases.noComment}</span>
-            )}
-          </Field>
-
-          <Field label={dict.cases.fromTeam}>
-            {item.moderatorComment ? (
-              <Translated text={item.moderatorComment} lang={lang} />
-            ) : (
-              <span className="text-muted">{dict.cases.noComment}</span>
-            )}
-          </Field>
         </dl>
-
-        {/*
-          Приложенное — только то, что проверяющий открыл поимённо. Токена
-          здесь нет и быть не может: страница публичная, а личный ключ на
-          то и личный. Список пуст — блока просто нет.
-        */}
-        <Attachments items={item.attachments} title={dict.cases.attachments} />
-
-        {/*
-          Разбор модели — теперь и здесь, по решению проекта.
-
-          Раньше его видел только заявитель на своей странице «принято».
-          Случай опубликован, и читатель со стороны вправе знать, на чём
-          стоит вывод: без этого публикация выглядит решением из ниоткуда.
-
-          Заметку проверяющего в карточку не передаём: она уже стоит выше
-          отдельным полем, и показывать её дважды под разными подписями
-          значит делать вид, что это два разных сведения.
-        */}
-        {item.ai ? (
-          <>
-            <AssessmentCard
-              dict={dict}
-              lang={lang}
-              audience="public"
-              status="APPROVED"
-              chosenType={item.typeSlug}
-              checks={item.ai.checks}
-              reviewed
-              terminology={item.terminology}
-              basis={item.basis}
-              hasLink={Boolean(item.link)}
-              assessment={{
-                verdict: item.ai.verdict as Verdict,
-                confidence: item.ai.confidence,
-                explanation: item.ai.explanation,
-                reasons: item.ai.reasons,
-                source: item.ai.source,
-              }}
-            />
-
-            {/* Кто и когда это писал. Без строки карточка читается как часть
-                решения редакции, а она — то, что ответила машина. */}
-            <p className="mt-3 max-w-prose text-sm text-muted">
-              {dict.assessment.publicNote}
-            </p>
-          </>
-        ) : null}
+      </aside>
       </div>
     </div>
   );

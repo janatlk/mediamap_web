@@ -48,7 +48,7 @@ export default async function HomePage({
         dict={dict}
         lang={lang}
         caseCount={data.caseCount}
-        recentCount={data.recentCount}
+        receivedCount={data.receivedCount}
         reviewDays={data.reviewDays}
       />
 

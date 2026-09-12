@@ -31,6 +31,9 @@ export type NewsRow = {
 /** Сколько случаев подтверждено. */
 const countCases = () => db.report.count({ where: CONFIRMED });
 
+/** Сколько сообщений пришло всего — то же число, что в «Аналитике». */
+const countReceived = () => db.report.count();
+
 /** Сколько новостей собрано за всё время. */
 const countNews = () => db.newsItem.count();
 
@@ -154,6 +157,8 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
 
 export type HomeData = {
   caseCount: number;
+  /** Все сообщения, включая непроверенные и отклонённые. */
+  receivedCount: number;
   /** Подтверждено за последний месяц. */
   recentCount: number;
   /** Средний срок проверки в днях. null — рассмотренных ещё слишком мало. */
@@ -169,9 +174,10 @@ const CASES_ON_PAGE = 8;
 const NEWS_ON_PAGE = 5;
 
 export async function getHomeData(): Promise<HomeData> {
-  const [caseCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news] =
+  const [caseCount, receivedCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news] =
     await Promise.all([
       countCases(),
+      countReceived(),
       countRecent(),
       averageReviewDays(),
       countNews(),
@@ -183,6 +189,7 @@ export async function getHomeData(): Promise<HomeData> {
 
   return {
     caseCount,
+    receivedCount,
     recentCount,
     reviewDays,
     newsCount,

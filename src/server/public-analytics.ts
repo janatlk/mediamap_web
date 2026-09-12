@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
-import { hostFromUrl } from "@/lib/format";
+import { hostFromUrl, shares } from "@/lib/format";
 
 /*
   Числа для открытого раздела «Аналитика».
@@ -21,6 +21,12 @@ export type TypeSlice = {
   slug: string;
   total: number;
   confirmed: number;
+  /*
+    Ждут проверки. Раньше страница выводила «на проверке» как «всего минус
+    подтверждённые» — и отклонённые заявки выглядели так, будто их ещё
+    смотрят.
+  */
+  pending: number;
   /** Доля от всех сообщений, 0-100. */
   share: number;
 };
@@ -72,23 +78,23 @@ export async function getPublicAnalytics(): Promise<PublicAnalytics> {
   ).length;
 
   // --- по видам ---
-  const byType = new Map<string, { total: number; confirmed: number }>();
+  const byType = new Map<string, { total: number; confirmed: number; pending: number }>();
   for (const row of rows) {
     const slug = row.violationType.slug;
-    const cell = byType.get(slug) ?? { total: 0, confirmed: 0 };
+    const cell = byType.get(slug) ?? { total: 0, confirmed: 0, pending: 0 };
     cell.total += 1;
     if (row.status === REPORT_STATUS.APPROVED) cell.confirmed += 1;
+    if (row.status === REPORT_STATUS.PENDING) cell.pending += 1;
     byType.set(slug, cell);
   }
 
-  const types: TypeSlice[] = [...byType.entries()]
-    .map(([slug, cell]) => ({
-      slug,
-      total: cell.total,
-      confirmed: cell.confirmed,
-      share: total > 0 ? Math.round((cell.total / total) * 100) : 0,
-    }))
-    .sort((a, b) => b.total - a.total);
+  const cells = [...byType.entries()].sort((a, b) => b[1].total - a[1].total);
+  const percents = shares(cells.map(([, cell]) => cell.total));
+  const types: TypeSlice[] = cells.map(([slug, cell], index) => ({
+    slug,
+    ...cell,
+    share: percents[index],
+  }));
 
   /*
     --- динамика по месяцам ---

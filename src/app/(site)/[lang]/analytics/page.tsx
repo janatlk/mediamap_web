@@ -113,8 +113,10 @@ export default async function AnalyticsPage({
                 </span>
               </p>
               <p className="mt-1 text-sm text-muted">
-                {type.confirmed} {words.confirmed} · {type.total - type.confirmed}{" "}
-                {words.pending}
+                {type.confirmed} {words.confirmed} · {type.pending} {words.pending}
+                {type.total - type.confirmed - type.pending > 0
+                  ? ` · ${type.total - type.confirmed - type.pending} ${words.rejected}`
+                  : null}
               </p>
             </li>
           ))}

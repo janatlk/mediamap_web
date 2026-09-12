@@ -43,6 +43,7 @@ const sections = {
 
     confirmed: "подтверждено",
     pending: "на проверке",
+    rejected: "не подтвердилось",
     empty: "Данных пока нет — нужно хотя бы одно сообщение.",
     regionUnknown: "Область не указана",
     sourceUnknown: "Площадка не указана",

@@ -19,9 +19,7 @@ const en = {
 
   nav: {
     home: "Home",
-    /* “Verified” rather than “Cases”: the menu item names what the reader
-       will find there. The page heading is still “Verified cases”. */
-    cases: "Verified",
+    cases: "Cases",
     types: "Types of violations",
     news: "Media digest",
     analytics: "Analytics",
@@ -57,7 +55,8 @@ const en = {
     /* Строка складывается как «<число> <слово> <хвост>»: «3 types of
        violation». Поэтому хвост здесь — не название само по себе, а его
        продолжение; иначе выходило «3 types violation types». */
-    statCases: "verified",
+    statReceived: "received",
+    statCases: "confirmed and published",
     statRecent: "in the past month",
     statReviewDays: "— how long a review takes",
 
@@ -141,6 +140,23 @@ const en = {
     attachments: "Attached to the case",
     fromTeam: "What the review established",
     noComment: "No explanation was left.",
+    verdictLabel: "Review outcome",
+    verdictConfirmed: "confirmed by a MediaMap reviewer",
+    readAnalysis: "Full analysis",
+    breadcrumbs: "Section navigation",
+    details: "About the case",
+    quoteShow: "Show the text",
+    quoteWarning: {
+      "hate-speech":
+        "Quoted from the report. Contains offensive language — we show it " +
+        "only as evidence.",
+      disinformation:
+        "Quoted from the report. Contains false claims — please do not " +
+        "spread them.",
+      "digital-fraud":
+        "Quoted from the report. Do not follow its links or send money.",
+      other: "Quoted from the report as the reporter sent it.",
+    },
     notFound: "No such case",
     notFoundLead:
       "The number may be mistyped, or the case has not passed review yet.",
@@ -237,7 +253,7 @@ const en = {
       "The assessment is based on your description — the model did not see " +
       "the material itself.",
     checkedLink: "The publication at your link was analysed.",
-    checkedLinkFailed: "The link could not be opened.",
+    checkedLinkFailed: "The model could not open the post behind the link.",
     /*
       The same lines for an outside reader. On their own page the reporter
       reads “your link” and “matches your choice”, which is true there. On a

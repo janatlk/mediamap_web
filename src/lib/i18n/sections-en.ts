@@ -43,6 +43,7 @@ const sections = {
 
     confirmed: "confirmed",
     pending: "under review",
+    rejected: "not confirmed",
     empty: "No data yet — at least one report is needed.",
     regionUnknown: "Region not given",
     sourceUnknown: "Platform not given",

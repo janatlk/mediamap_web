@@ -17,6 +17,7 @@ export const getDictionary = (lang: Lang): Dictionary => DICTIONARIES[lang];
 export const FORMS: Record<Lang, Record<string, Forms>> = {
   ru: {
     cases: ["случай", "случая", "случаев"],
+    reports: ["сообщение", "сообщения", "сообщений"],
     types: ["вид", "вида", "видов"],
     news: ["новость", "новости", "новостей"],
     sources: ["площадка", "площадки", "площадок"],
@@ -24,6 +25,7 @@ export const FORMS: Record<Lang, Record<string, Forms>> = {
   },
   ky: {
     cases: ["учур", "учур", "учур"],
+    reports: ["билдирүү", "билдирүү", "билдирүү"],
     types: ["түр", "түр", "түр"],
     news: ["жаңылык", "жаңылык", "жаңылык"],
     sources: ["аянтча", "аянтча", "аянтча"],
@@ -32,6 +34,7 @@ export const FORMS: Record<Lang, Record<string, Forms>> = {
   // Английскому нужны две формы; третья повторяет вторую и не используется.
   en: {
     cases: ["case", "cases", "cases"],
+    reports: ["report", "reports", "reports"],
     types: ["type", "types", "types"],
     news: ["item", "items", "items"],
     sources: ["platform", "platforms", "platforms"],

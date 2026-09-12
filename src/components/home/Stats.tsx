@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { FORMS, type Dictionary, type Lang } from "@/lib/i18n";
 import { plural } from "@/lib/plural";
 
@@ -5,7 +7,7 @@ type Props = {
   dict: Dictionary;
   lang: Lang;
   caseCount: number;
-  recentCount: number;
+  receivedCount: number;
   reviewDays: number | null;
 };
 
@@ -26,25 +28,34 @@ type Props = {
   Срока может не быть: пока рассмотренных меньше трёх, среднее — это
   пересказ двух случаев. Тогда плашек две, и это честнее выдуманной третьей.
 */
+/*
+  Пара «получено — подтверждено» заменила «за последний месяц». Одно «7
+  проверено» на главной и «54 сообщения» в «Аналитике» читались как
+  противоречие; вместе они отвечают сразу и на «сколько к вам пишут», и на
+  «сколько из этого правда». Каждое число ведёт туда, где его видно
+  подробно.
+*/
 export default function Stats({
   dict,
   lang,
   caseCount,
-  recentCount,
+  receivedCount,
   reviewDays,
 }: Props) {
   const forms = FORMS[lang];
 
-  const items = [
+  const items: { value: number; word: string; tail: string; href?: string }[] = [
+    {
+      value: receivedCount,
+      word: plural(receivedCount, forms.reports, lang),
+      tail: dict.home.statReceived,
+      href: `/${lang}/analytics`,
+    },
     {
       value: caseCount,
       word: plural(caseCount, forms.cases, lang),
       tail: dict.home.statCases,
-    },
-    {
-      value: recentCount,
-      word: plural(recentCount, forms.cases, lang),
-      tail: dict.home.statRecent,
+      href: `/${lang}/cases`,
     },
     ...(reviewDays === null
       ? []
@@ -64,15 +75,31 @@ export default function Stats({
           Отсюда отрицательные поля — они гасят внутренний отступ ячейки. */}
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
         <div className="-mx-4 grid grid-cols-2 gap-px bg-line sm:-mx-6 sm:grid-cols-3 lg:-mx-10">
-          {items.map((item) => (
-            <div key={item.tail} className="bg-surface px-4 py-6 sm:px-6 sm:py-7 lg:px-10">
-              {/* Числа набраны тем же крупным начертанием, что заголовки, и цвет им нужен тот же: иначе четыре чёрных числа спорят с заголовком раздела. */}
-              <p className="font-display text-3xl text-display tabular-nums">{item.value}</p>
-              <p className="mt-1 text-sm text-muted">
-                {item.word} {item.tail}
-              </p>
-            </div>
-          ))}
+          {items.map((item) => {
+            const body = (
+              <>
+                {/* Числа набраны тем же крупным начертанием, что заголовки, и цвет им нужен тот же: иначе четыре чёрных числа спорят с заголовком раздела. */}
+                <p className="font-display text-3xl text-display tabular-nums">{item.value}</p>
+                <p className="mt-1 text-sm text-muted">
+                  {item.word} {item.tail}
+                </p>
+              </>
+            );
+            const cell = "bg-surface px-4 py-6 sm:px-6 sm:py-7 lg:px-10";
+            return item.href ? (
+              <Link
+                key={item.tail}
+                href={item.href}
+                className={`${cell} block transition-colors hover:bg-paper`}
+              >
+                {body}
+              </Link>
+            ) : (
+              <div key={item.tail} className={cell}>
+                {body}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
