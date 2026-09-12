@@ -65,10 +65,10 @@ function Breakdown({ types, dict, lang }: Omit<Props, "cases" | "total">) {
 export default function CaseFeed({ dict, lang, cases, types }: Props) {
   return (
     <section className="bg-surface">
-      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>
-            <h2 className="text-2xl">{dict.home.casesTitle}</h2>
+            <h2 className="text-2xl lg:text-3xl">{dict.home.casesTitle}</h2>
             <p className="mt-2 text-muted">{dict.home.casesLead}</p>
           </div>
           <Link
@@ -81,9 +81,9 @@ export default function CaseFeed({ dict, lang, cases, types }: Props) {
         </div>
 
         {cases.length === 0 ? (
-          <p className="mt-8 text-muted">{dict.home.casesEmpty}</p>
+          <p className="mt-8 text-muted lg:mt-12">{dict.home.casesEmpty}</p>
         ) : (
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_1.5fr] lg:gap-14">
+          <div className="mt-8 grid gap-10 lg:mt-12 lg:grid-cols-[1fr_1.5fr] lg:gap-14">
             <Breakdown dict={dict} lang={lang} types={types} />
 
             {/* Тот же список, что на странице случаев. Здесь стояла своя

@@ -18,11 +18,11 @@ export default function NewsList({
   if (news.length === 0) return null;
 
   return (
-    <section className="border-t border-line bg-surface">
-      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
+    <section className="border-t border-line">
+      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>
-            <h2 className="text-2xl">{dict.home.newsTitle}</h2>
+            <h2 className="text-2xl lg:text-3xl">{dict.home.newsTitle}</h2>
             <p className="mt-2 text-muted">{dict.home.newsLead}</p>
           </div>
           <Link
@@ -36,7 +36,7 @@ export default function NewsList({
 
         {/* Без линеек: три списка подряд с ними превращали страницу
             в одну длинную таблицу. */}
-        <ul className="mt-8 space-y-5">
+        <ul className="mt-8 space-y-5 lg:mt-12">
           {news.map((item) => (
             <li key={item.id}>
               <a

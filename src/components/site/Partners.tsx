@@ -48,7 +48,7 @@ function Plate({ item, external }: { item: Partner; external: string }) {
 export default function Partners({ dict }: { dict: Dictionary }) {
   return (
     <section className="border-t border-line">
-      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
         <h2 className="eyebrow">{dict.partners.title}</h2>
 
         <div className="mt-4 grid gap-x-12 gap-y-3 sm:grid-cols-[auto_1fr]">

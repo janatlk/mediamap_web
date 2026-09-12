@@ -23,7 +23,7 @@ export default function CaseList({
         <li key={item.id} className="border-b border-line">
           <Link
             href={`/${lang}/cases/${item.publicId}`}
-            className="block py-4 transition-colors hover:bg-surface"
+            className="block py-4 transition-colors hover:bg-line/40"
           >
             {/* Заголовок переносится на две строки — номер при этом должен
                 остаться справа, а не уезжать под точку. Отсюда flex без

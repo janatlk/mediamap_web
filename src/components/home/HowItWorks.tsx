@@ -7,10 +7,10 @@ import type { Dictionary } from "@/lib/i18n";
 // теперь стоит выше этого раздела.
 export default function HowItWorks({ dict }: { dict: Dictionary }) {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
-      <h2 className="text-2xl">{dict.home.howTitle}</h2>
+    <section className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
+      <h2 className="text-2xl lg:text-3xl">{dict.home.howTitle}</h2>
 
-      <ol className="mt-8 grid gap-8 sm:grid-cols-3">
+      <ol className="mt-8 grid gap-8 sm:grid-cols-3 lg:mt-12 lg:gap-12">
         {dict.home.steps.map((step, index) => (
           <li key={step.title}>
             {/* Номера тут по делу — это последовательность. */}
@@ -23,7 +23,7 @@ export default function HowItWorks({ dict }: { dict: Dictionary }) {
         ))}
       </ol>
 
-      <div className="mt-12 border-t border-line pt-8">
+      <div className="mt-12 border-t border-line pt-8 lg:mt-16 lg:pt-10">
         <h3 className="text-lg">{dict.home.limitsTitle}</h3>
         <p className="mt-2 max-w-prose text-muted">{dict.home.limitsBody}</p>
       </div>
