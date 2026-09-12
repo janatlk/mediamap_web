@@ -55,7 +55,7 @@ function Block({
 /** Сообщение о неизвестном виде. Ссылка назад обязательна. */
 function NotFound({ dict, lang }: { dict: Dictionary; lang: string }) {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">
       <h1 className="text-3xl">{dict.typesPage.notFound}</h1>
       <p className="mt-4 max-w-prose text-muted">
         {dict.typesPage.notFoundLead}
@@ -88,7 +88,7 @@ export default async function TypePage({
   const count = types.find((type) => type.slug === slug)?.count ?? 0;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <Link
         href={`/${lang}/types`}
         className="inline-flex min-h-11 items-center gap-2 py-2 text-sm text-signal hover:underline"
@@ -108,7 +108,7 @@ export default async function TypePage({
 
         <p className="mt-4 text-lg text-muted">{text.summary}</p>
 
-        <div className="mt-10">
+        <div className="mt-8">
           <Block title={dict.typesPage.about}>{text.about}</Block>
 
           <Block title={dict.typesPage.legal}>{text.legal}</Block>
@@ -135,7 +135,7 @@ export default async function TypePage({
         {count > 0 ? (
           <Link
             href={`/${lang}/cases?type=${slug}`}
-            className="mt-10 inline-flex h-12 items-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep"
+            className="mt-8 inline-flex h-12 items-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep"
           >
             {dict.typesPage.casesLink}
             <span className="font-mono text-sm">
@@ -144,10 +144,10 @@ export default async function TypePage({
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         ) : (
-          <p className="mt-10 text-muted">{dict.typesPage.casesNone}</p>
+          <p className="mt-8 text-muted">{dict.typesPage.casesNone}</p>
         )}
 
-        <p className="mt-10 border-t border-line pt-6 text-sm text-muted">
+        <p className="mt-8 border-t border-line pt-6 text-sm text-muted">
           {dict.typesPage.disclaimer}
         </p>
       </div>

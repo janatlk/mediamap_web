@@ -78,11 +78,11 @@ export default async function ContactsPage({
   const page = dict.contactsPage;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <h1 className="text-3xl sm:text-4xl">{page.title}</h1>
       <p className="mt-4 max-w-prose text-lg text-muted">{page.lead}</p>
 
-      <ul className="mt-10 grid gap-px bg-line sm:grid-cols-3">
+      <ul className="mt-8 grid gap-px bg-line sm:grid-cols-3">
         <Channel
           icon={<Send className="h-5 w-5" />}
           title={page.telegramTitle}
@@ -109,7 +109,7 @@ export default async function ContactsPage({
 
       {/* Сообщения о нарушениях через переписку теряются: нет номера, нет
           статуса, нет очереди на проверку. Уводим на форму. */}
-      <section className="mt-12 max-w-3xl border-t border-line pt-8">
+      <section className="mt-8 max-w-3xl border-t border-line pt-8">
         <h2 className="text-2xl">{page.reportTitle}</h2>
         <p className="mt-3 text-muted">{page.reportBody}</p>
 

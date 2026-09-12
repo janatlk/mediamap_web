@@ -30,7 +30,7 @@ export default async function AccountPage({
   const dict = await getContent(lang);
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-2xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -51,7 +51,7 @@ export default async function AccountPage({
         {/* Заголовок над списком. Без него страница выглядела так, будто
             аккаунт и есть список сообщений; со словом «История» видно, что
             это один из разделов профиля, а не всё его содержимое. */}
-        <h2 className="mt-10 flex items-center gap-2 text-xl">
+        <h2 className="mt-8 flex items-center gap-2 text-xl">
           <Clock className="h-5 w-5 text-muted" aria-hidden="true" />
           {dict.account.history}
         </h2>

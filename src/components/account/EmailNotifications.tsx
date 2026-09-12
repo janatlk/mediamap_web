@@ -26,7 +26,7 @@ export default function EmailNotifications({ dict, enabled }: Props) {
   return (
     <form
       action={setEmailNotifications}
-      className="mt-10 border-t border-line pt-6"
+      className="mt-8 border-t border-line pt-6"
     >
       <label className="flex cursor-pointer items-start gap-3">
         <input

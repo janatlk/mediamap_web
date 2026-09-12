@@ -72,7 +72,7 @@ export default async function NewsPage({
     }`;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <h1 className="text-3xl sm:text-4xl">{dict.newsPage.title}</h1>
       <p className="mt-4 max-w-prose text-lg text-muted">
         {dict.newsPage.lead}
@@ -107,7 +107,7 @@ export default async function NewsPage({
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-10 text-muted">{dict.newsPage.empty}</p>
+        <p className="mt-8 text-muted">{dict.newsPage.empty}</p>
       ) : (
         <>
           <p className="mt-8 text-sm text-muted">

@@ -42,13 +42,13 @@ export default async function TypesPage({
   const types = await loadViolationTypes();
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <h1 className="text-3xl sm:text-4xl">{dict.typesPage.title}</h1>
       <p className="mt-4 max-w-prose text-lg text-muted">
         {dict.typesPage.lead}
       </p>
 
-      <ul className="mt-10 grid gap-px bg-line sm:grid-cols-3">
+      <ul className="mt-8 grid gap-px bg-line sm:grid-cols-3">
         {types.map((type) => {
           const text = violationText(dict, type.slug);
 
@@ -84,7 +84,7 @@ export default async function TypesPage({
 
       {/* Печатаем статьи Уголовного кодекса — надо сказать, что это
           справка, а не заключение. */}
-      <p className="mt-10 max-w-prose text-sm text-muted">
+      <p className="mt-8 max-w-prose text-sm text-muted">
         {dict.typesPage.disclaimer}
       </p>
     </div>

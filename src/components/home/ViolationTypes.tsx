@@ -16,7 +16,7 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
 
   return (
     <section className="border-t border-line">
-      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>
             <h2 className="text-2xl">{dict.home.typesTitle}</h2>
@@ -31,7 +31,7 @@ export default function ViolationTypes({ dict, lang, types }: Props) {
           </Link>
         </div>
 
-        <ul className="mt-8 grid gap-px bg-line sm:grid-cols-3">
+        <ul className="mt-6 grid gap-px bg-line sm:grid-cols-3">
           {types.map((type) => {
             const text = violationText(dict, type.slug);
             const body = (

@@ -81,7 +81,7 @@ export default function Header({ dict, lang, account }: Props) {
 
   return (
     <header className="sticky top-0 z-[100] border-b border-line bg-paper">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
         <Link
           href={`/${lang}`}
           className="flex h-11 items-center font-display text-lg font-medium tracking-tight whitespace-nowrap"
@@ -140,11 +140,13 @@ export default function Header({ dict, lang, account }: Props) {
 
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
           {/* Поиск значком, без поля: поле в шапке съедало место, которое
-              нужнее рубрикам, а страница поиска всё равно своя. */}
+              нужнее рубрикам, а страница поиска всё равно своя. На самых
+              узких телефонах поиск и вход прячем: они есть в меню, а
+              шапка иначе вылезала вбок. */}
           <Link
             href={`/${lang}/search`}
             title={dict.nav.search}
-            className="flex h-11 w-11 items-center justify-center rounded-xs border border-border transition-colors hover:bg-surface"
+            className="hidden h-11 w-11 min-[380px]:flex items-center justify-center rounded-xs border border-border transition-colors hover:bg-surface"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">{dict.nav.search}</span>
@@ -160,7 +162,7 @@ export default function Header({ dict, lang, account }: Props) {
               шапке дороже. */}
           <Link
             href={account ? accountHref : `/${lang}/account/login`}
-            className="flex h-11 items-center gap-2 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface"
+            className="hidden h-11 items-center gap-2 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface min-[380px]:flex"
             title={account ? account.name : dict.nav.signIn}
           >
             {account ? (

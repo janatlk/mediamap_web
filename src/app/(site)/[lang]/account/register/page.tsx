@@ -20,11 +20,11 @@ export default async function AccountRegisterPage({
   const dict = await getContent(lang);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
+    <div className="mx-auto max-w-md px-4 py-10 sm:px-6">
       <h1 className="text-2xl">{dict.account.registerTitle}</h1>
       <p className="mt-3 text-muted">{dict.account.registerLead}</p>
 
-      <div className="mt-10">
+      <div className="mt-8">
         <AccountForm
           dict={dict}
           lang={lang}

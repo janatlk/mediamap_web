@@ -63,7 +63,7 @@ export default async function CasesPage({
   );
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <h1 className="text-3xl sm:text-4xl">{dict.cases.title}</h1>
       <p className="mt-4 max-w-prose text-lg text-muted">{dict.cases.lead}</p>
 
@@ -72,7 +72,7 @@ export default async function CasesPage({
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-10 text-muted">
+        <p className="mt-8 text-muted">
           {active ? dict.cases.emptyFiltered : dict.cases.empty}
         </p>
       ) : (

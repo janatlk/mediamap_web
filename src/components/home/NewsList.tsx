@@ -19,7 +19,7 @@ export default function NewsList({
 
   return (
     <section className="border-t border-line bg-surface">
-      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>
             <h2 className="text-2xl">{dict.home.newsTitle}</h2>
@@ -36,7 +36,7 @@ export default function NewsList({
 
         {/* Без линеек: три списка подряд с ними превращали страницу
             в одну длинную таблицу. */}
-        <ul className="mt-8 space-y-5">
+        <ul className="mt-6 space-y-5">
           {news.map((item) => (
             <li key={item.id}>
               <a

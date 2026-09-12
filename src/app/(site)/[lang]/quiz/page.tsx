@@ -42,17 +42,17 @@ export default async function QuizPage({
   const words = dict.quizPage;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
         <p className="mt-4 text-lg text-muted">{words.lead}</p>
 
-        <section className="mt-10 border-t border-line pt-8">
+        <section className="mt-8 border-t border-line pt-8">
           <h2 className="text-2xl">{words.soonTitle}</h2>
           <p className="mt-3 text-muted">{words.soonBody}</p>
         </section>
 
-        <section className="mt-10 border-t border-line pt-8">
+        <section className="mt-8 border-t border-line pt-8">
           <h2 className="text-2xl">{words.meanwhileTitle}</h2>
           <p className="mt-3 text-muted">{words.meanwhileBody}</p>
 

@@ -57,7 +57,7 @@ export default async function SentPage({
   // Неверная ссылка — объясняем, а не отдаём системную страницу ошибки.
   if (!receipt) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-2xl">
           <h1 className="text-3xl">{page.receiptNotFound}</h1>
           <p className="mt-4 text-muted">{page.receiptNotFoundLead}</p>
@@ -78,7 +78,7 @@ export default async function SentPage({
   const signedIn = (await currentUser()) !== null;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
       {/* Колонка та же, что у формы, и так же по центру. Человек приходит
           сюда прямо с формы, и страница не должна на глазах прыгать влево и
           становиться шире — это читается как «меня перекинуло не туда». */}
