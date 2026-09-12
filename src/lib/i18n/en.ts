@@ -227,8 +227,8 @@ const en = {
 
     forget: "Clear the list",
     forgetHint: "Removes the list from this browser. The reports themselves stay with us.",
-    signInHint: "Want to see your reports from any device?",
-    signInAction: "Sign in",
+    signInHint: "Want to keep your reports safe?",
+    signInAction: "Sign in to your account",
 
     link: "My reports",
   },

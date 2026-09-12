@@ -51,13 +51,10 @@ export default async function MyReportsPage({
             привязаны к аккаунту и от браузера не зависят. */}
         {signedIn ? null : (
           <p className="mt-4 border-l-2 border-line pl-4 text-sm text-muted">
-            {page.warning}{" "}
-            <span className="mt-2 block">
-              {page.signInHint}{" "}
-              <Link href={`/${lang}/account/login`} className="text-signal hover:underline">
-                {page.signInAction}
-              </Link>
-            </span>
+            {page.signInHint}{" "}
+            <Link href={`/${lang}/account/login`} className="text-signal hover:underline">
+              {page.signInAction}
+            </Link>
           </p>
         )}
 
