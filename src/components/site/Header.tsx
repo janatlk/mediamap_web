@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogIn, Menu, Search, UserRound, X } from "lucide-react";
+import { ChevronDown, Inbox, Menu, Search, UserRound, X } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
 import type { Dictionary, Lang } from "@/lib/i18n";
@@ -79,6 +79,21 @@ export default function Header({ dict, lang, account }: Props) {
   // В телефонном меню места хватает — там показываем всё подряд.
   const items = [...primary, ...secondary];
 
+  /*
+    Раздел активен и на своих вложенных страницах: на странице случая
+    меню раньше не подсвечивало ничего, и было непонятно, где ты.
+  */
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+
+  /*
+    Гостю — «Мои сообщения», а не «Войти». Сайт обещает писать без имени,
+    и заметная кнопка входа это обещание размывала. Вход никуда не делся:
+    он на странице своих сообщений.
+  */
+  const personalHref = account ? accountHref : `/${lang}/report/my`;
+  const personalLabel = account ? accountLabel : dict.myReports.link;
+
   return (
     <header className="sticky top-0 z-[100] border-b border-line bg-paper">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
@@ -94,9 +109,13 @@ export default function Header({ dict, lang, account }: Props) {
             <Link
               key={item.href}
               href={item.href}
-              aria-current={pathname === item.href ? "page" : undefined}
-              className={`flex h-11 items-center whitespace-nowrap text-sm transition-colors hover:text-signal ${
-                pathname === item.href ? "text-ink" : "text-muted"
+              aria-current={isActive(item.href) ? "page" : undefined}
+              // Одного цвета мало: серый и почти чёрный рядом почти не
+              // различить. Активный пункт ещё и подчёркнут.
+              className={`relative flex h-11 items-center whitespace-nowrap text-sm transition-colors hover:text-signal ${
+                isActive(item.href)
+                  ? "font-medium text-ink after:absolute after:inset-x-0 after:bottom-1.5 after:h-0.5 after:bg-signal"
+                  : "text-muted"
               }`}
             >
               {item.label}
@@ -108,9 +127,9 @@ export default function Header({ dict, lang, account }: Props) {
               type="button"
               onClick={() => setIsMoreOpen((value) => !value)}
               aria-expanded={isMoreOpen}
-              className={`flex h-11 items-center gap-1 text-sm transition-colors hover:text-signal ${
-                secondary.some((item) => item.href === pathname)
-                  ? "text-ink"
+              className={`relative flex h-11 items-center gap-1 text-sm transition-colors hover:text-signal ${
+                secondary.some((item) => isActive(item.href))
+                  ? "font-medium text-ink after:absolute after:inset-x-0 after:bottom-1.5 after:h-0.5 after:bg-signal"
                   : "text-muted"
               }`}
             >
@@ -124,9 +143,9 @@ export default function Header({ dict, lang, account }: Props) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      aria-current={pathname === item.href ? "page" : undefined}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       className={`block px-4 py-2.5 text-sm transition-colors hover:bg-surface ${
-                        pathname === item.href ? "text-ink" : "text-muted"
+                        isActive(item.href) ? "font-medium text-ink" : "text-muted"
                       }`}
                     >
                       {item.label}
@@ -161,18 +180,16 @@ export default function Header({ dict, lang, account }: Props) {
           {/* Подпись прячем на узких экранах: значка хватает, а место в
               шапке дороже. */}
           <Link
-            href={account ? accountHref : `/${lang}/account/login`}
+            href={personalHref}
             className="hidden h-11 items-center gap-2 rounded-xs border border-border px-3 text-sm transition-colors hover:bg-surface min-[380px]:flex"
-            title={account ? account.name : dict.nav.signIn}
+            title={account ? account.name : personalLabel}
           >
             {account ? (
               <UserRound className="h-4 w-4" aria-hidden="true" />
             ) : (
-              <LogIn className="h-4 w-4" aria-hidden="true" />
+              <Inbox className="h-4 w-4" aria-hidden="true" />
             )}
-            <span className="hidden xl:inline">
-              {account ? accountLabel : dict.nav.signIn}
-            </span>
+            <span className="sr-only xl:not-sr-only">{personalLabel}</span>
           </Link>
 
           <Link
@@ -199,7 +216,13 @@ export default function Header({ dict, lang, account }: Props) {
           <ul className="mx-auto max-w-[1400px] px-4 py-2 sm:px-6">
             {items.map((item) => (
               <li key={item.href} className="border-b border-line">
-                <Link href={item.href} className="block py-3.5 text-base">
+                <Link
+                  href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={`block py-3.5 text-base ${
+                    isActive(item.href) ? "font-medium text-signal" : ""
+                  }`}
+                >
                   {item.label}
                 </Link>
               </li>
@@ -215,15 +238,15 @@ export default function Header({ dict, lang, account }: Props) {
             </li>
             <li className="border-b border-line">
               <Link
-                href={account ? accountHref : `/${lang}/account/login`}
+                href={personalHref}
                 className="flex items-center gap-2 py-3.5 text-base"
               >
                 {account ? (
                   <UserRound className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <LogIn className="h-4 w-4" aria-hidden="true" />
+                  <Inbox className="h-4 w-4" aria-hidden="true" />
                 )}
-                {account ? accountLabel : dict.nav.signIn}
+                {personalLabel}
               </Link>
             </li>
 

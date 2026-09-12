@@ -27,12 +27,20 @@ type Props = { dict: Dictionary; lang: Lang };
 
 export default function Hero({ dict, lang }: Props) {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 pt-14 pb-14 sm:px-6 lg:px-10 lg:pt-24 lg:pb-20">
+    /*
+      На телефоне отступы чуть меньше, чем на десктопе. На 375×812 первый
+      экран кончался на 755px, и в последние полсотни пикселей влезали
+      только верхушки чисел статистики без подписей — «7 7», обрывок
+      непонятно чего. Минус ~80px, и полоса с числами входит целиком.
+      Десктоп не тронут: там воздух на месте и сгиб режет карточки, как
+      и должен.
+    */
+    <section className="mx-auto max-w-[1400px] px-4 pt-8 pb-6 sm:px-6 sm:pt-14 sm:pb-14 lg:px-10 lg:pt-24 lg:pb-20">
       <p className="text-sm tracking-[0.14em] text-muted uppercase">
         {dict.home.slogan}
       </p>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:items-end lg:gap-16">
+      <div className="mt-4 grid gap-6 sm:mt-6 sm:gap-8 lg:grid-cols-2 lg:items-end lg:gap-16">
         <h1 className="max-w-[16ch] text-3xl tracking-tight text-balance sm:text-4xl lg:text-5xl">
           {dict.home.title}
         </h1>
@@ -40,7 +48,7 @@ export default function Hero({ dict, lang }: Props) {
         <div className="lg:pb-2">
           <p className="max-w-prose text-lg text-muted lg:text-xl">{dict.home.lead}</p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
             <Link
               href={`/${lang}/report`}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep"

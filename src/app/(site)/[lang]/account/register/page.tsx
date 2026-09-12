@@ -20,8 +20,9 @@ export default async function AccountRegisterPage({
   const dict = await getContent(lang);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
-      <h1 className="text-2xl">{dict.account.registerTitle}</h1>
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+      <div className="max-w-md">
+      <h1 className="text-3xl sm:text-4xl">{dict.account.registerTitle}</h1>
       <p className="mt-3 text-muted">{dict.account.registerLead}</p>
 
       <div className="mt-10">
@@ -31,6 +32,7 @@ export default async function AccountRegisterPage({
           mode="register"
           providers={availableProviders()}
         />
+      </div>
       </div>
     </div>
   );

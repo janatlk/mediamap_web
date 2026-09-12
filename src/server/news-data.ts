@@ -44,8 +44,34 @@ export function splitPublisher(title: string): { title: string; publisher: strin
     tail.length <= MAX_PUBLISHER_CHARS &&
     tail.split(/\s+/).length <= MAX_PUBLISHER_WORDS;
 
-  return fits ? { title: title.slice(0, at).trim(), publisher: tail } : { title, publisher: null };
+  return fits
+    ? { title: title.slice(0, at).trim(), publisher: samePublisher(tail) }
+    : { title, publisher: null };
 }
+
+/*
+  Одно издание под разными подписями. Агрегатор подписывает Kaktus то
+  латиницей, то кириллицей, и в дайджесте рядом стояли «Kaktus Media» и
+  «Кактус Медиа» — будто два разных источника.
+*/
+const PUBLISHER_ALIASES: Record<string, string> = {
+  "кактус медиа": "Kaktus Media",
+  "kaktus.media": "Kaktus Media",
+  "акипресс": "AKIpress",
+  "24 кг": "24.kg",
+};
+
+export const samePublisher = (name: string): string =>
+  PUBLISHER_ALIASES[name.toLowerCase()] ?? name;
+
+/*
+  Ключ повтора. Сравнивать заголовки целиком было мало: одна новость
+  приходит с разными хвостами — «… - Kaktus Media» и «… - Кактус Медиа», —
+  и в дайджесте стояла дважды подряд. Хвост с изданием отрезаем, регистр и
+  знаки препинания не считаем.
+*/
+export const newsKey = (title: string): string =>
+  bare(splitPublisher(decodeEntities(title)).title);
 
 export type NewsRow = {
   id: number;
@@ -88,7 +114,7 @@ export async function loadNewsPage(
 
   const seen = new Set<string>();
   const unique = all.filter((item) => {
-    const key = item.title.trim().toLowerCase();
+    const key = newsKey(item.title);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -112,7 +138,7 @@ export async function loadNewsPage(
         link: item.link,
         snippet: usefulSnippet(item.title, item.snippet),
         // Издание точнее агрегатора: RTVI полезнее, чем «Google News (KG/RU)».
-        source: parsed.publisher ?? item.source,
+        source: parsed.publisher ?? samePublisher(item.source),
         publishedAt: item.publishedAt,
       };
     }),

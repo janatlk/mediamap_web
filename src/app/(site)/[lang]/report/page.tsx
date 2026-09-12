@@ -43,16 +43,16 @@ export default async function ReportPage({
       пришёл жаловаться, а под формой её всё равно никто не находил. Тем, кто
       вернулся смотреть решение, есть путь из шапки и по своей ссылке.
     */
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
-      {/* Колонка узкая — так читается текст и так заполняется форма. Но на
-          широком экране, прижатая к левому краю, она оставляла справа шестьсот
-          пикселей пустоты, и страница выглядела недоделанной. Поэтому центр. */}
-      <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl sm:text-3xl">{dict.reportPage.title}</h1>
-        <p className="mt-3 text-muted">{dict.reportPage.lead}</p>
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+      {/* Колонка узкая — так читается текст и так заполняется форма. Раньше
+          она стояла по центру, и заголовок при переходе сюда из любого
+          раздела прыгал вправо. Теперь как везде: на общей левой линии. */}
+      <div className="max-w-2xl">
+        <h1 className="text-3xl sm:text-4xl">{dict.reportPage.title}</h1>
+        <p className="mt-4 text-lg text-muted">{dict.reportPage.lead}</p>
       </div>
 
-      <div className="mx-auto mt-8 max-w-2xl">
+      <div className="mt-8 max-w-2xl">
         <ReportForm
           dict={dict}
           lang={lang}

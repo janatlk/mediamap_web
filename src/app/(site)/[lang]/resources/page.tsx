@@ -51,7 +51,7 @@ export default async function ResourcesPage({
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-3xl">
+      <div className="max-w-3xl">
         <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
         <p className="mt-4 text-lg text-muted">{words.lead}</p>
 

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
-import { splitPublisher } from "./news-data";
+import { newsKey, samePublisher, splitPublisher } from "./news-data";
 import { loadViolationTypes, type ViolationType } from "./violations";
 import { decodeEntities, hostFromUrl } from "@/lib/format";
 
@@ -135,7 +135,7 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
     ...pool.filter((item) => !isCyrillic(item.title)),
   ]
     .filter((item) => {
-      const key = item.title.trim().toLowerCase();
+      const key = newsKey(item.title);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -149,7 +149,7 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
         id: item.id,
         title: parsed.title,
         link: item.link,
-        source: parsed.publisher ?? item.source,
+        source: parsed.publisher ?? samePublisher(item.source),
         publishedAt: item.publishedAt,
       };
     });

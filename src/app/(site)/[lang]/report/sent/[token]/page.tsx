@@ -58,7 +58,7 @@ export default async function SentPage({
   if (!receipt) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-2xl">
+        <div className="max-w-2xl">
           <h1 className="text-3xl">{page.receiptNotFound}</h1>
           <p className="mt-4 text-muted">{page.receiptNotFoundLead}</p>
           <Link
@@ -82,7 +82,7 @@ export default async function SentPage({
       {/* Колонка та же, что у формы, и так же по центру. Человек приходит
           сюда прямо с формы, и страница не должна на глазах прыгать влево и
           становиться шире — это читается как «меня перекинуло не туда». */}
-      <div className="mx-auto max-w-2xl">
+      <div className="max-w-2xl">
         <h1 className="flex items-center gap-3 text-3xl sm:text-4xl">
           <Check className="h-7 w-7 text-signal" aria-hidden="true" />
           {page.doneTitle}

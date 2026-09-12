@@ -56,7 +56,7 @@ const en = {
        violation». Поэтому хвост здесь — не название само по себе, а его
        продолжение; иначе выходило «3 types violation types». */
     statReceived: "received",
-    statCases: "confirmed and published",
+    statCases: "confirmed",
     statRecent: "in the past month",
     statReviewDays: "— how long a review takes",
 
@@ -227,6 +227,8 @@ const en = {
 
     forget: "Clear the list",
     forgetHint: "Removes the list from this browser. The reports themselves stay with us.",
+    signInHint: "Want to see your reports from any device?",
+    signInAction: "Sign in",
 
     link: "My reports",
   },

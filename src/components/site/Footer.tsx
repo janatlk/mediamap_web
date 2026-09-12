@@ -10,6 +10,9 @@ export default function Footer({ dict, lang }: Props) {
   const links = [
     { href: `/${lang}/cases`, label: dict.nav.cases },
     { href: `/${lang}/types`, label: dict.nav.types },
+    // Были в шапке, но не в подвале — подвал должен повторять карту сайта.
+    { href: `/${lang}/analytics`, label: dict.nav.analytics },
+    { href: `/${lang}/news`, label: dict.nav.news },
     { href: `/${lang}/about`, label: dict.nav.about },
     { href: `/${lang}/contacts`, label: dict.nav.contacts },
     { href: "/admin", label: dict.footer.admin },

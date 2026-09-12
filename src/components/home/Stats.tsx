@@ -85,7 +85,7 @@ export default function Stats({
                 </p>
               </>
             );
-            const cell = "bg-surface px-4 py-6 sm:px-6 sm:py-7 lg:px-10";
+            const cell = "bg-surface px-4 py-5 sm:px-6 sm:py-7 lg:px-10";
             return item.href ? (
               <Link
                 key={item.tail}

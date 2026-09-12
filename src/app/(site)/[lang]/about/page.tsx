@@ -37,7 +37,7 @@ export default async function AboutPage({
     // широкого экрана, она оставляла справа пустую половину, и страница
     // выглядела недоделанной. Поэтому колонка по центру.
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-3xl">
+      <div className="max-w-3xl">
         <h1 className="text-3xl sm:text-4xl">{about.title}</h1>
         <p className="mt-5 text-lg text-muted">{about.lead}</p>
 

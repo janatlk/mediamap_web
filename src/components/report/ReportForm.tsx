@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, ArrowRight } from "lucide-react";
 
@@ -66,7 +66,8 @@ function Submit({ dict }: { dict: Dictionary }) {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex h-12 items-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep disabled:opacity-60"
+      // На телефоне во всю ширину, как главные кнопки на первом экране.
+      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xs bg-signal px-6 text-base font-medium text-surface transition-colors hover:bg-signal-deep disabled:opacity-60 sm:w-auto"
     >
       {pending ? dict.reportPage.submitting : dict.reportPage.submit}
       {pending ? null : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
@@ -259,10 +260,58 @@ export default function ReportForm({ dict, lang, types }: Props) {
       .replace("{total}", String(megabytes(FILE_LIMITS.TOTAL_BYTES)));
   };
 
+  /*
+    Обязательные поля проверяем ещё в браузере, до отправки.
+
+    Раньше ошибку «опишите подробнее» присылал сервер — то есть после того,
+    как форма целиком ушла по сети, вместе с приложенным видео на десятки
+    мегабайт. На медленном мобильном это минута ожидания ради сообщения,
+    которое можно было показать сразу.
+
+    Нативный required не годится: у формы noValidate, и так задумано —
+    браузер сказал бы своё на языке браузера, а не на языке страницы.
+    Сервер проверяет всё то же самое снова: браузеру верить нельзя.
+  */
+  const [day, setDay] = useState(
+    (state.status === "error" ? state.values.happenedAt : "") || today(),
+  );
+  const dayInWords = /^\d{4}-\d{2}-\d{2}$/.test(day)
+    ? new Intl.DateTimeFormat(lang, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(new Date(`${day}T00:00:00Z`))
+    : null;
+
+  const [local, setLocal] = useState<Record<string, string> | null>(null);
+  useEffect(() => setLocal(null), [state]);
+
+  const precheck = (event: FormEvent<HTMLFormElement>) => {
+    const form = new FormData(event.currentTarget);
+    const found: Record<string, string> = {};
+    if (!form.get("typeSlug")) found.typeSlug = "typeRequired";
+    if (String(form.get("story") ?? "").trim().length < LIMITS.STORY_MIN) {
+      found.story = "storyShort";
+    }
+    if (form.get("consent") !== "on") found.consent = "consentRequired";
+
+    if (Object.keys(found).length === 0) {
+      setLocal(null);
+      return;
+    }
+    event.preventDefault();
+    setLocal(found);
+    const first = ["typeSlug", "story", "consent"].find((field) => found[field]);
+    document.getElementById(first === "typeSlug" ? "type-first" : first!)?.focus();
+  };
+
   const errorFor = (field: string) =>
-    state.status === "error" && state.errors[field]
-      ? message(state.errors[field])
-      : undefined;
+    local?.[field]
+      ? message(local[field])
+      : state.status === "error" && state.errors[field]
+        ? message(state.errors[field])
+        : undefined;
 
   /*
     Ведём человека к первому незаполненному полю.
@@ -291,7 +340,7 @@ export default function ReportForm({ dict, lang, types }: Props) {
     state.status === "error" ? state.values[field] : undefined;
 
   return (
-    <form action={action} className="max-w-2xl" noValidate>
+    <form action={action} onSubmit={precheck} className="max-w-2xl" noValidate>
       <FormNotice text={errorFor("form")} />
 
       <input type="hidden" name="lang" value={lang} />
@@ -379,10 +428,19 @@ export default function ReportForm({ dict, lang, types }: Props) {
           max={today()}
           min={LIMITS.EARLIEST}
           defaultValue={valueOf("happenedAt") || today()}
-          aria-describedby={errorFor("happenedAt") ? "date-error" : undefined}
+          onChange={(event) => setDay(event.target.value)}
+          aria-describedby={errorFor("happenedAt") ? "date-error" : "date-words"}
           aria-invalid={errorFor("happenedAt") ? true : undefined}
           className={`${fieldStyle(Boolean(errorFor("happenedAt")))} sm:max-w-56`}
         />
+        {/* Поле даты рисует браузер, и формат у него — языка браузера, а не
+            сайта: на телефоне с английским Chrome выходило «09/12/2026», и
+            9 сентября легко прочесть как 9 декабря. Словами — без двусмысленности. */}
+        {dayInWords ? (
+          <p id="date-words" className="mt-2 text-sm text-muted" suppressHydrationWarning>
+            {dayInWords}
+          </p>
+        ) : null}
         <FieldError text={errorFor("happenedAt")} id="date-error" />
       </div>
 

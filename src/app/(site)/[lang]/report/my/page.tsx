@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import MyReports from "@/components/report/MyReports";
@@ -40,7 +41,7 @@ export default async function MyReportsPage({
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-2xl">
+      <div className="max-w-2xl">
         <h1 className="text-3xl sm:text-4xl">{page.title}</h1>
         <p className="mt-4 text-lg text-muted">
           {signedIn ? page.leadAccount : page.lead}
@@ -50,7 +51,13 @@ export default async function MyReportsPage({
             привязаны к аккаунту и от браузера не зависят. */}
         {signedIn ? null : (
           <p className="mt-4 border-l-2 border-line pl-4 text-sm text-muted">
-            {page.warning}
+            {page.warning}{" "}
+            <span className="mt-2 block">
+              {page.signInHint}{" "}
+              <Link href={`/${lang}/account/login`} className="text-signal hover:underline">
+                {page.signInAction}
+              </Link>
+            </span>
           </p>
         )}
 
