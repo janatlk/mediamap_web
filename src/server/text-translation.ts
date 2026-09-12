@@ -94,8 +94,18 @@ export async function translateTexts(
   return texts.map((text) => {
     const clean = text?.trim();
     if (!clean) return text ?? null;
-    return done.get(hashOf(clean)) ?? clean;
+    const translated = done.get(hashOf(clean));
+    return translated ? likeOriginal(clean, translated) : clean;
   });
+}
+
+/*
+  Модель ставит точку в конце всегда, даже заголовку, у которого её не
+  было: выходило «…деп аташат .». Нет знака в оригинале — нет и в переводе.
+*/
+function likeOriginal(original: string, translated: string): string {
+  if (/[.!?…]$/.test(original)) return translated;
+  return translated.replace(/\s*[.。]+$/, "");
 }
 
 /** Спрашивает модель пачками по языку оригинала и сохраняет ответы. */
