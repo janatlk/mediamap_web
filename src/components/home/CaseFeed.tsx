@@ -47,7 +47,9 @@ function Breakdown({ types, dict, lang }: Omit<Props, "cases" | "total">) {
           return (
             <li key={type.slug} className="flex h-full min-w-0 flex-1 flex-col">
               <span className="text-sm tabular-nums text-muted">{share}%</span>
-              <div className="relative mt-2 flex-1 bg-line" aria-hidden="true">
+              {/* Узкий столбик, а не на всю колонку: во всю ширину три
+                  столбика складывались в тяжёлые серые квадраты. */}
+              <div className="relative mt-2 w-12 flex-1 bg-line" aria-hidden="true">
                 <div
                   className={`absolute inset-x-0 bottom-0 ${typeColor(type.slug)}`}
                   style={{ height: `${share}%` }}
