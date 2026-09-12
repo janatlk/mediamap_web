@@ -90,11 +90,13 @@ type Bar = { key: string; label: string; count: number; share: number; color: st
 /** Вертикальные столбики долей. Узкие: во всю колонку выходили квадратами. */
 function VerticalBars({ items, className }: { items: Bar[]; className: string }) {
   return (
-    <ul className={`h-72 items-end gap-6 ${className}`}>
+    <ul className={`items-start gap-6 ${className}`}>
       {items.map((item) => (
-        <li key={item.key} className="flex h-full min-w-0 flex-1 flex-col">
+        <li key={item.key} className="flex min-w-0 flex-1 flex-col">
           <span className="text-sm tabular-nums text-muted">{item.share}%</span>
-          <div className="relative mt-2 w-12 flex-1 bg-line">
+          {/* Высота столбика задана, а не «сколько останется»: иначе у вида с
+              подписью в две строки столбик выходил короче и низы гуляли. */}
+          <div className="relative mt-2 h-56 w-12 bg-line">
             {/* Число случаев прямо на столбике, а не строкой под ним.
                 Невысокий столбик всё равно вмещает цифру: min-h. */}
             <div
@@ -104,7 +106,7 @@ function VerticalBars({ items, className }: { items: Bar[]; className: string })
               <span className="text-sm font-medium tabular-nums text-surface">{item.count}</span>
             </div>
           </div>
-          <span className="mt-3 text-sm leading-snug break-words">{item.label}</span>
+          <span className="mt-3 text-sm leading-snug">{item.label}</span>
         </li>
       ))}
     </ul>
