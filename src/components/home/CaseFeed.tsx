@@ -2,8 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import CaseList from "@/components/cases/CaseList";
-import TrendLine from "./TrendLine";
-import type { CaseRow, TrendPoint } from "@/server/home-data";
+import type { CaseRow } from "@/server/home-data";
 import type { ViolationType } from "@/server/violations";
 import { shares } from "@/lib/format";
 import { FORMS, violationText, type Dictionary, type Lang } from "@/lib/i18n";
@@ -22,17 +21,50 @@ type Props = {
   cases: CaseRow[];
   types: ViolationType[];
   total: number;
-  trend: TrendPoint[];
 };
 
 /** Распределение случаев по видам нарушений. */
-function Breakdown({ types, dict, lang, trend }: Omit<Props, "cases" | "total">) {
+function Breakdown({ types, dict, lang }: Omit<Props, "cases" | "total">) {
   const forms = FORMS[lang];
   const percents = shares(types.map((type) => type.count));
 
   return (
     <div>
-      <ul className="space-y-5">
+      {/*
+        Две раскладки одних и тех же долей.
+
+        На широком экране доли стоят столбиками: колонка слева от списка
+        высокая, и вертикальные столбики занимают её, а не жмутся полосками
+        к верху. На телефоне колонка во всю ширину и одна над другой — там
+        горизонтальные полосы читаются лучше, и они остались как были.
+
+        Скрытая раскладка убрана через display:none, поэтому экранный
+        диктор читает только одну из двух.
+      */}
+      <ul className="hidden h-72 items-end gap-6 lg:flex">
+        {types.map((type, index) => {
+          const share = percents[index];
+          return (
+            <li key={type.slug} className="flex h-full min-w-0 flex-1 flex-col">
+              <span className="text-sm tabular-nums text-muted">{share}%</span>
+              <div className="relative mt-2 flex-1 bg-line" aria-hidden="true">
+                <div
+                  className={`absolute inset-x-0 bottom-0 ${typeColor(type.slug)}`}
+                  style={{ height: `${share}%` }}
+                />
+              </div>
+              <span className="mt-3 min-h-11 text-sm leading-snug">
+                {violationText(dict, type.slug)?.name ?? type.slug}
+              </span>
+              <span className="text-sm text-muted">
+                {type.count} {plural(type.count, forms.cases, lang)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      <ul className="space-y-5 lg:hidden">
         {types.map((type, index) => {
           const share = percents[index];
           return (
@@ -60,13 +92,11 @@ function Breakdown({ types, dict, lang, trend }: Omit<Props, "cases" | "total">)
       </ul>
 
       <p className="mt-6 text-sm text-muted">{dict.home.casesShare}</p>
-
-      <TrendLine points={trend} lang={lang} caption={dict.home.trendCaption} />
     </div>
   );
 }
 
-export default function CaseFeed({ dict, lang, cases, types, trend }: Props) {
+export default function CaseFeed({ dict, lang, cases, types }: Props) {
   return (
     <section className="bg-surface">
       <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
@@ -88,7 +118,7 @@ export default function CaseFeed({ dict, lang, cases, types, trend }: Props) {
           <p className="mt-8 text-muted lg:mt-12">{dict.home.casesEmpty}</p>
         ) : (
           <div className="mt-8 grid gap-10 lg:mt-12 lg:grid-cols-[1fr_1.5fr] lg:gap-14">
-            <Breakdown dict={dict} lang={lang} types={types} trend={trend} />
+            <Breakdown dict={dict} lang={lang} types={types} />
 
             {/* Тот же список, что на странице случаев. Здесь стояла своя
                 копия — с другой раскладкой и без ссылок: строки не

@@ -71,7 +71,6 @@ export default async function HomePage({
         cases={data.cases}
         types={data.types}
         total={data.caseCount}
-        trend={data.trend}
       />
 
       <NewsList dict={dict} lang={lang} news={data.news} />

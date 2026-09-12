@@ -82,50 +82,6 @@ async function averageReviewDays(): Promise<number | null> {
   return Math.max(1, Math.round(average));
 }
 
-export type TrendPoint = { week: Date; count: number };
-
-/** Сколько недель показывает линия тренда, не больше. */
-const TREND_WEEKS = 12;
-
-/** Понедельник недели, в которую попала дата, по UTC. */
-const weekStart = (date: Date) => {
-  const day = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
-  return day;
-};
-
-/**
- * Подтверждённые случаи по неделям — для линии тренда.
- *
- * Считаем с недели первого случая, а не за фиксированные двенадцать недель:
- * иначе у молодого проекта линия долго лежала бы на нуле и читалась как
- * «ничего не происходило». Пустые недели внутри ряда — честные нули.
- */
-async function loadTrend(): Promise<TrendPoint[]> {
-  const rows = await db.report.findMany({
-    where: CONFIRMED,
-    select: { createdAt: true },
-  });
-  if (rows.length === 0) return [];
-
-  const counts = new Map<number, number>();
-  for (const row of rows) {
-    const key = weekStart(row.createdAt).getTime();
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-
-  const last = weekStart(new Date());
-  const first = new Date(
-    Math.max(Math.min(...counts.keys()), last.getTime() - (TREND_WEEKS - 1) * 7 * 86_400_000),
-  );
-
-  const points: TrendPoint[] = [];
-  for (let week = first; week <= last; week = new Date(week.getTime() + 7 * 86_400_000)) {
-    points.push({ week, count: counts.get(week.getTime()) ?? 0 });
-  }
-  return points;
-}
-
 /** Последние подтверждённые случаи. */
 async function loadCases(limit: number): Promise<CaseRow[]> {
   const rows = await db.report.findMany({
@@ -205,8 +161,6 @@ export type HomeData = {
   receivedCount: number;
   /** Подтверждено за последний месяц. */
   recentCount: number;
-  /** Подтверждённые случаи по неделям. */
-  trend: TrendPoint[];
   /** Средний срок проверки в днях. null — рассмотренных ещё слишком мало. */
   reviewDays: number | null;
   newsCount: number;
@@ -220,7 +174,7 @@ const CASES_ON_PAGE = 8;
 const NEWS_ON_PAGE = 5;
 
 export async function getHomeData(): Promise<HomeData> {
-  const [caseCount, receivedCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news, trend] =
+  const [caseCount, receivedCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news] =
     await Promise.all([
       countCases(),
       countReceived(),
@@ -231,7 +185,6 @@ export async function getHomeData(): Promise<HomeData> {
       loadViolationTypes(),
       loadCases(CASES_ON_PAGE),
       loadNews(NEWS_ON_PAGE),
-      loadTrend(),
     ]);
 
   return {
@@ -244,6 +197,5 @@ export async function getHomeData(): Promise<HomeData> {
     types,
     cases,
     news,
-    trend,
   };
 }
