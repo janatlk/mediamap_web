@@ -58,6 +58,7 @@ const ky: typeof ru = {
     latestTitle: "Акыркы текшерүүлөр",
     casesEmpty: "Азырынча бир да учур тастыкталган жок.",
     casesShare: "бардык учурлардан үлүшү",
+    trendCaption: "жумалар боюнча ырасталганы",
     caseSourceUnknown: "аянтча көрсөтүлгөн эмес",
 
     typesTitle: "Бузуулардын түрлөрү",

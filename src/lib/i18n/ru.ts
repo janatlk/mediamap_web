@@ -70,6 +70,7 @@ const ru = {
     latestTitle: "Последние проверки",
     casesEmpty: "Пока ни один случай не подтверждён.",
     casesShare: "доля от всех случаев",
+    trendCaption: "подтверждено по неделям",
     caseSourceUnknown: "площадка не указана",
 
     typesTitle: "Виды нарушений",
