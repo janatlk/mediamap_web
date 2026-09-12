@@ -20,7 +20,7 @@ export default function ReportCta({
 }) {
   return (
     <section className="bg-deep text-surface">
-      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             {/* Цвет задан прямо, и это не лишнее. Заголовкам в globals.css

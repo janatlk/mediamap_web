@@ -103,7 +103,7 @@ function CaseItem({ item, lang, dict }: { item: CaseRow; lang: Lang; dict: Dicti
 export default function CaseFeed({ dict, lang, cases, types, total }: Props) {
   return (
     <section className="bg-surface">
-      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>
             <h2 className="text-2xl">{dict.home.casesTitle}</h2>
@@ -119,9 +119,9 @@ export default function CaseFeed({ dict, lang, cases, types, total }: Props) {
         </div>
 
         {cases.length === 0 ? (
-          <p className="mt-6 text-muted">{dict.home.casesEmpty}</p>
+          <p className="mt-8 text-muted">{dict.home.casesEmpty}</p>
         ) : (
-          <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_1.5fr] lg:gap-10">
+          <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_1.5fr] lg:gap-14">
             <Breakdown dict={dict} lang={lang} types={types} total={total} />
 
             <ul className="border-t border-line">

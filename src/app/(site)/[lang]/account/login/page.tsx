@@ -26,10 +26,10 @@ export default async function AccountLoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
       <h1 className="text-2xl">{dict.account.loginTitle}</h1>
 
-      <div className="mt-8">
+      <div className="mt-10">
         <AccountForm
           dict={dict}
           lang={lang}

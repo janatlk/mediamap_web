@@ -68,7 +68,7 @@ export default async function AnalyticsPage({
 
   if (data.total === 0) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
         <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
         <p className="mt-8 text-muted">{words.empty}</p>
       </div>
@@ -76,7 +76,7 @@ export default async function AnalyticsPage({
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
       <p className="mt-4 max-w-prose text-lg text-muted">{words.lead}</p>
 
@@ -86,7 +86,7 @@ export default async function AnalyticsPage({
         {words.scopeNote}
       </p>
 
-      <section className="mt-8 border-t border-line pt-8">
+      <section className="mt-10 border-t border-line pt-8">
         <h2 className="eyebrow">{words.totalTitle}</h2>
         <p className="mt-3 font-display text-4xl">{data.total}</p>
         <p className="mt-1 text-sm text-muted">
@@ -94,7 +94,7 @@ export default async function AnalyticsPage({
         </p>
       </section>
 
-      <section className="mt-8 border-t border-line pt-8">
+      <section className="mt-10 border-t border-line pt-8">
         <h2 className="text-2xl">{words.typesTitle}</h2>
         <p className="mt-2 max-w-prose text-muted">{words.typesLead}</p>
 
@@ -121,7 +121,7 @@ export default async function AnalyticsPage({
         </ul>
       </section>
 
-      <section className="mt-8 border-t border-line pt-8">
+      <section className="mt-10 border-t border-line pt-8">
         <h2 className="text-2xl">{words.trendTitle}</h2>
         <p className="mt-2 max-w-prose text-muted">{words.trendLead}</p>
 
@@ -143,7 +143,7 @@ export default async function AnalyticsPage({
         </div>
       </section>
 
-      <section className="mt-8 border-t border-line pt-8">
+      <section className="mt-10 border-t border-line pt-8">
         <h2 className="text-2xl">{words.sourcesTitle}</h2>
         <p className="mt-2 max-w-prose text-muted">{words.sourcesLead}</p>
 
@@ -160,7 +160,7 @@ export default async function AnalyticsPage({
         </ul>
       </section>
 
-      <section className="mt-8 border-t border-line pt-8">
+      <section className="mt-10 border-t border-line pt-8">
         <h2 className="text-2xl">{words.regionsTitle}</h2>
         <p className="mt-2 max-w-prose text-muted">{words.regionsLead}</p>
 

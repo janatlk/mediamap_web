@@ -71,7 +71,7 @@ export default async function CasePage({
   // полезнее понять, что случилось, чем упереться в системную страницу.
   if (!item) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-10">
         <h1 className="text-3xl">{dict.cases.notFound}</h1>
         <p className="mt-4 max-w-prose text-muted">{dict.cases.notFoundLead}</p>
         <Link
@@ -86,7 +86,7 @@ export default async function CasePage({
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <Link
         href={`/${lang}/cases`}
         className="inline-flex min-h-11 items-center gap-2 py-2 text-sm text-signal hover:underline"
@@ -115,7 +115,7 @@ export default async function CasePage({
           )}
         </h1>
 
-        <dl className="mt-8">
+        <dl className="mt-10">
           <Field label={dict.cases.number}>
             <span className="font-mono">{item.publicId}</span>
           </Field>

@@ -41,12 +41,12 @@ export default async function GlossaryPage({
   const entries = Object.entries(dict.glossary);
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-3xl sm:text-4xl">{dict.glossaryPage.title}</h1>
         <p className="mt-4 text-lg text-muted">{dict.glossaryPage.lead}</p>
 
-        <dl className="mt-8">
+        <dl className="mt-10">
           {entries.map(([id, entry]) => (
             <div key={id} className="border-t border-line py-6">
               <dt className="text-xl">{entry.term}</dt>

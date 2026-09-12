@@ -101,7 +101,7 @@ export default function MyReports({ dict, lang, signedIn }: Props) {
 
   if (reports.length === 0) {
     return (
-      <div className="mt-8">
+      <div className="mt-10">
         <p className="text-muted">
           {signedIn ? page.emptyAccount : page.empty}
         </p>
@@ -134,7 +134,7 @@ export default function MyReports({ dict, lang, signedIn }: Props) {
 
   return (
     <>
-      <ul className="mt-8 border-t border-line">
+      <ul className="mt-10 border-t border-line">
         {reports.map((report) => (
           <li key={report.token} className="border-b border-line py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">

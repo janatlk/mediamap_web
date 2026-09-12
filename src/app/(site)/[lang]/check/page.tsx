@@ -44,7 +44,7 @@ export default async function CheckPage({
   const words = dict.checkPage;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
         <p className="mt-4 text-lg text-muted">{words.lead}</p>
@@ -57,7 +57,7 @@ export default async function CheckPage({
           <p className="mt-3 max-w-prose text-muted">{words.limitsThirdParty}</p>
         </section>
 
-        <div className="mt-8">
+        <div className="mt-10">
           <CheckForm dict={dict} />
           <p className="mt-3 text-sm text-muted">{words.formats}</p>
         </div>

@@ -50,13 +50,13 @@ export default async function ResourcesPage({
   };
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
         <p className="mt-4 text-lg text-muted">{words.lead}</p>
 
         {RESOURCE_GROUPS.map((group) => (
-          <section key={group.id} className="mt-8 border-t border-line pt-8">
+          <section key={group.id} className="mt-10 border-t border-line pt-8">
             <h2 className="text-2xl">{heading[group.id]}</h2>
 
             <ul className="mt-5">
@@ -89,7 +89,7 @@ export default async function ResourcesPage({
         {/* Отсутствие местных ссылок надо объяснить: иначе страница про
             Кыргызстан без единого кыргызстанского ресурса выглядит
             недоделанной, а она такая намеренно. */}
-        <section className="mt-8 border-t border-line pt-8">
+        <section className="mt-10 border-t border-line pt-8">
           <h2 className="text-xl">{words.localTitle}</h2>
           <p className="mt-2 text-muted">{words.localBody}</p>
         </section>
