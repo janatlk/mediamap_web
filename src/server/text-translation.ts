@@ -22,6 +22,16 @@ import { guessLanguage } from "./translate";
 
 type Source = "en" | "ru" | "ky" | "auto";
 
+/*
+  Сколько ждать модель. Страница ждёт недолго: не успели — покажем
+  оригинал, а перевод догонит фоновый прогрев. Фоновому прогреву спешить
+  некуда, и обрывать его нельзя: модель доделает брошенную работу всё
+  равно, а перевод пропадёт.
+*/
+const PAGE_WAIT_MS = 25_000;
+const WARM_WAIT_MS = 5 * 60_000;
+const PER_REQUEST = 8;
+
 const hashOf = (text: string) => createHash("sha256").update(text).digest("hex");
 
 /**
@@ -47,7 +57,11 @@ function sourceOf(text: string, source: Source): string {
 export async function translateTexts(
   texts: (string | null | undefined)[],
   lang: Lang,
-  { source = "auto", live = true }: { source?: Source; live?: boolean } = {},
+  {
+    source = "auto",
+    live = true,
+    waitMs = PAGE_WAIT_MS,
+  }: { source?: Source; live?: boolean; waitMs?: number } = {},
 ): Promise<(string | null)[]> {
   const jobs = new Map<string, { text: string; from: string }>();
   for (const text of texts) {
@@ -68,7 +82,7 @@ export async function translateTexts(
 
       if (live) {
         const missing = [...jobs].filter(([hash]) => !done.has(hash));
-        for (const [hash, text] of await askModel(missing, lang)) {
+        for (const [hash, text] of await askModel(missing, lang, waitMs)) {
           done.set(hash, text);
         }
       }
@@ -88,6 +102,7 @@ export async function translateTexts(
 async function askModel(
   missing: [string, { text: string; from: string }][],
   lang: Lang,
+  waitMs: number,
 ): Promise<[string, string][]> {
   const base = mlServiceUrl();
   if (!base || missing.length === 0) return [];
@@ -99,13 +114,15 @@ async function askModel(
 
   const result: [string, string][] = [];
   for (const [from, items] of bySource) {
-    for (let start = 0; start < items.length; start += 40) {
-      const part = items.slice(start, start + 40);
+    // Понемногу: модель одна и работает под замком, и большая пачка
+    // заставила бы ждать всех остальных, включая открытую страницу.
+    for (let start = 0; start < items.length; start += PER_REQUEST) {
+      const part = items.slice(start, start + PER_REQUEST);
       const response = await fetch(`${base}/translate/many`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texts: part.map(([, text]) => text), target: lang, source: from }),
-        signal: AbortSignal.timeout(timeoutMs()),
+        signal: AbortSignal.timeout(waitMs),
         cache: "no-store",
       });
       if (!response.ok) throw new Error(`перевод: сервис ответил ${response.status}`);
@@ -138,7 +155,7 @@ export async function warmTranslations(
   source: Source = "auto",
 ): Promise<void> {
   for (const lang of READY_LANGUAGES) {
-    await translateTexts(texts, lang, { source, live: true });
+    await translateTexts(texts, lang, { source, live: true, waitMs: WARM_WAIT_MS });
   }
 }
 
@@ -179,7 +196,3 @@ function checkTexts(raw: string | null): string[] {
   }
 }
 
-function timeoutMs(): number {
-  const raw = Number(process.env.TRANSLATE_TIMEOUT_MS);
-  return Number.isFinite(raw) && raw > 0 ? raw : 60_000;
-}
