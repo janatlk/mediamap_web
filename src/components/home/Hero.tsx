@@ -27,7 +27,7 @@ type Props = { dict: Dictionary; lang: Lang };
 
 export default function Hero({ dict, lang }: Props) {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 pt-14 pb-14 sm:px-6 lg:px-10 lg:pt-16 lg:pb-16">
+    <section className="mx-auto max-w-[1400px] px-4 pt-14 pb-14 sm:px-6 lg:px-10 lg:pt-24 lg:pb-20">
       <p className="text-sm tracking-[0.14em] text-muted uppercase">
         {dict.home.slogan}
       </p>
