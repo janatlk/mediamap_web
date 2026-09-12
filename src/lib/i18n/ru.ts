@@ -70,8 +70,6 @@ const ru = {
     latestTitle: "Последние проверки",
     casesEmpty: "Пока ни один случай не подтверждён.",
     casesShare: "доля от всех случаев",
-    platformsShare: "по площадкам — доля среди случаев, где площадка известна",
-    platformsOther: "другие",
     caseSourceUnknown: "площадка не указана",
 
     typesTitle: "Виды нарушений",

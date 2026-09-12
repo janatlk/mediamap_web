@@ -82,39 +82,6 @@ async function averageReviewDays(): Promise<number | null> {
   return Math.max(1, Math.round(average));
 }
 
-export type PlatformCount = { name: string | null; count: number };
-
-/** Сколько площадок показываем отдельными столбиками, остальные — «другие». */
-const TOP_PLATFORMS = 3;
-
-/**
- * Подтверждённые случаи по площадкам — для столбиков на главной.
- *
- * Только случаи со ссылкой: без неё площадка неизвестна. Самые частые идут
- * отдельно, хвост складывается в «другие» (name: null), чтобы столбиков
- * было не больше, чем видов над ними.
- */
-async function countPlatforms(): Promise<PlatformCount[]> {
-  const rows = await db.report.findMany({
-    where: CONFIRMED,
-    select: { mediaLink: true },
-  });
-
-  const counts = new Map<string, number>();
-  for (const row of rows) {
-    const host = hostFromUrl(row.mediaLink);
-    if (host) counts.set(host, (counts.get(host) ?? 0) + 1);
-  }
-
-  const sorted = [...counts.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  if (sorted.length <= TOP_PLATFORMS + 1) return sorted;
-
-  const rest = sorted.slice(TOP_PLATFORMS).reduce((sum, item) => sum + item.count, 0);
-  return [...sorted.slice(0, TOP_PLATFORMS), { name: null, count: rest }];
-}
-
 /** Последние подтверждённые случаи. */
 async function loadCases(limit: number): Promise<CaseRow[]> {
   const rows = await db.report.findMany({
@@ -199,8 +166,6 @@ export type HomeData = {
   newsCount: number;
   sourceCount: number;
   types: ViolationType[];
-  /** Подтверждённые случаи по площадкам. */
-  platforms: PlatformCount[];
   cases: CaseRow[];
   news: NewsRow[];
 };
@@ -209,7 +174,7 @@ const CASES_ON_PAGE = 8;
 const NEWS_ON_PAGE = 5;
 
 export async function getHomeData(): Promise<HomeData> {
-  const [caseCount, receivedCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news, platforms] =
+  const [caseCount, receivedCount, recentCount, reviewDays, newsCount, sourceCount, types, cases, news] =
     await Promise.all([
       countCases(),
       countReceived(),
@@ -220,7 +185,6 @@ export async function getHomeData(): Promise<HomeData> {
       loadViolationTypes(),
       loadCases(CASES_ON_PAGE),
       loadNews(NEWS_ON_PAGE),
-      countPlatforms(),
     ]);
 
   return {
@@ -233,6 +197,5 @@ export async function getHomeData(): Promise<HomeData> {
     types,
     cases,
     news,
-    platforms,
   };
 }
