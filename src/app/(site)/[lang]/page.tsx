@@ -10,6 +10,7 @@ import ReportCta from "@/components/home/ReportCta";
 import Partners from "@/components/site/Partners";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
+import { localizeHeadlines } from "@/server/case-data";
 import { getHomeData } from "@/server/home-data";
 
 // Тут только порядок разделов. Разметка — в компонентах, запросы —
@@ -37,6 +38,7 @@ export default async function HomePage({
 
   const dict = await getContent(lang);
   const data = await getHomeData();
+  await localizeHeadlines(data.cases, lang);
 
   return (
     <>

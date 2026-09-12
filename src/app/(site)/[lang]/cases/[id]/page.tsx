@@ -28,7 +28,7 @@ export async function generateMetadata({
   if (!isReadyLanguage(lang)) return {};
 
   const dict = await getContent(lang);
-  const item = await loadCase(id);
+  const item = await loadCase(id, lang);
   if (!item) return { title: dict.cases.notFound };
 
   return {
@@ -62,7 +62,7 @@ export default async function CasePage({
   if (!isReadyLanguage(lang)) notFound();
 
   const dict = await getContent(lang);
-  const item = await loadCase(id);
+  const item = await loadCase(id, lang);
 
   // Не 404, а объяснение: номер могли продиктовать с ошибкой, и человеку
   // полезнее понять, что случилось, чем упереться в системную страницу.

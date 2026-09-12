@@ -3,6 +3,7 @@ import { REPORT_STATUS, type ReportStatus } from "@/lib/enums";
 import { hostFromUrl } from "@/lib/format";
 import { parseChecks } from "./case-data";
 import type { TypeCheck } from "./ml-service";
+import { translateTexts } from "./text-translation";
 
 /*
   Список сообщений для панели.
@@ -114,13 +115,43 @@ export async function loadReports(filter: Filter): Promise<Page> {
     countByStatus(),
   ]);
 
+  const ready = rows.map(toRow);
+  await inRussian(ready);
+
   return {
-    rows: rows.map(toRow),
+    rows: ready,
     total,
     page,
     pages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
     counts,
   };
+}
+
+/*
+  Разбор ИИ в панели — по-русски.
+
+  Модель пишет по-английски, а проверяющие читают по-русски. Переводы
+  берём только готовые: двадцать пять карточек ждать модель не будут, а
+  переводы готовятся сразу после разбора. Не успел — видно оригинал.
+*/
+async function inRussian(rows: ReportRow[]): Promise<void> {
+  const texts = rows.flatMap((row) => [
+    row.headline,
+    row.aiSource === "model" ? row.aiSummary : null,
+    ...Object.values(row.checks).map((check) => check?.explanation),
+  ]);
+  const translated = await translateTexts(texts, "ru", { live: false });
+
+  let at = 0;
+  for (const row of rows) {
+    row.headline = translated[at++];
+    if (row.aiSource === "model") row.aiSummary = translated[at];
+    at++;
+    for (const check of Object.values(row.checks)) {
+      if (check) check.explanation = translated[at] ?? check.explanation;
+      at++;
+    }
+  }
 }
 
 function buildWhere(filter: Filter) {

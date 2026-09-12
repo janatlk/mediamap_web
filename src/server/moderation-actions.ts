@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { requireStaff } from "@/lib/guard";
 import { notifyReporter, whatChanged } from "./report-notifications";
+import { warmReport } from "./text-translation";
 import { VIOLATION_SLUGS } from "@/lib/i18n";
 
 // Решение по сообщению. Единственное место, где статус меняется.
@@ -89,6 +91,14 @@ async function decide(form: FormData, decision: Decision) {
       whatChanged(before, { status: decision, moderatorComment: note.trim() || null }),
     );
   }
+
+  // Заметку и пояснение проверяющий пишет по-русски, а читают их на трёх
+  // языках. Переводим после ответа, а когда готово — пересобираем страницы,
+  // чтобы перевод появился и в списках, где модель не спрашивают.
+  after(async () => {
+    await warmReport(id);
+    revalidatePath("/", "layout");
+  });
 
   // Публичные страницы собраны заранее — после решения их надо пересобрать,
   // иначе подтверждённый случай появится только через пять минут.

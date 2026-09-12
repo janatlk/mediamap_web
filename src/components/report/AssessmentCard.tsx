@@ -300,7 +300,7 @@ export default function AssessmentCard({
       {terminology ? (
         <div className="border-t border-line bg-paper px-6 py-5">
           <p className="text-sm text-muted">{words.terminologyLabel}</p>
-          <p className="mt-3 max-w-prose text-base">{terminology}</p>
+          <p className="mt-3 max-w-prose text-base">{words.terminologyText}</p>
         </div>
       ) : null}
 

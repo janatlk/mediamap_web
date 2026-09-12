@@ -273,6 +273,8 @@ const en = {
 
     reasonsLabel: "What the conclusion rests on",
     terminologyLabel: "A note on terminology",
+    terminologyText:
+      "The term “invalid” puts a diagnosis or a limitation first and defines a person above all through their health condition. The phrase “person with a disability” follows the principles of person-first language: the person comes first, then their characteristic, and it stresses that disability is only one of many traits of a personality, not its whole essence. This is in line with current international standards, including UN terminology and the recommendations of human rights organisations representing people with disabilities. This approach helps to counter stigma and stereotypes and to reduce the perception of a person as an “object of pity” or as “inferior”. Using this phrase also respects the self-identification of people with disabilities themselves, many of whom prefer exactly this terminology. We recommend using the correct term “person/people with a disability”.",
 
     disclaimerRules:
       "This is not a decision. The analysis was done by keyword search, " +

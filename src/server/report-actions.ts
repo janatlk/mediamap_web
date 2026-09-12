@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -14,6 +15,7 @@ import { assess, type AssessRun } from "./ai-review";
 import { recordCheck } from "./ai-journal";
 import { attachTo, discard, filesFrom, prepare } from "./attachments";
 import { takeSubmitSlot } from "./rate-limit";
+import { warmReport } from "./text-translation";
 
 // Приём сообщения о нарушении. Первая и пока единственная операция записи
 // на сайте, поэтому здесь же заведён весь порядок: проверка, номер, статус.
@@ -278,6 +280,11 @@ export async function submitReport(
 
   await attachTo(reportId, files.items);
   await recordCheck(reportId, run, data.typeSlug);
+
+  // Разбор модель пишет по-английски — переводы на языки сайта готовим уже
+  // после ответа, чтобы заявитель не ждал лишнего. Страница «принято»
+  // переведёт сама, если откроется раньше.
+  after(() => warmReport(reportId));
 
   // redirect бросает своё исключение, поэтому вызываем его последним:
   // раньше его перехватила бы проверка на дубль номера.

@@ -52,7 +52,7 @@ export default async function SentPage({
 
   const dict = await getContent(lang);
   const page = dict.reportPage;
-  const receipt = await loadReceipt(token);
+  const receipt = await loadReceipt(token, lang);
 
   // Неверная ссылка — объясняем, а не отдаём системную страницу ошибки.
   if (!receipt) {

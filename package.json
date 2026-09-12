@@ -11,7 +11,8 @@
     "check:contrast": "python scripts/check-contrast.py",
     "admin:create": "tsx scripts/create-admin.ts",
     "news:collect": "tsx scripts/collect-news.ts",
-    "news:seed": "tsx scripts/seed-news-config.ts"
+    "news:seed": "tsx scripts/seed-news-config.ts",
+    "reports:translate": "tsx scripts/translate-reports.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",

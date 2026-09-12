@@ -59,6 +59,7 @@ export default async function CasesPage({
   const { items, total, page, pageCount } = await loadCasePage(
     active,
     requestedPage,
+    lang,
   );
 
   return (

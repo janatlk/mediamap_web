@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
 import { hostFromUrl } from "@/lib/format";
 import type { ViolationSlug } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n/languages";
+import { translateTexts } from "./text-translation";
 import type { TypeCheck } from "./ml-service";
 
 // Запросы для страницы случаев. Наружу отдаём готовые к показу поля, без
@@ -100,6 +102,7 @@ export type CasePage = {
 export async function loadCasePage(
   typeSlug: string | undefined,
   requestedPage: number,
+  lang?: Lang,
 ): Promise<CasePage> {
   const where = filterBy(typeSlug);
   const total = await db.report.count({ where });
@@ -114,11 +117,13 @@ export async function loadCasePage(
     include: { violationType: true },
   });
 
-  return { items: rows.map(toListItem), total, page, pageCount };
+  const items = rows.map(toListItem);
+  if (lang) await localizeHeadlines(items, lang);
+  return { items, total, page, pageCount };
 }
 
 /** Один случай по публичному номеру. Null, если такого нет или он не подтверждён. */
-export async function loadCase(publicId: string): Promise<CaseDetail | null> {
+export async function loadCase(publicId: string, lang?: Lang): Promise<CaseDetail | null> {
   const row = await db.report.findFirst({
     where: { publicId, ...CONFIRMED },
     include: {
@@ -133,7 +138,7 @@ export async function loadCase(publicId: string): Promise<CaseDetail | null> {
 
   if (!row) return null;
 
-  return {
+  const detail: CaseDetail = {
     ...toListItem(row),
     attachments: row.attachments,
     happenedAt: row.happenedAt,
@@ -145,6 +150,61 @@ export async function loadCase(publicId: string): Promise<CaseDetail | null> {
       row.aiBasis === "image" || row.aiBasis === "link" ? row.aiBasis : "story",
     ai: assessmentOf(row),
   };
+  if (lang) await localizeCase(detail, lang);
+  return detail;
+}
+
+/*
+  Заголовки списка — на язык страницы, из готовых переводов.
+
+  Модель тут не спрашиваем: двадцать переводов подряд список не дождётся.
+  Переводы готовятся заранее, после разбора и после решения проверяющего.
+*/
+export async function localizeHeadlines(
+  items: { headline: string | null }[],
+  lang: Lang,
+): Promise<void> {
+  const translated = await translateTexts(
+    items.map((item) => item.headline),
+    lang,
+    { live: false },
+  );
+  items.forEach((item, index) => {
+    item.headline = translated[index];
+  });
+}
+
+/** Тексты одного случая — на язык страницы. Здесь модель спросить можно. */
+async function localizeCase(item: CaseDetail, lang: Lang): Promise<void> {
+  const checks = Object.values(item.ai?.checks ?? {});
+  const [headline, moderatorComment, explanation, ...checkTexts] =
+    await translateTexts(
+      [
+        item.headline,
+        item.moderatorComment,
+        item.ai?.explanation,
+        ...checks.map((check) => check?.explanation),
+      ],
+      lang,
+    );
+
+  item.headline = headline;
+  item.moderatorComment = moderatorComment;
+  if (item.ai) {
+    item.ai.explanation = explanation;
+    item.ai.checks = localizedChecks(item.ai.checks, checkTexts);
+  }
+}
+
+function localizedChecks(
+  checks: Partial<Record<ViolationSlug, TypeCheck>>,
+  texts: (string | null)[],
+): Partial<Record<ViolationSlug, TypeCheck>> {
+  const entries = Object.entries(checks).map(([slug, check], index) => [
+    slug,
+    check ? { ...check, explanation: texts[index] ?? check.explanation } : check,
+  ]);
+  return Object.fromEntries(entries);
 }
 
 /*
@@ -250,7 +310,7 @@ export type Receipt = {
  * проверки не опубликовано. Статус отдаём любой, в том числе отклонённый:
  * человек вправе узнать решение по своему сообщению.
  */
-export async function loadReceipt(token: string): Promise<Receipt | null> {
+export async function loadReceipt(token: string, lang?: Lang): Promise<Receipt | null> {
   const row = await db.report.findUnique({
     where: { receiptToken: token },
     include: {
@@ -264,7 +324,7 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
 
   if (!row) return null;
 
-  return {
+  const receipt: Receipt = {
     publicId: row.publicId,
     status: row.status,
     typeSlug: row.violationType.slug,
@@ -312,6 +372,35 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
           }
         : null,
   };
+  if (lang) await localizeReceipt(receipt, lang);
+  return receipt;
+}
+
+/*
+  Разбор и заметка — на языке, на котором человек подавал сообщение.
+
+  Свой пересказ заявителя (story) не трогаем: это его слова, и переводить
+  ему же его текст незачем.
+*/
+async function localizeReceipt(item: Receipt, lang: Lang): Promise<void> {
+  const checks = Object.values(item.ai?.checks ?? {});
+  const [moderatorComment, reviewSummary, explanation, ...checkTexts] =
+    await translateTexts(
+      [
+        item.moderatorComment,
+        item.reviewSummary,
+        item.ai?.explanation,
+        ...checks.map((check) => check?.explanation),
+      ],
+      lang,
+    );
+
+  item.moderatorComment = moderatorComment;
+  item.reviewSummary = reviewSummary;
+  if (item.ai) {
+    item.ai.explanation = explanation;
+    item.ai.checks = localizedChecks(item.ai.checks, checkTexts);
+  }
 }
 
 /**
