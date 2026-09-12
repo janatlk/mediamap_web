@@ -63,7 +63,9 @@ export default async function CasePage({
   if (!isReadyLanguage(lang)) notFound();
 
   const dict = await getContent(lang);
-  const item = await loadCase(id, lang);
+  // Без языка: тексты переводит Translated, ему нужен оригинал. Переданный
+  // перевод он принял бы за новый текст и перевёл ещё раз.
+  const item = await loadCase(id);
 
   // Не 404, а объяснение: номер могли продиктовать с ошибкой, и человеку
   // полезнее понять, что случилось, чем упереться в системную страницу.
