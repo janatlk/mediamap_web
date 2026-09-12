@@ -67,6 +67,7 @@ const ru = {
     casesTitle: "Проверенные случаи",
     casesLead: "Что мы подтвердили после проверки.",
     casesAll: "Все случаи",
+    latestTitle: "Последние проверки",
     casesEmpty: "Пока ни один случай не подтверждён.",
     casesShare: "доля от всех случаев",
     caseSourceUnknown: "площадка не указана",

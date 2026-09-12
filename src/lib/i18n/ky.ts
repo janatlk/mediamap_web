@@ -55,6 +55,7 @@ const ky: typeof ru = {
     casesTitle: "Текшерилген учурлар",
     casesLead: "Текшерүүдөн кийин тастыктаганыбыз.",
     casesAll: "Бардык учурлар",
+    latestTitle: "Акыркы текшерүүлөр",
     casesEmpty: "Азырынча бир да учур тастыкталган жок.",
     casesShare: "бардык учурлардан үлүшү",
     caseSourceUnknown: "аянтча көрсөтүлгөн эмес",

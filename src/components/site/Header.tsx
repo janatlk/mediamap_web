@@ -28,6 +28,23 @@ export default function Header({ dict, lang, account }: Props) {
   const moreRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
+  /*
+    На главной красная кнопка в шапке появляется, только когда первый
+    экран уехал вверх. Раньше в кадре стояли две одинаковые красные
+    «Сообщить о нарушении» в сотне пикселей друг от друга — глаз цеплялся
+    за повтор, и было непонятно, какая главная.
+  */
+  const isHome = pathname === `/${lang}`;
+  const [pastHero, setPastHero] = useState(false);
+  useEffect(() => {
+    if (!isHome) return;
+    const update = () => setPastHero(window.scrollY > 480);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [isHome]);
+  const showReport = !isHome || pastHero;
+
   // Иначе на телефоне меню висит поверх новой страницы.
   useEffect(() => {
     setIsOpen(false);
@@ -194,7 +211,11 @@ export default function Header({ dict, lang, account }: Props) {
 
           <Link
             href={`/${lang}/report`}
-            className="hidden h-11 items-center rounded-xs bg-signal px-4 text-sm font-medium text-surface transition-colors hover:bg-signal-deep sm:flex"
+            aria-hidden={showReport ? undefined : true}
+            tabIndex={showReport ? undefined : -1}
+            className={`hidden h-11 items-center rounded-xs bg-signal px-4 text-sm font-medium text-surface transition-[background-color,opacity] duration-200 hover:bg-signal-deep sm:flex ${
+              showReport ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
           >
             {dict.nav.report}
           </Link>

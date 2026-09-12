@@ -49,7 +49,7 @@ export default async function HomePage({
 
   return (
     <>
-      <Hero dict={dict} lang={lang} />
+      <Hero dict={dict} lang={lang} latest={data.cases.slice(0, 3)} />
 
       <Stats
         dict={dict}

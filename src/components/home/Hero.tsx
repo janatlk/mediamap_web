@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import type { Dictionary, Lang } from "@/lib/i18n";
+import { violationText, type Dictionary, type Lang } from "@/lib/i18n";
+import { formatDate } from "@/lib/format";
+import { typeColor } from "@/lib/violation-types";
+import type { CaseRow } from "@/server/home-data";
 
 /*
   Первый экран: что это за место и что здесь можно сделать.
@@ -23,30 +26,37 @@ import type { Dictionary, Lang } from "@/lib/i18n";
   своей, и заголовок разъедется с остальным сайтом.
 */
 
-type Props = { dict: Dictionary; lang: Lang };
+type Props = { dict: Dictionary; lang: Lang; latest: CaseRow[] };
 
-export default function Hero({ dict, lang }: Props) {
+export default function Hero({ dict, lang, latest }: Props) {
   return (
     /*
       На телефоне отступы чуть меньше, чем на десктопе. На 375×812 первый
       экран кончался на 755px, и в последние полсотни пикселей влезали
       только верхушки чисел статистики без подписей — «7 7», обрывок
       непонятно чего. Минус ~80px, и полоса с числами входит целиком.
-      Десктоп не тронут: там воздух на месте и сгиб режет карточки, как
-      и должен.
     */
-    <section className="mx-auto max-w-[1400px] px-4 pt-8 pb-6 sm:px-6 sm:pt-14 sm:pb-14 lg:px-10 lg:pt-24 lg:pb-20">
-      <p className="text-sm tracking-[0.14em] text-muted uppercase">
-        {dict.home.slogan}
-      </p>
+    <section className="mx-auto max-w-[1400px] px-4 pt-8 pb-6 sm:px-6 sm:pt-14 sm:pb-14 lg:px-10 lg:pt-20 lg:pb-20">
+      {/*
+        Две колонки: слева — кто мы и что сделать, справа — свежие проверки.
 
-      <div className="mt-4 grid gap-6 sm:mt-6 sm:gap-8 lg:grid-cols-2 lg:items-end lg:gap-16">
-        <h1 className="max-w-[16ch] text-3xl tracking-tight text-balance sm:text-4xl lg:text-5xl">
-          {dict.home.title}
-        </h1>
+        Раньше справа стоял только абзац с кнопками, прижатый к низу, а над
+        ним пустовала половина экрана. Первый экран был одним текстом, и
+        сайт о проверенных случаях не показывал ни одного случая — читался
+        как титульный лист. Теперь справа то, ради чего сюда приходят, и это
+        данные, а не картинка для заполнения места.
+      */}
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-center lg:gap-20">
+        <div>
+          <p className="text-sm tracking-[0.14em] text-muted uppercase">
+            {dict.home.slogan}
+          </p>
 
-        <div className="lg:pb-2">
-          <p className="max-w-prose text-lg text-muted lg:text-xl">{dict.home.lead}</p>
+          <h1 className="mt-4 max-w-[16ch] text-3xl tracking-tight text-balance sm:mt-6 sm:text-4xl lg:text-5xl">
+            {dict.home.title}
+          </h1>
+
+          <p className="mt-6 max-w-prose text-lg text-muted lg:text-xl">{dict.home.lead}</p>
 
           <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
             <Link
@@ -68,6 +78,55 @@ export default function Hero({ dict, lang }: Props) {
               которого они вообще не напишут. */}
           <p className="mt-4 text-sm text-muted">{dict.home.anonymous}</p>
         </div>
+
+        {/* На телефоне карточки нет: там первый экран и так занят, а тот
+            же список стоит ниже, в «Проверенных случаях». */}
+        {latest.length > 0 ? (
+          <aside className="hidden border border-line bg-surface lg:block">
+            <div className="flex items-baseline justify-between gap-4 border-b border-line px-6 py-4">
+              <h2 className="eyebrow">{dict.home.latestTitle}</h2>
+              <Link
+                href={`/${lang}/cases`}
+                className="inline-flex items-center gap-1 text-sm text-signal hover:underline"
+              >
+                {dict.home.casesAll}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <ul>
+              {latest.map((item) => {
+                const typeName =
+                  violationText(dict, item.typeSlug)?.name ?? item.typeSlug;
+                return (
+                  <li key={item.id} className="border-b border-line last:border-b-0">
+                    <Link
+                      href={`/${lang}/cases/${item.publicId}`}
+                      className="block px-6 py-5 transition-colors hover:bg-paper"
+                    >
+                      <span className="flex items-center gap-2 text-sm text-muted">
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${typeColor(item.typeSlug)}`}
+                          aria-hidden="true"
+                        />
+                        {/* Без заголовка вид уже стоит строкой ниже вместо него. */}
+                        {item.headline ? (
+                          <>
+                            {typeName}
+                            <span aria-hidden="true">·</span>
+                          </>
+                        ) : null}
+                        <span className="tabular-nums">{formatDate(item.checkedAt, lang)}</span>
+                      </span>
+                      <span className="mt-2 line-clamp-2 block text-lg">
+                        {item.headline ?? typeName}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </aside>
+        ) : null}
       </div>
     </section>
   );

@@ -63,6 +63,7 @@ const en = {
     casesTitle: "Verified cases",
     casesLead: "What we confirmed after review.",
     casesAll: "All cases",
+    latestTitle: "Latest checks",
     casesEmpty: "No case has been confirmed yet.",
     casesShare: "share of all cases",
     caseSourceUnknown: "platform not given",
