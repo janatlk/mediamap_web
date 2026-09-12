@@ -66,6 +66,8 @@ const en = {
     latestTitle: "Latest checks",
     casesEmpty: "No case has been confirmed yet.",
     casesShare: "share of all cases",
+    platformsShare: "by platform — share of cases where the platform is known",
+    platformsOther: "other",
     caseSourceUnknown: "platform not given",
 
     typesTitle: "Types of violations",
