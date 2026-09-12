@@ -174,37 +174,13 @@ export async function localizeHeadlines(
   });
 }
 
-/** Тексты одного случая — на язык страницы. Здесь модель спросить можно. */
+/*
+  Заголовок — для вкладки браузера и выдачи, из готовых переводов. Сами
+  тексты случая переводит компонент Translated на странице, с подгрузкой:
+  ждать модель здесь значило бы держать всю страницу.
+*/
 async function localizeCase(item: CaseDetail, lang: Lang): Promise<void> {
-  const checks = Object.values(item.ai?.checks ?? {});
-  const [headline, moderatorComment, explanation, ...checkTexts] =
-    await translateTexts(
-      [
-        item.headline,
-        item.moderatorComment,
-        item.ai?.explanation,
-        ...checks.map((check) => check?.explanation),
-      ],
-      lang,
-    );
-
-  item.headline = headline;
-  item.moderatorComment = moderatorComment;
-  if (item.ai) {
-    item.ai.explanation = explanation;
-    item.ai.checks = localizedChecks(item.ai.checks, checkTexts);
-  }
-}
-
-function localizedChecks(
-  checks: Partial<Record<ViolationSlug, TypeCheck>>,
-  texts: (string | null)[],
-): Partial<Record<ViolationSlug, TypeCheck>> {
-  const entries = Object.entries(checks).map(([slug, check], index) => [
-    slug,
-    check ? { ...check, explanation: texts[index] ?? check.explanation } : check,
-  ]);
-  return Object.fromEntries(entries);
+  await localizeHeadlines([item], lang);
 }
 
 /*
@@ -310,7 +286,7 @@ export type Receipt = {
  * проверки не опубликовано. Статус отдаём любой, в том числе отклонённый:
  * человек вправе узнать решение по своему сообщению.
  */
-export async function loadReceipt(token: string, lang?: Lang): Promise<Receipt | null> {
+export async function loadReceipt(token: string): Promise<Receipt | null> {
   const row = await db.report.findUnique({
     where: { receiptToken: token },
     include: {
@@ -324,7 +300,7 @@ export async function loadReceipt(token: string, lang?: Lang): Promise<Receipt |
 
   if (!row) return null;
 
-  const receipt: Receipt = {
+  return {
     publicId: row.publicId,
     status: row.status,
     typeSlug: row.violationType.slug,
@@ -372,35 +348,6 @@ export async function loadReceipt(token: string, lang?: Lang): Promise<Receipt |
           }
         : null,
   };
-  if (lang) await localizeReceipt(receipt, lang);
-  return receipt;
-}
-
-/*
-  Разбор и заметка — на языке, на котором человек подавал сообщение.
-
-  Свой пересказ заявителя (story) не трогаем: это его слова, и переводить
-  ему же его текст незачем.
-*/
-async function localizeReceipt(item: Receipt, lang: Lang): Promise<void> {
-  const checks = Object.values(item.ai?.checks ?? {});
-  const [moderatorComment, reviewSummary, explanation, ...checkTexts] =
-    await translateTexts(
-      [
-        item.moderatorComment,
-        item.reviewSummary,
-        item.ai?.explanation,
-        ...checks.map((check) => check?.explanation),
-      ],
-      lang,
-    );
-
-  item.moderatorComment = moderatorComment;
-  item.reviewSummary = reviewSummary;
-  if (item.ai) {
-    item.ai.explanation = explanation;
-    item.ai.checks = localizedChecks(item.ai.checks, checkTexts);
-  }
 }
 
 /**

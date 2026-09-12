@@ -4,6 +4,8 @@ import { violationText, type Dictionary } from "@/lib/i18n";
 import { typeColor } from "@/lib/violation-types";
 import type { Assessment } from "@/server/ai-review";
 import type { TypeCheck } from "@/server/ml-service";
+import type { Lang } from "@/lib/i18n/languages";
+import Translated from "./Translated";
 
 // Показ предварительной оценки.
 //
@@ -14,6 +16,11 @@ import type { TypeCheck } from "@/server/ml-service";
 
 type Props = {
   dict: Dictionary;
+  /**
+   * Язык страницы. Разбор ИИ английский, заметка проверяющего русская —
+   * оба переводятся на него, с подгрузкой, не задерживая страницу.
+   */
+  lang?: Lang;
   /** Оценка плюс обоснование словами, если её дала модель. */
   assessment: Assessment & { explanation?: string | null };
   chosenType: string;
@@ -89,6 +96,7 @@ function certainty(
 
 export default function AssessmentCard({
   dict,
+  lang,
   assessment,
   chosenType,
   checks,
@@ -293,7 +301,9 @@ export default function AssessmentCard({
       {explanation ? (
         <div className="border-t border-line px-6 py-5">
           <p className="text-sm text-muted">{words.reasonsLabel}</p>
-          <p className="mt-3 max-w-prose text-base">{explanation}</p>
+          <p className="mt-3 max-w-prose text-base">
+            {lang ? <Translated text={explanation} lang={lang} lines={3} /> : explanation}
+          </p>
         </div>
       ) : null}
 
@@ -307,7 +317,9 @@ export default function AssessmentCard({
       {moderatorComment ? (
         <div className="border-t border-line px-6 py-5">
           <p className="text-sm text-muted">{words.conclusion.reviewedNote}</p>
-          <p className="mt-3 max-w-prose text-base">{moderatorComment}</p>
+          <p className="mt-3 max-w-prose text-base">
+            {lang ? <Translated text={moderatorComment} lang={lang} /> : moderatorComment}
+          </p>
         </div>
       ) : null}
 

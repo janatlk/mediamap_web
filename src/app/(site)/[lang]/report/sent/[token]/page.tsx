@@ -52,7 +52,7 @@ export default async function SentPage({
 
   const dict = await getContent(lang);
   const page = dict.reportPage;
-  const receipt = await loadReceipt(token, lang);
+  const receipt = await loadReceipt(token);
 
   // Неверная ссылка — объясняем, а не отдаём системную страницу ошибки.
   if (!receipt) {
@@ -144,6 +144,7 @@ export default async function SentPage({
         {receipt.ai ? (
           <AssessmentCard
             dict={dict}
+            lang={lang}
             status={receipt.status}
             chosenType={receipt.typeSlug}
             checks={receipt.ai.checks}

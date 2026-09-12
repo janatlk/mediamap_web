@@ -8,6 +8,7 @@ import { isReadyLanguage, violationText } from "@/lib/i18n";
 import { getContent } from "@/server/content";
 import { typeColor } from "@/lib/violation-types";
 import AssessmentCard from "@/components/report/AssessmentCard";
+import Translated from "@/components/report/Translated";
 import Attachments from "@/components/report/Attachments";
 import { loadCase } from "@/server/case-data";
 import type { Verdict } from "@/server/ai-review";
@@ -105,7 +106,11 @@ export default async function CasePage({
         </p>
 
         <h1 className="mt-3 text-3xl sm:text-4xl">
-          {item.headline ?? violationText(dict, item.typeSlug)?.name ?? item.typeSlug}
+          {item.headline ? (
+            <Translated text={item.headline} lang={lang} lines={1} />
+          ) : (
+            violationText(dict, item.typeSlug)?.name ?? item.typeSlug
+          )}
         </h1>
 
         <dl className="mt-10">
@@ -169,7 +174,9 @@ export default async function CasePage({
           </Field>
 
           <Field label={dict.cases.fromTeam}>
-            {item.moderatorComment ?? (
+            {item.moderatorComment ? (
+              <Translated text={item.moderatorComment} lang={lang} />
+            ) : (
               <span className="text-muted">{dict.cases.noComment}</span>
             )}
           </Field>
@@ -197,6 +204,7 @@ export default async function CasePage({
           <>
             <AssessmentCard
               dict={dict}
+              lang={lang}
               audience="public"
               status="APPROVED"
               chosenType={item.typeSlug}
