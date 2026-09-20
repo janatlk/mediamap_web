@@ -6,7 +6,14 @@ import { redirect } from "next/navigation";
 import { hashPassword, startSession, verifyPassword, endSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ROLE } from "@/lib/enums";
-import { ACCOUNT_ERRORS, loginSchema, registerSchema } from "@/lib/account-schema";
+import {
+  ACCOUNT_ERRORS,
+  ACCOUNT_LIMITS,
+  loginSchema,
+  passwordChangeSchema,
+  registerSchema,
+} from "@/lib/account-schema";
+import { isStaff } from "@/lib/enums";
 
 // Аккаунт заявителя. Дело добровольное: анонимная подача остаётся основным
 // путём, аккаунт лишь даёт историю сообщений на всех устройствах.
@@ -98,6 +105,65 @@ export async function setEmailNotifications(form: FormData): Promise<void> {
   });
 
   revalidatePath("/[lang]/account", "page");
+}
+
+export type PasswordState = { error?: string; done?: boolean };
+
+/**
+ * Смена собственного пароля.
+ *
+ * Раньше пароль менялся только скриптом на сервере, то есть через
+ * администратора — и сотрудники сидели с паролями, которые кто-то им
+ * присылал в мессенджере.
+ *
+ * Все прочие сессии закрываем: смена пароля обычно и значит «кто-то мог
+ * его знать». Текущая остаётся, иначе человек тут же вылетел бы сам.
+ */
+export async function changePassword(
+  _previous: PasswordState,
+  form: FormData,
+): Promise<PasswordState> {
+  const { currentUser } = await import("@/lib/auth");
+  const who = await currentUser();
+  if (!who) return { error: ACCOUNT_ERRORS.wrong };
+
+  const parsed = passwordChangeSchema.safeParse({
+    current: form.get("current") ?? "",
+    password: form.get("password") ?? "",
+  });
+  if (!parsed.success) return { error: firstError(parsed.error.issues) };
+
+  const user = await db.user.findUnique({ where: { id: who.id } });
+  if (!user?.passwordHash) return { error: ACCOUNT_ERRORS.wrong };
+
+  if (!(await verifyPassword(parsed.data.current, user.passwordHash))) {
+    return { error: ACCOUNT_ERRORS.currentWrong };
+  }
+
+  // У сотрудников порог длиннее: их аккаунт открывает чужие сообщения.
+  const min = isStaff(user.role)
+    ? ACCOUNT_LIMITS.STAFF_PASSWORD_MIN
+    : ACCOUNT_LIMITS.PASSWORD_MIN;
+  if (parsed.data.password.length < min) {
+    return { error: ACCOUNT_ERRORS.passwordShort };
+  }
+
+  if (await verifyPassword(parsed.data.password, user.passwordHash)) {
+    return { error: ACCOUNT_ERRORS.samePassword };
+  }
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await hashPassword(parsed.data.password) },
+  });
+
+  const { currentSessionId } = await import("@/lib/auth");
+  const keep = await currentSessionId();
+  await db.session.deleteMany({
+    where: { userId: user.id, ...(keep ? { id: { not: keep } } : {}) },
+  });
+
+  return { done: true };
 }
 
 export async function signOutAccount(): Promise<void> {

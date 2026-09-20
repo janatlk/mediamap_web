@@ -194,13 +194,21 @@ const en = {
     haveAccount: "Already have an account?",
     anonymous: "Report anonymously, without an account",
 
+    passwordTitle: "Change password",
+    passwordHint: "The new password must be at least {n} characters.",
+    passwordCurrent: "Current password",
+    passwordNew: "New password",
+    passwordSave: "Change password",
+    passwordDone: "Password changed. You will need to sign in again on other devices.",
     title: "My account",
     signOut: "Sign out",
     adopted: "Reports from this device are now linked to your account",
 
     errors: {
       emailInvalid: "Check the email address",
-      passwordShort: "The password is shorter than eight characters",
+      currentWrong: "That is not your current password",
+      samePassword: "The new password is the same as the old one",
+      passwordShort: "The password is too short",
       nameLong: "Too long",
       taken: "That email is already taken. Try signing in",
       wrong: "That did not match. Check the email and password",

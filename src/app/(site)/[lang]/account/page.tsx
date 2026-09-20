@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Clock } from "lucide-react";
 
+import ChangePassword from "@/components/account/ChangePassword";
 import EmailNotifications from "@/components/account/EmailNotifications";
 import MyReports from "@/components/report/MyReports";
 import { currentUser } from "@/lib/auth";
@@ -57,6 +58,8 @@ export default async function AccountPage({
         </h2>
 
         <EmailNotifications dict={dict} enabled={user.notifyByEmail} />
+
+        <ChangePassword dict={dict} role={user.role} />
 
         <MyReports dict={dict} lang={lang} signedIn />
       </div>

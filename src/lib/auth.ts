@@ -43,6 +43,12 @@ export async function startSession(userId: number): Promise<void> {
   });
 }
 
+/** Ключ текущей сессии. Нужен, чтобы закрыть все прочие и не выгнать себя. */
+export async function currentSessionId(): Promise<string | null> {
+  const jar = await cookies();
+  return jar.get(COOKIE)?.value ?? null;
+}
+
 /** Закрывает текущую сессию: и в базе, и в браузере. */
 export async function endSession(): Promise<void> {
   const jar = await cookies();

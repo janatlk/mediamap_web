@@ -8,6 +8,8 @@ export const ACCOUNT_ERRORS = {
   nameLong: "nameLong",
   taken: "taken",
   wrong: "wrong",
+  currentWrong: "currentWrong",
+  samePassword: "samePassword",
 } as const;
 
 // Восемь символов, а не двенадцать как у сотрудников: у заявителя за
@@ -27,4 +29,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, ACCOUNT_ERRORS.wrong),
 });
 
-export const ACCOUNT_LIMITS = { PASSWORD_MIN, NAME_MAX };
+/*
+  Смена пароля в профиле.
+
+  Текущий пароль спрашиваем всегда: без него любой, кто подсел за чужой
+  открытый ноутбук, уводит аккаунт одним нажатием. Длину нового проверяет
+  уже действие: у сотрудника порог выше, чем у заявителя, а схема про роли
+  не знает.
+*/
+export const passwordChangeSchema = z.object({
+  current: z.string().min(1, ACCOUNT_ERRORS.currentWrong),
+  password: z.string().min(PASSWORD_MIN, ACCOUNT_ERRORS.passwordShort),
+});
+
+/** Порог для сотрудников — тот же, что у скрипта create-admin. */
+const STAFF_PASSWORD_MIN = 12;
+
+export const ACCOUNT_LIMITS = { PASSWORD_MIN, STAFF_PASSWORD_MIN, NAME_MAX };
