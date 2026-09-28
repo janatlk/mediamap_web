@@ -119,6 +119,9 @@ export default function Header({ dict, lang, account }: Props) {
           className="flex h-11 items-center font-display text-lg font-medium tracking-tight whitespace-nowrap"
         >
           {dict.brand}
+          <span className="ml-2 rounded-xs border border-line bg-surface px-1.5 py-0.5 text-[10px] font-medium text-muted uppercase leading-none">
+            Beta
+          </span>
         </Link>
 
         <nav className="hidden flex-1 items-center gap-6 lg:flex">
