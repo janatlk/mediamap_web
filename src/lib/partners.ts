@@ -65,6 +65,6 @@ export const PARTNER_ROWS: PartnerRow[] = [
   },
   {
     id: "executor",
-    items: [{ name: "Фонд развития медиаконсалтинга в ЦА" }],
+    items: [{ name: "Фонд развития медиаконсалтинга в ЦА", logo: "/partners/media-consult.png" }],
   },
 ];
