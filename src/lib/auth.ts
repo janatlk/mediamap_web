@@ -11,8 +11,24 @@ import type { Role } from "./enums";
 // хранился прямо в строке пользователя и не истекал никогда.
 
 const COOKIE = "mm_session";
-const DAYS = 14;
+
+/*
+  Два разных срока, и это не путаница.
+
+  В куке лежит только ключ сессии, и живёт она долго: её задача — не
+  потеряться, пока человек не закрыл браузер на полгода. Настоящий срок
+  хранится в базе, там его можно отозвать и там же он продлевается.
+
+  Срок скользящий: кто заходит в панель каждый день, не вводит пароль
+  вообще, а брошенная сессия умирает через месяц сама. Раньше было
+  четырнадцать дней без продления, и сотрудники вводили пароль заново
+  каждые две недели — просто потому, что прошло две недели.
+*/
+const COOKIE_DAYS = 180;
+const DAYS = 30;
 const ROUNDS = 12;
+
+const day = 24 * 60 * 60 * 1000;
 
 export type SessionUser = {
   id: number;
@@ -30,7 +46,7 @@ export const verifyPassword = (plain: string, hash: string) =>
 
 /** Заводит сессию и кладёт её ключ в куку. */
 export async function startSession(userId: number): Promise<void> {
-  const expiresAt = new Date(Date.now() + DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + DAYS * day);
   const session = await db.session.create({ data: { userId, expiresAt } });
 
   const jar = await cookies();
@@ -39,7 +55,7 @@ export async function startSession(userId: number): Promise<void> {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    expires: expiresAt,
+    expires: new Date(Date.now() + COOKIE_DAYS * day),
   });
 }
 
@@ -82,6 +98,20 @@ export async function currentUser(): Promise<SessionUser | null> {
   if (session.expiresAt < new Date()) {
     await db.session.deleteMany({ where: { id } });
     return null;
+  }
+
+  /*
+    Продлеваем, когда прошла половина срока. Не на каждый запрос: иначе
+    открытая страница панели писала бы в базу при каждом обновлении списка.
+
+    Пишем только в базу, куку не трогаем: куку из серверного компонента
+    менять нельзя, а она и так выдана надолго — срок держит база.
+  */
+  if (session.expiresAt.getTime() - Date.now() < (DAYS * day) / 2) {
+    await db.session.update({
+      where: { id },
+      data: { expiresAt: new Date(Date.now() + DAYS * day) },
+    });
   }
 
   return {
