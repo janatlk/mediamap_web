@@ -6,12 +6,15 @@ import CaseFeed from "@/components/home/CaseFeed";
 import ViolationTypes from "@/components/home/ViolationTypes";
 import NewsList from "@/components/home/NewsList";
 import HowItWorks from "@/components/home/HowItWorks";
+import VideoShelf from "@/components/home/VideoShelf";
 import ReportCta from "@/components/home/ReportCta";
 import Partners from "@/components/site/Partners";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
 import { localizeHeadlines } from "@/server/case-data";
 import { getHomeData } from "@/server/home-data";
+import { loadVideos } from "@/server/videos";
+import { translateTexts } from "@/server/text-translation";
 
 // Тут только порядок разделов. Разметка — в компонентах, запросы —
 // в src/server/home-data.ts.
@@ -47,6 +50,16 @@ export default async function HomePage({
   const data = await getHomeData();
   await localizeHeadlines(data.cases, lang);
 
+  /*
+    Названия роликов переводим из памяти переводов, модель не спрашиваем:
+    главная не должна ждать её ради подписи под видео. Нет готового
+    перевода — покажем как есть, на языке редакции.
+  */
+  const videos = await loadVideos();
+  const videoTitles = (
+    await translateTexts(videos.map((video) => video.title), lang, { live: false })
+  ).map((title, index) => title ?? videos[index].title);
+
   return (
     <>
       <Hero dict={dict} lang={lang} latest={data.cases.slice(0, 3)} />
@@ -64,6 +77,8 @@ export default async function HomePage({
       <ReportCta dict={dict} lang={lang} />
 
       <HowItWorks dict={dict} />
+
+      <VideoShelf dict={dict} lang={lang} videos={videos} titles={videoTitles} />
 
       <CaseFeed
         dict={dict}

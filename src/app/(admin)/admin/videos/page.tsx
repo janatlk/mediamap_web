@@ -1,0 +1,129 @@
+import VideoForm from "@/components/admin/VideoForm";
+import { requireEditor } from "@/lib/guard";
+import { loadAllVideos } from "@/server/videos";
+import { removeVideo, shiftVideo, toggleVideo } from "@/server/video-actions";
+
+export const metadata = { title: "Видео" };
+
+/*
+  Ролики для главной.
+
+  Порядок правится стрелками, а не полем с числом: редактору нужно «этот
+  выше», а не «поставьте 3». Снятый с показа ролик остаётся здесь — чтобы
+  убрать его со страницы на время, не загружая потом заново.
+*/
+
+export const dynamic = "force-dynamic";
+
+const дата = new Intl.DateTimeFormat("ru", { dateStyle: "short" });
+
+const мегабайты = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
+
+const длительность = (seconds: number | null) =>
+  seconds === null
+    ? "—"
+    : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
+export default async function AdminVideosPage() {
+  await requireEditor();
+  const videos = await loadAllVideos();
+
+  return (
+    <>
+      <h1>Видео</h1>
+      <p className="note">
+        Короткие ролики на главной: как не попасться мошенникам, как узнать
+        фейк. Файлы лежат у нас, а не ссылками на соцсети.
+      </p>
+
+      <section>
+        <h2>Добавить ролик</h2>
+        <VideoForm />
+      </section>
+
+      <section>
+        <h2>Загруженные</h2>
+
+        {videos.length === 0 ? (
+          <p className="note">Пока ни одного ролика.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Обложка</th>
+                <th>Название</th>
+                <th>Длина</th>
+                <th>Размер</th>
+                <th>Загружен</th>
+                <th>Порядок</th>
+                <th>Показ</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {videos.map((video, index) => (
+                <tr key={video.id}>
+                  <td>
+                    {video.posterKey ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`/api/videos/${video.id}?poster`}
+                        alt=""
+                        width={48}
+                        height={85}
+                        style={{ objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span className="note">нет</span>
+                    )}
+                  </td>
+                  <td>
+                    <a href={`/api/videos/${video.id}`} target="_blank" rel="noreferrer">
+                      {video.title}
+                    </a>
+                  </td>
+                  <td>{длительность(video.seconds)}</td>
+                  <td>{мегабайты(video.size)}</td>
+                  <td>{дата.format(video.createdAt)}</td>
+                  <td>
+                    {/* Стрелки: «выше» у первого и «ниже» у последнего
+                        некуда вести, поэтому их просто нет. */}
+                    <form action={shiftVideo} style={{ display: "inline" }}>
+                      <input type="hidden" name="id" value={video.id} />
+                      <input type="hidden" name="up" value="1" />
+                      <button type="submit" disabled={index === 0}>
+                        ↑
+                      </button>
+                    </form>{" "}
+                    <form action={shiftVideo} style={{ display: "inline" }}>
+                      <input type="hidden" name="id" value={video.id} />
+                      <button type="submit" disabled={index === videos.length - 1}>
+                        ↓
+                      </button>
+                    </form>
+                  </td>
+                  <td>
+                    <form action={toggleVideo}>
+                      <input type="hidden" name="id" value={video.id} />
+                      <button type="submit">
+                        {video.published ? "показывается" : "скрыт"}
+                      </button>
+                    </form>
+                  </td>
+                  <td>
+                    {/* Удаление уносит и файл с диска: держать осиротевшее
+                        видео незачем. */}
+                    <form action={removeVideo}>
+                      <input type="hidden" name="id" value={video.id} />
+                      <button type="submit">Удалить</button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </>
+  );
+}

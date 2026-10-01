@@ -45,6 +45,12 @@ export function read(key: string): ReturnType<typeof createReadStream> {
   return createReadStream(resolve(key));
 }
 
+/**
+ * Путь к файлу на диске. Нужен тем, кто читает файл кусками: отдача видео
+ * просит у потока диапазон байт, а не весь файл целиком.
+ */
+export const filePath = (key: string): string => resolve(key);
+
 /** Убирает файл. Молчит, если его уже нет: результат всё равно нужный. */
 export async function remove(key: string): Promise<void> {
   try {

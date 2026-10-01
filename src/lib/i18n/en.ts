@@ -74,6 +74,10 @@ const en = {
     typesAll: "More about the types",
     typesEmpty: "No cases yet",
 
+    videoTitle: "How not to get caught",
+    videoLead: "Short clips: how to spot a scam, a fake and hate speech.",
+    videoPlay: "Watch",
+
     newsTitle: "Media digest",
     newsLead: "We follow what the specialist outlets publish.",
     newsAll: "The whole digest",
