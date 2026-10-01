@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireEditor } from "@/lib/guard";
 import { dropVideo, moveVideo, saveVideo } from "./videos";
-import { warmTranslations } from "./text-translation";
 
 /*
   Управление роликами из панели.
@@ -36,18 +35,12 @@ export async function addVideo(
     return { error: "Выберите файл с роликом" };
   }
 
-  const result = await saveVideo(String(form.get("title") ?? ""), file);
+  const result = await saveVideo(
+    String(form.get("title") ?? ""),
+    String(form.get("lang") ?? ""),
+    file,
+  );
   if ("error" in result) return { error: result.error };
-
-  /*
-    Название переводим заранее, как заголовки случаев: главная берёт только
-    готовые переводы и модель не ждёт. Перевод идёт в фоне, ответа не ждём —
-    иначе редактор смотрел бы на крутилку лишнюю минуту.
-  */
-  const title = String(form.get("title") ?? "").trim();
-  void warmTranslations([title]).catch((error) => {
-    console.error("перевод названия ролика не вышел:", error);
-  });
 
   refresh();
   return { done: "Ролик добавлен" };

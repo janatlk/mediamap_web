@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { LANGUAGES, READY_LANGUAGES } from "@/lib/i18n/languages";
 import { VIDEO_ACCEPT, VIDEO_MAX_BYTES } from "@/lib/video-rules";
 import { addVideo, type VideoState } from "@/server/video-actions";
 
@@ -27,6 +28,20 @@ export default function VideoForm() {
           maxLength={120}
           placeholder="Как узнать мошенника в переписке"
         />
+      </label>
+
+      <label>
+        Язык ролика:
+        <br />
+        {/* Ролик озвучен, переводить его нечем — поэтому у каждого языка
+            свои файлы, и на главной показываются только его. */}
+        <select name="lang" defaultValue="ru">
+          {READY_LANGUAGES.map((code) => (
+            <option key={code} value={code}>
+              {LANGUAGES.find((item) => item.code === code)?.name ?? code}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label>

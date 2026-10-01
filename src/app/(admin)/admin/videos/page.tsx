@@ -1,5 +1,6 @@
 import VideoForm from "@/components/admin/VideoForm";
 import { requireEditor } from "@/lib/guard";
+import { LANGUAGES } from "@/lib/i18n/languages";
 import { loadAllVideos } from "@/server/videos";
 import { removeVideo, shiftVideo, toggleVideo } from "@/server/video-actions";
 
@@ -24,16 +25,27 @@ const длительность = (seconds: number | null) =>
     ? "—"
     : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
+const язык = (code: string) =>
+  LANGUAGES.find((item) => item.code === code)?.name ?? code;
+
 export default async function AdminVideosPage() {
   await requireEditor();
   const videos = await loadAllVideos();
+
+  /*
+    Стрелки двигают ролик среди роликов его языка, поэтому «выше» и «ниже»
+    гасим по краям каждой языковой группы, а не всей таблицы.
+  */
+  const sameLang = (index: number, step: number) =>
+    videos[index + step]?.lang === videos[index].lang;
 
   return (
     <>
       <h1>Видео</h1>
       <p className="note">
         Короткие ролики на главной: как не попасться мошенникам, как узнать
-        фейк. Файлы лежат у нас, а не ссылками на соцсети.
+        фейк. Файлы лежат у нас, а не ссылками на соцсети. У каждого языка
+        свои ролики: на кыргызской главной показываются кыргызские.
       </p>
 
       <section>
@@ -52,6 +64,7 @@ export default async function AdminVideosPage() {
               <tr>
                 <th>Обложка</th>
                 <th>Название</th>
+                <th>Язык</th>
                 <th>Длина</th>
                 <th>Размер</th>
                 <th>Загружен</th>
@@ -82,6 +95,7 @@ export default async function AdminVideosPage() {
                       {video.title}
                     </a>
                   </td>
+                  <td>{язык(video.lang)}</td>
                   <td>{длительность(video.seconds)}</td>
                   <td>{мегабайты(video.size)}</td>
                   <td>{дата.format(video.createdAt)}</td>
@@ -91,13 +105,13 @@ export default async function AdminVideosPage() {
                     <form action={shiftVideo} style={{ display: "inline" }}>
                       <input type="hidden" name="id" value={video.id} />
                       <input type="hidden" name="up" value="1" />
-                      <button type="submit" disabled={index === 0}>
+                      <button type="submit" disabled={!sameLang(index, -1)}>
                         ↑
                       </button>
                     </form>{" "}
                     <form action={shiftVideo} style={{ display: "inline" }}>
                       <input type="hidden" name="id" value={video.id} />
-                      <button type="submit" disabled={index === videos.length - 1}>
+                      <button type="submit" disabled={!sameLang(index, 1)}>
                         ↓
                       </button>
                     </form>

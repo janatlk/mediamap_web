@@ -11,18 +11,38 @@
   Публичного сайта это не касается — файл подключён только в макете админки.
 */
 
+/*
+  Читаемость. Панель остаётся служебным экраном без своего дизайна, но
+  браузерные умолчания для неё слишком тесные: Times New Roman, строки
+  вплотную, поля и кнопки в пол-сантиметра. Здесь исправлено ровно это —
+  шрифт, межстрочное расстояние и размеры того, во что целятся мышью.
+*/
 body {
   margin: 0;
   background: #fff;
-  color: #000;
+  color: #1a1a1a;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Моноширинным — только то, что и есть машинный текст: номера, ключи. */
+code,
+kbd,
+pre,
+.id {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.92em;
 }
 
 /* Ширину ограничиваем: строка на весь монитор не читается. */
 .panel,
 .topbar {
-  max-width: 55em;
+  /* Было 55em при шрифте с засечками. Таблицы роликов и вопросов в такую
+     ширину не укладывались и жались в столбик. */
+  max-width: 68em;
   margin: 0 auto;
-  padding: 0 1em;
+  padding: 0 1.2em;
 }
 
 /*
@@ -84,13 +104,16 @@ body {
 }
 
 h1 {
-  font-size: 1.4em;
-  margin: 0.6em 0 0.2em;
+  font-size: 1.6em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0.8em 0 0.3em;
 }
 
 h2 {
-  font-size: 1.1em;
-  margin: 1.8em 0 0.4em;
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 2em 0 0.5em;
 }
 
 p {
@@ -101,9 +124,35 @@ p {
    телефоне такое поле вылезает за экран — отсюда единственная поправка. */
 
 input,
-textarea {
+textarea,
+select,
+button {
+  font: inherit;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* Поля и кнопки крупнее: по умолчанию в них трудно попасть и трудно
+   прочитать набранное. */
+input,
+textarea,
+select {
+  padding: 0.4em 0.6em;
+  border: 1px solid #8c8c8c;
+  border-radius: 2px;
+  background: #fff;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 1px;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.8em;
 }
 
 /* --- таблицы: главный способ показать данные --- */
@@ -124,15 +173,21 @@ table {
 
 th,
 td {
-  border: 1px solid #999;
-  padding: 0.2em 0.6em;
+  border: 1px solid #d4d4d4;
+  padding: 0.5em 0.7em;
   text-align: left;
   vertical-align: top;
 }
 
 th {
-  background: #eee;
-  font-weight: normal;
+  background: #f0f0f0;
+  font-weight: 600;
+}
+
+/* Полоска через строку: в таблице на десяток столбцов глаз иначе
+   соскальзывает на соседнюю. */
+tbody tr:nth-child(even) {
+  background: #fafafa;
 }
 
 td.num,
@@ -191,7 +246,13 @@ article p {
 .lead,
 .id {
   color: #555;
-  font-size: 0.9em;
+  font-size: 0.92em;
+}
+
+/* Ошибка формы: словами и цветом, одного цвета мало. */
+.error {
+  color: #a01026;
+  font-weight: 600;
 }
 
 /* .status — просто выделенное слово: ошибка ленты, отказ сервиса. */
@@ -319,7 +380,20 @@ section form textarea {
    Отличаем главную, а откат отбиваем от решений. */
 
 button {
-  padding: 0.25em 0.8em;
+  padding: 0.4em 0.9em;
+  border: 1px solid #8c8c8c;
+  border-radius: 2px;
+  background: #f5f5f5;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+button:disabled {
+  color: #9a9a9a;
+  cursor: default;
 }
 
 .actions {

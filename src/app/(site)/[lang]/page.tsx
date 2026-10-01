@@ -14,7 +14,6 @@ import { getContent } from "@/server/content";
 import { localizeHeadlines } from "@/server/case-data";
 import { getHomeData } from "@/server/home-data";
 import { loadVideos } from "@/server/videos";
-import { translateTexts } from "@/server/text-translation";
 
 // Тут только порядок разделов. Разметка — в компонентах, запросы —
 // в src/server/home-data.ts.
@@ -50,15 +49,8 @@ export default async function HomePage({
   const data = await getHomeData();
   await localizeHeadlines(data.cases, lang);
 
-  /*
-    Названия роликов переводим из памяти переводов, модель не спрашиваем:
-    главная не должна ждать её ради подписи под видео. Нет готового
-    перевода — покажем как есть, на языке редакции.
-  */
-  const videos = await loadVideos();
-  const videoTitles = (
-    await translateTexts(videos.map((video) => video.title), lang, { live: false })
-  ).map((title, index) => title ?? videos[index].title);
+  // Ролики у каждого языка свои: озвученный ролик не переведёшь.
+  const videos = await loadVideos(lang);
 
   return (
     <>
@@ -78,7 +70,7 @@ export default async function HomePage({
 
       <HowItWorks dict={dict} />
 
-      <VideoShelf dict={dict} lang={lang} videos={videos} titles={videoTitles} />
+      <VideoShelf dict={dict} videos={videos} />
 
       <CaseFeed
         dict={dict}

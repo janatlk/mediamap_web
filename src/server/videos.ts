@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { db } from "@/lib/db";
+import { isReadyLanguage, type Lang } from "@/lib/i18n/languages";
 import { VIDEO_MAX_BYTES, VIDEO_TYPES } from "@/lib/video-rules";
 import { put, remove } from "./storage";
 
@@ -28,10 +29,17 @@ export type VideoRow = {
   hasPoster: boolean;
 };
 
-/** Ролики для главной: только показываемые, в заданном порядке. */
-export async function loadVideos(limit = 12): Promise<VideoRow[]> {
+/*
+  Ролики для главной того языка, на котором её читают.
+
+  Переводить ролик нельзя — он озвучен, — поэтому у каждого языка свои
+  файлы. Нет кыргызских роликов, значит на кыргызской главной блока просто
+  не будет: показывать русский ролик вместо кыргызского хуже, чем не
+  показывать ничего.
+*/
+export async function loadVideos(lang: Lang, limit = 12): Promise<VideoRow[]> {
   const rows = await db.video.findMany({
-    where: { published: true },
+    where: { published: true, lang },
     orderBy: [{ position: "asc" }, { createdAt: "desc" }],
     take: limit,
     select: { id: true, title: true, seconds: true, posterKey: true },
@@ -46,15 +54,22 @@ export async function loadVideos(limit = 12): Promise<VideoRow[]> {
 /** Всё подряд — для панели. */
 export const loadAllVideos = () =>
   db.video.findMany({
-    orderBy: [{ position: "asc" }, { createdAt: "desc" }],
+    // Сначала по языку: так группы не перемешаны, и стрелки двигают ролик
+    // внутри своей группы, а не через всю таблицу.
+    orderBy: [{ lang: "asc" }, { position: "asc" }, { createdAt: "desc" }],
   });
 
 export type SavedVideo = { id: number } | { error: string };
 
 /** Принимает файл, снимает обложку, заводит запись. */
-export async function saveVideo(title: string, file: File): Promise<SavedVideo> {
+export async function saveVideo(
+  title: string,
+  lang: string,
+  file: File,
+): Promise<SavedVideo> {
   const clean = title.trim();
   if (!clean) return { error: "Нужно название ролика" };
+  if (!isReadyLanguage(lang)) return { error: "Неизвестный язык ролика" };
 
   const ext = VIDEO_TYPES[file.type];
   if (!ext) return { error: `Такой тип файла не принимаем: ${file.type || "неизвестно"}` };
@@ -68,12 +83,16 @@ export async function saveVideo(title: string, file: File): Promise<SavedVideo> 
   const probed = await describe(data, ext);
   const posterKey = probed.poster ? await put(probed.poster, "jpg") : null;
 
-  // Новый ролик встаёт первым: свежее обычно и показывают.
-  const first = await db.video.findFirst({ orderBy: { position: "asc" } });
+  // Новый ролик встаёт первым среди роликов своего языка.
+  const first = await db.video.findFirst({
+    where: { lang },
+    orderBy: { position: "asc" },
+  });
 
   const row = await db.video.create({
     data: {
       title: clean,
+      lang,
       key,
       mime: file.type,
       size: data.length,
@@ -96,9 +115,13 @@ export async function dropVideo(id: number): Promise<void> {
   if (row.posterKey) await remove(row.posterKey);
 }
 
-/** Меняет ролик местами с соседним. Порядок правится стрелками в панели. */
+/** Меняет ролик местами с соседним своего языка. */
 export async function moveVideo(id: number, up: boolean): Promise<void> {
+  const moved = await db.video.findUnique({ where: { id }, select: { lang: true } });
+  if (!moved) return;
+
   const rows = await db.video.findMany({
+    where: { lang: moved.lang },
     orderBy: [{ position: "asc" }, { createdAt: "desc" }],
     select: { id: true },
   });

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Play } from "lucide-react";
 
-import type { Dictionary, Lang } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n";
 import type { VideoRow } from "@/server/videos";
 
 /*
@@ -19,15 +19,9 @@ import type { VideoRow } from "@/server/videos";
   спроса раздражают, а у нас страница про доверие.
 */
 
-type Props = {
-  dict: Dictionary;
-  lang: Lang;
-  videos: VideoRow[];
-  /** Заголовки, переведённые на язык страницы. */
-  titles: string[];
-};
+type Props = { dict: Dictionary; videos: VideoRow[] };
 
-export default function VideoShelf({ dict, videos, titles }: Props) {
+export default function VideoShelf({ dict, videos }: Props) {
   const words = dict.home;
   if (videos.length === 0) return null;
 
@@ -41,14 +35,14 @@ export default function VideoShelf({ dict, videos, titles }: Props) {
             уезжал бы один во вторую строку. Отрицательные поля — чтобы
             карточки «утекали» за край страницы, как лента. */}
         <ul className="mt-8 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mt-12 lg:-mx-10 lg:px-10">
-          {videos.map((video, index) => (
+          {videos.map((video) => (
             <li
               key={video.id}
               className="w-[70vw] shrink-0 snap-start sm:w-56 lg:w-64"
             >
               <Card
                 video={video}
-                title={titles[index] ?? video.title}
+                title={video.title}
                 playLabel={words.videoPlay}
               />
             </li>

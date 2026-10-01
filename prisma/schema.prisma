@@ -575,6 +575,9 @@ model TextTranslation {
 model Video {
   id    Int    @id @default(autoincrement())
   title String
+  /// Язык ролика: ky, ru, en. Ролики не переводятся, у каждого языка свои —
+  /// на кыргызской главной кыргызские, на русской русские.
+  lang  String @default("ru")
 
   /// Ключ файла в хранилище (src/server/storage.ts).
   key   String
@@ -593,7 +596,7 @@ model Video {
 
   createdAt DateTime @default(now())
 
-  @@index([published, position])
+  @@index([lang, published, position])
   @@map("videos")
 }
 
