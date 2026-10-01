@@ -3,16 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
+import Quiz from "@/components/quiz/Quiz";
 import { isReadyLanguage } from "@/lib/i18n";
 import { getContent } from "@/server/content";
+import { loadQuiz } from "@/server/quiz";
 
 /*
-  «Проверь себя». Рубрика заведена, тестов пока нет — так и решено: сделать
-  их функциональными в самом конце.
+  «Проверь себя».
 
-  Страница-заглушка написана честно: сказано, что тестов нет, почему их нет
-  и куда пойти вместо них. Пустая страница с одним заголовком читалась бы
-  как поломка, а обещание срока, которого мы не знаем, — как обман.
+  Вопросы заводит редакция в панели. Пока их нет, страница честно говорит об
+  этом и уводит к видам нарушений и глоссарию: пустая страница с одним
+  заголовком читается как поломка.
 */
 
 export const revalidate = 3600;
@@ -40,6 +41,20 @@ export default async function QuizPage({
 
   const dict = await getContent(lang);
   const words = dict.quizPage;
+  const questions = await loadQuiz(lang);
+
+  if (questions.length > 0) {
+    return (
+      <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl sm:text-4xl">{words.title}</h1>
+          <p className="mt-4 text-lg text-muted">{words.lead}</p>
+
+          <Quiz dict={dict} questions={questions} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-10">

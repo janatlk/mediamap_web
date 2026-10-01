@@ -596,3 +596,31 @@ model Video {
   @@index([published, position])
   @@map("videos")
 }
+
+/// Вопрос теста «Проверь себя».
+///
+/// Варианты лежат строкой JSON, а не отдельной таблицей: их два-четыре на
+/// вопрос, они всегда читаются вместе с ним и по отдельности не нужны ни
+/// в одном запросе. Таблица на связь дала бы только лишний join.
+///
+/// Тексты хранятся на языке редакции, а на страницу приходят переведёнными —
+/// тем же способом, что заголовки случаев (см. TextTranslation).
+model QuizQuestion {
+  id       Int    @id @default(autoincrement())
+  question String
+  /// JSON-массив строк: варианты ответа в порядке показа.
+  options  String
+  /// Номер верного варианта, считая с нуля.
+  correct  Int
+  /// Почему верно именно это. Показывается после ответа — ради этого тест
+  /// и затевался, иначе он просто считает очки.
+  explanation String?
+
+  position  Int     @default(0)
+  published Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([published, position])
+  @@map("quiz_questions")
+}

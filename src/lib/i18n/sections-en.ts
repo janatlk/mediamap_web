@@ -122,6 +122,16 @@ const sections = {
     meanwhileBody:
       "The violation types and the glossary answer the same questions, only " +
       "without a score.",
+    progress: "Question {n} of {total}",
+    right: "Correct",
+    wrong: "Not quite",
+    next: "Next",
+    finish: "See the result",
+    again: "Start over",
+    resultTitle: "Your result",
+    resultAll: "Every answer right. Not everyone who works with text daily can tell these apart.",
+    resultGood: "More than half right. The guide to the types of violations covers the rest.",
+    resultPoor: "Hard going so far, and that is normal: plenty of people fall for these. Have a look at the types of violations.",
     toTypes: "Types of violations",
     toGlossary: "Glossary",
   },
