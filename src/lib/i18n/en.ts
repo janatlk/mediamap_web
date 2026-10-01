@@ -37,6 +37,7 @@ const en = {
     account: "Account",
     panel: "Panel",
     languageSoon: "soon",
+    beta: "beta",
     menu: "Menu",
     close: "Close",
   },

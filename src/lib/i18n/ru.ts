@@ -38,6 +38,7 @@ const ru = {
     account: "Профиль",
     panel: "Панель",
     languageSoon: "скоро",
+    beta: "бета",
     menu: "Меню",
     close: "Закрыть",
   },

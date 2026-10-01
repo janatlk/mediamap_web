@@ -116,9 +116,15 @@ export default function Header({ dict, lang, account }: Props) {
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
         <Link
           href={`/${lang}`}
-          className="flex h-11 items-center font-display text-lg font-medium tracking-tight whitespace-nowrap"
+          className="flex h-11 items-center gap-2 font-display text-lg font-medium tracking-tight whitespace-nowrap"
         >
           {dict.brand}
+          {/* Метка «бета» рядом с названием: сайт показывают вживую, и
+              читатель должен понимать, что это ещё не окончательная версия.
+              Серая, а не красная: это предупреждение, а не действие. */}
+          <span className="rounded-xs border border-line bg-surface px-1.5 py-0.5 font-mono text-2xs font-normal tracking-wide text-muted uppercase">
+            {dict.nav.beta}
+          </span>
         </Link>
 
         <nav className="hidden flex-1 items-center gap-6 lg:flex">

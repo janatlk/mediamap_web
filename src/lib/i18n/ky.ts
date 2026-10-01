@@ -32,6 +32,7 @@ const ky: typeof ru = {
     account: "Профиль",
     panel: "Панель",
     languageSoon: "жакында",
+    beta: "бета",
     menu: "Меню",
     close: "Жабуу",
   },
