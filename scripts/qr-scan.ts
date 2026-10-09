@@ -9,6 +9,11 @@
  * остался бы на странице случая открытым.
  */
 
+// Адрес ML-сервиса живёт в .env. Запуск идёт мимо Next, который читает его
+// сам, — без этой строки сервис считается выключенным и смотреть снимки
+// было бы нечем.
+import "dotenv/config";
+
 import { db } from "../src/lib/db";
 import { ATTACHMENT_KIND } from "../src/lib/enums";
 import { scanAttachments } from "../src/server/qr-scan";
