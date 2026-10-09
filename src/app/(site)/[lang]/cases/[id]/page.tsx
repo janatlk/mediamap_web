@@ -219,7 +219,7 @@ export default async function CasePage({
           здесь нет и быть не может: страница публичная, а личный ключ на
           то и личный. Список пуст — блока просто нет.
         */}
-        <Attachments items={item.attachments} title={words.attachments} />
+        <Attachments dict={dict} items={item.attachments} title={words.attachments} />
 
         {/*
           Разбор модели — подробности к вердикту выше. Заметку проверяющего

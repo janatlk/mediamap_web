@@ -29,7 +29,14 @@ export type CaseDetail = CaseListItem & {
     переписки бывает его собственное имя и номер. Пустой список — обычное
     состояние, а не поломка.
   */
-  attachments: { id: string; kind: string; name: string; mime: string }[];
+  attachments: {
+    id: string;
+    kind: string;
+    name: string;
+    mime: string;
+    /** На снимке найден QR-код. Такой снимок показываем под заслонкой. */
+    hasQr: boolean;
+  }[];
   /*
     Когда произошло само нарушение. Пусто у сообщений, поданных до того, как
     в форме появилась дата: подставлять им дату подачи нельзя — она про
@@ -122,6 +129,19 @@ export async function loadCasePage(
   return { items, total, page, pageCount };
 }
 
+/*
+  Снимок с QR-кодом на опубликованной странице закрываем заслонкой.
+
+  Саму расшифровку наружу не отдаём: она собрана для проверяющего, и
+  печатать на странице адрес мошеннического сайта — значит разносить его
+  дальше. Посетителю нужно другое — знать, что сканировать этот код
+  опасно.
+*/
+const withQr = <T extends { qrSummary: string | null }>(row: T) => {
+  const { qrSummary, ...rest } = row;
+  return { ...rest, hasQr: Boolean(qrSummary) };
+};
+
 /** Один случай по публичному номеру. Null, если такого нет или он не подтверждён. */
 export async function loadCase(publicId: string, lang?: Lang): Promise<CaseDetail | null> {
   const row = await db.report.findFirst({
@@ -130,7 +150,7 @@ export async function loadCase(publicId: string, lang?: Lang): Promise<CaseDetai
       violationType: true,
       attachments: {
         where: { public: true },
-        select: { id: true, kind: true, name: true, mime: true },
+        select: { id: true, kind: true, name: true, mime: true, qrSummary: true },
         orderBy: { createdAt: "asc" },
       },
     },
@@ -140,7 +160,7 @@ export async function loadCase(publicId: string, lang?: Lang): Promise<CaseDetai
 
   const detail: CaseDetail = {
     ...toListItem(row),
-    attachments: row.attachments,
+    attachments: row.attachments.map(withQr),
     happenedAt: row.happenedAt,
     terminology: row.aiTerminology,
     link: row.mediaLink,
@@ -245,7 +265,14 @@ export type Receipt = {
   story: string | null;
   link: string | null;
   city: string | null;
-  attachments: { id: string; kind: string; name: string; mime: string }[];
+  attachments: {
+    id: string;
+    kind: string;
+    name: string;
+    mime: string;
+    /** На снимке найден QR-код. Такой снимок показываем под заслонкой. */
+    hasQr: boolean;
+  }[];
   /** Заметка проверяющего к решению. Человек вправе знать, почему решили так. */
   moderatorComment: string | null;
   /** Решение принял живой человек, а не только модель. */
@@ -292,7 +319,7 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
     include: {
       violationType: { select: { slug: true } },
       attachments: {
-        select: { id: true, kind: true, name: true, mime: true },
+        select: { id: true, kind: true, name: true, mime: true, qrSummary: true },
         orderBy: { createdAt: "asc" },
       },
     },
@@ -309,7 +336,7 @@ export async function loadReceipt(token: string): Promise<Receipt | null> {
     story: row.authorComment,
     link: row.mediaLink,
     city: row.city,
-    attachments: row.attachments,
+    attachments: row.attachments.map(withQr),
     moderatorComment: row.moderatorComment,
     reviewed: row.reviewedAt !== null,
     reviewSummary: row.reviewSummary,

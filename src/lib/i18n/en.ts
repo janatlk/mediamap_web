@@ -566,6 +566,15 @@ const en = {
       "the position of the European Union.",
   },
 
+  qrCover: {
+    title: "This photo may contain a QR code that is unsafe to scan",
+    text: "Do not scan QR codes you do not know.",
+    confirm: "I know what I am doing",
+    cancel: "Cancel",
+    show: "Show the photo",
+    hidden: "Photo hidden: it contains a QR code",
+  },
+
   a11y: {
     skipToContent: "Skip to content",
     cases: "cases",

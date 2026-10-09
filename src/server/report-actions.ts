@@ -14,6 +14,7 @@ import type { ViolationSlug } from "@/lib/i18n";
 import { assess, type AssessRun } from "./ai-review";
 import { recordCheck } from "./ai-journal";
 import { attachTo, discard, filesFrom, prepare } from "./attachments";
+import { scanAttachments } from "./qr-scan";
 import { takeSubmitSlot } from "./rate-limit";
 import { warmReport } from "./text-translation";
 
@@ -279,6 +280,16 @@ export async function submitReport(
   }
 
   await attachTo(reportId, files.items);
+
+  /*
+    Снимки смотрим на QR-коды в фоне.
+
+    Ходить по ссылке из кода — это обращение к чужому серверу, иногда
+    медленное; заставлять заявителя ждать его ради сведения, нужного
+    проверяющему, незачем. К моменту, когда заявку откроют в панели,
+    находка уже на месте.
+  */
+  after(() => scanAttachments(reportId));
   await recordCheck(reportId, run, data.typeSlug);
 
   // Разбор модель пишет по-английски — переводы на языки сайта готовим уже

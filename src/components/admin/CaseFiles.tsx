@@ -20,6 +20,8 @@ type File = {
   name: string;
   mime: string;
   public: boolean;
+  /** Расшифровка QR-кода со снимка. Пусто — кода нет или ещё не смотрели. */
+  qrSummary: string | null;
 };
 
 export default function CaseFiles({ items }: { items: File[] }) {
@@ -44,6 +46,20 @@ export default function CaseFiles({ items }: { items: File[] }) {
                 <img src={`/api/attachments/${file.id}`} alt={file.name} />
               </a>
             )}
+
+            {/* Код на снимке — то, чего не видно глазами. Пишем словами и
+                рядом со снимком: проверяющему незачем наводить телефон на
+                код из чужого сообщения, чтобы узнать, куда тот ведёт. */}
+            {file.qrSummary ? (
+              <p className="error">
+                <strong>QR-код на снимке.</strong> {file.qrSummary}
+                <br />
+                <span className="note">
+                  Ссылку прошёл сервис, без браузера. Сканировать код самому
+                  не нужно.
+                </span>
+              </p>
+            ) : null}
 
             <p>
               <span className={`badge ${file.public ? "approved" : "rejected"}`}>

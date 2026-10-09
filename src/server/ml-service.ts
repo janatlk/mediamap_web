@@ -143,6 +143,108 @@ export async function classify(payload: ClassifyPayload): Promise<MlVerdict> {
   return toVerdict((await response.json()) as ClassifyResponse);
 }
 
+/** Куда привёл адрес из QR-кода. */
+export type QrDestination = {
+  url: string;
+  finalUrl: string;
+  host: string;
+  status: number | null;
+  title: string;
+  /** Пометки словами: «сокращатель ссылок», «адрес подменяется на …». */
+  flags: string[];
+};
+
+export type QrCode = {
+  text: string;
+  /** url | payment | tel | sms | wifi | crypto | text */
+  kind: string;
+  destination: QrDestination | null;
+};
+
+export type QrFinding = {
+  codes: QrCode[];
+  /** Та же находка словами — её читает проверяющий в панели. */
+  summary: string;
+};
+
+type QrResponse = {
+  codes: {
+    text: string;
+    kind: string;
+    destination: {
+      url: string;
+      final_url: string;
+      host: string;
+      status: number | null;
+      title: string;
+      flags: string[];
+    } | null;
+  }[];
+  summary: string;
+};
+
+/**
+ * Читает QR-коды со снимка и проходит по ссылке из них.
+ *
+ * Отдельно от classify: разбор отвечает на вопрос «нарушение ли это», а
+ * здесь вопрос другой и нужен в другом месте — в панели у каждого снимка и
+ * на странице случая, где снимок с кодом закрывается предупреждением.
+ *
+ * Переход по ссылке делает сервис, а не браузер и не модель: скрипты не
+ * выполняются, адрес проверяется на «не наша внутренняя сеть», читается
+ * только начало страницы.
+ */
+export async function readQr(
+  image: { base64: string; mime: string },
+  follow = true,
+): Promise<QrFinding> {
+  const base = mlServiceUrl();
+  if (!base) throw new Error("ML_SERVICE_URL не задан");
+
+  const response = await fetch(`${base}/qr`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      image_base64: image.base64,
+      image_mime: image.mime,
+      follow,
+    }),
+    // Своя мерка времени: здесь нет ни расшифровки речи, ни скачивания
+    // медиа — только чтение кода и короткая цепочка переходов.
+    signal: AbortSignal.timeout(qrTimeoutMs()),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`ML-сервис ответил ${response.status}`);
+  }
+
+  const body = (await response.json()) as QrResponse;
+
+  return {
+    summary: body.summary ?? "",
+    codes: (body.codes ?? []).map((code) => ({
+      text: code.text,
+      kind: code.kind,
+      destination: code.destination
+        ? {
+            url: code.destination.url,
+            finalUrl: code.destination.final_url,
+            host: code.destination.host,
+            status: code.destination.status,
+            title: code.destination.title ?? "",
+            flags: code.destination.flags ?? [],
+          }
+        : null,
+    })),
+  };
+}
+
+function qrTimeoutMs(): number {
+  const raw = Number(process.env.ML_QR_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 20_000;
+}
+
 function toVerdict(body: ClassifyResponse): MlVerdict {
   return {
     slug: CLASS_TO_SLUG[body.label] ?? "unclear",

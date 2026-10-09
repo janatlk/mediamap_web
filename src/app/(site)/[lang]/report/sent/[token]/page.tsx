@@ -136,6 +136,7 @@ export default async function SentPage({
         ) : null}
 
         <Attachments
+          dict={dict}
           items={receipt.attachments}
           token={token}
           title={page.filesChosen}

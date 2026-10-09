@@ -69,7 +69,15 @@ export type ReportRow = {
    */
   aiError: string | null;
 
-  attachments: { id: string; kind: string; name: string; mime: string; public: boolean }[];
+  attachments: {
+    id: string;
+    kind: string;
+    name: string;
+    mime: string;
+    public: boolean;
+    /** Что записано в QR-коде на снимке и куда ведёт. Пусто — кода нет. */
+    qrSummary: string | null;
+  }[];
 };
 
 export type Filter = {
@@ -100,7 +108,14 @@ export async function loadReports(filter: Filter): Promise<Page> {
         violationType: { select: { slug: true } },
         reviewedBy: { select: { name: true, email: true } },
         attachments: {
-          select: { id: true, kind: true, name: true, mime: true, public: true },
+          select: {
+            id: true,
+            kind: true,
+            name: true,
+            mime: true,
+            public: true,
+            qrSummary: true,
+          },
           orderBy: { createdAt: "asc" },
         },
         aiChecks: {
@@ -216,7 +231,14 @@ function toRow(row: {
   aiTypeChecks: string | null;
   violationType: { slug: string };
   reviewedBy: { name: string | null; email: string } | null;
-  attachments: { id: string; kind: string; name: string; mime: string; public: boolean }[];
+  attachments: {
+    id: string;
+    kind: string;
+    name: string;
+    mime: string;
+    public: boolean;
+    qrSummary: string | null;
+  }[];
   aiChecks: {
     claim: string | null;
     factVerdict: string | null;

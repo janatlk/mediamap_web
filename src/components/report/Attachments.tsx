@@ -1,6 +1,8 @@
 import { FileVideo } from "lucide-react";
 
 import { ATTACHMENT_KIND } from "@/lib/enums";
+import type { Dictionary } from "@/lib/i18n";
+import QrCover from "./QrCover";
 
 /*
   Показ приложенного к сообщению.
@@ -19,20 +21,26 @@ export type Attachment = {
   kind: string;
   name: string;
   mime: string;
+  /** На снимке нашёлся QR-код — показываем его под заслонкой. */
+  hasQr?: boolean;
 };
 
 type Props = {
+  dict: Dictionary;
   items: Attachment[];
   /** Личный ключ страницы «принято». У публичных страниц его нет. */
   token?: string;
   title: string;
 };
 
-export default function Attachments({ items, token, title }: Props) {
+export default function Attachments({ dict, items, token, title }: Props) {
   if (items.length === 0) return null;
 
   const src = (id: string) =>
     token ? `/api/attachments/${id}?t=${token}` : `/api/attachments/${id}`;
+
+  const withCover = (item: Attachment, picture: React.ReactNode) =>
+    item.hasQr ? <QrCover dict={dict}>{picture}</QrCover> : picture;
 
   return (
     <section className="mt-8">
@@ -49,16 +57,22 @@ export default function Attachments({ items, token, title }: Props) {
                 className="block max-h-80 w-full bg-ink"
               />
             ) : (
-              // Открывается в полный размер: на снимке экрана мелкий текст,
-              // и разглядеть его в карточке нельзя.
-              <a href={src(item.id)} target="_blank" rel="noreferrer">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src(item.id)}
-                  alt={item.name}
-                  className="block max-h-80 w-full object-contain"
-                />
-              </a>
+              // Снимок с QR-кодом открывается только после предупреждения:
+              // код наводят телефоном не задумываясь, а приходят такие
+              // снимки из сообщений о мошенничестве. См. QrCover.
+              withCover(
+                item,
+                // Открывается в полный размер: на снимке экрана мелкий
+                // текст, и разглядеть его в карточке нельзя.
+                <a href={src(item.id)} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src(item.id)}
+                    alt={item.name}
+                    className="block max-h-80 w-full object-contain"
+                  />
+                </a>,
+              )
             )}
 
             <p className="flex items-center gap-2 border-t border-line px-3 py-2 text-sm text-muted">
