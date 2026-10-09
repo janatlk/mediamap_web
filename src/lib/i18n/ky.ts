@@ -142,7 +142,7 @@ const ky: typeof ru = {
     verdictConfirmed: "MediaMap текшерүүчүсү тастыктады",
     readAnalysis: "Толук талдоо",
     breadcrumbs: "Бөлүм боюнча навигация",
-    details: "Учур тууралуу",
+    details: "Толугураак",
     quoteShow: "Текстти көрсөтүү",
     quoteWarning: {
       "hate-speech":

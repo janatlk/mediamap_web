@@ -150,7 +150,7 @@ const en = {
     verdictConfirmed: "confirmed by a MediaMap reviewer",
     readAnalysis: "Full analysis",
     breadcrumbs: "Section navigation",
-    details: "About the case",
+    details: "More details",
     quoteShow: "Show the text",
     quoteWarning: {
       "hate-speech":
