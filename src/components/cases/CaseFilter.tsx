@@ -19,7 +19,7 @@ export default function CaseFilter({ dict, lang, types, active }: Props) {
   const base = `/${lang}/cases`;
 
   const chip = (isActive: boolean) =>
-    `inline-flex h-10 items-center gap-2 rounded-xs border px-4 text-sm transition-colors ${
+    `inline-flex h-11 items-center gap-2 rounded-xs border px-4 text-base transition-colors ${
       isActive
         ? "border-ink bg-ink text-surface"
         : "border-border hover:bg-surface"
@@ -48,7 +48,7 @@ export default function CaseFilter({ dict, lang, types, active }: Props) {
                   aria-hidden="true"
                 />
                 {violationText(dict, type.slug)?.name ?? type.slug}
-                <span className="text-2xs tabular-nums opacity-70">
+                <span className="text-xs tabular-nums opacity-70">
                   {type.count}
                 </span>
               </Link>

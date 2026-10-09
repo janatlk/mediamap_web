@@ -77,12 +77,12 @@ export default async function CasesPage({
         </p>
       ) : (
         <>
-          <p className="mt-8 text-sm text-muted">
+          <p className="mt-8 text-base text-muted">
             {withCount(total, FORMS[lang].cases, lang)} {dict.cases.found}
           </p>
 
           <div className="mt-4">
-            <CaseList cases={items} dict={dict} lang={lang} />
+            <CaseList cases={items} dict={dict} lang={lang} large />
           </div>
 
           <Pagination
