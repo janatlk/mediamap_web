@@ -38,7 +38,13 @@ export default function VideoShelf({ dict, videos }: Props) {
           {videos.map((video) => (
             <li
               key={video.id}
-              className="w-[70vw] shrink-0 snap-start sm:w-56 lg:w-64"
+              /* Широкий ролик с YouTube в карточку под рилс не влезает:
+                 он лёг бы чёрными полосами сверху и снизу. Поэтому у
+                 широких карточка шире, а высота у всех одна — иначе ряд
+                 выглядел бы лесенкой. */
+              className={`shrink-0 snap-start ${
+                video.wide ? "w-[85vw] sm:w-[25rem] lg:w-[28rem]" : "w-[70vw] sm:w-56 lg:w-64"
+              }`}
             >
               <Card
                 video={video}
@@ -67,7 +73,11 @@ function Card({
 
   return (
     <figure>
-      <div className="relative aspect-[9/16] overflow-hidden rounded-xs bg-deep">
+      <div
+        className={`relative overflow-hidden rounded-xs bg-deep ${
+          video.wide ? "aspect-video" : "aspect-[9/16]"
+        }`}
+      >
         <video
           ref={player}
           src={`/api/videos/${video.id}`}

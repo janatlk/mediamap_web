@@ -51,7 +51,7 @@ const ky: typeof ru = {
     statReceived: "келип түштү",
     statCases: "ырасталды",
     statRecent: "акыркы айда",
-    statReviewDays: "— текшерүү ушунча убакыт алат",
+    statReviewDays: "активдүү текшерүү",
 
     casesTitle: "Текшерилген учурлар",
     casesLead: "Текшерүүдөн кийин тастыктаганыбыз.",

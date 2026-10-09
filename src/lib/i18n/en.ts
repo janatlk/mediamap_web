@@ -59,7 +59,7 @@ const en = {
     statReceived: "received",
     statCases: "confirmed",
     statRecent: "in the past month",
-    statReviewDays: "— how long a review takes",
+    statReviewDays: "of active review",
 
     casesTitle: "Verified cases",
     casesLead: "What we confirmed after review.",

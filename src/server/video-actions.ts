@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
 import { requireEditor } from "@/lib/guard";
-import { dropVideo, moveVideo, saveVideo } from "./videos";
+import { fetchVideo, LinkError } from "./cobalt";
+import { dropVideo, moveVideo, saveVideo, storeVideo } from "./videos";
 
 /*
   Управление роликами из панели.
@@ -44,6 +45,55 @@ export async function addVideo(
 
   refresh();
   return { done: "Ролик добавлен" };
+}
+
+/**
+ * Скачивает ролик по ссылке и откладывает его черновиком.
+ *
+ * Сразу на сайт не ставим: по ссылке приходит то, что отдала соцсеть, и
+ * это может оказаться не тем роликом, обрезанным куском или рекламой.
+ * Редактор смотрит, что скачалось, и подтверждает.
+ */
+export async function addVideoByLink(
+  _previous: VideoState,
+  form: FormData,
+): Promise<VideoState> {
+  await requireEditor();
+
+  const link = String(form.get("link") ?? "").trim();
+  if (!/^https?:\/\//i.test(link)) return { error: "Нужна ссылка, начиная с http" };
+
+  try {
+    const file = await fetchVideo(link);
+    const result = await storeVideo({
+      // Название из ссылки — черновик: у YouTube там заголовок ролика, у
+      // соцсетей обычно мусор вроде instagram_12345.
+      title: String(form.get("title") ?? "").trim() || file.title || link,
+      lang: String(form.get("lang") ?? ""),
+      data: file.data,
+      mime: file.mime,
+      sourceUrl: link,
+      draft: true,
+    });
+
+    if ("error" in result) return { error: result.error };
+
+    refresh();
+    return { done: "Скачано. Посмотрите, что получилось, и подтвердите" };
+  } catch (error) {
+    if (error instanceof LinkError) return { error: error.message };
+    console.error("загрузка по ссылке не вышла:", error);
+    return { error: "Скачать не вышло. Подробности в журнале сервера" };
+  }
+}
+
+/** Редактор посмотрел черновик и согласился его показывать. */
+export async function confirmVideo(form: FormData): Promise<void> {
+  await requireEditor();
+  await db.video
+    .update({ where: { id: Number(form.get("id")) }, data: { draft: false } })
+    .catch(() => {});
+  refresh();
 }
 
 export async function removeVideo(form: FormData): Promise<void> {

@@ -63,7 +63,7 @@ const ru = {
     statReceived: "получено",
     statCases: "подтверждено",
     statRecent: "за последний месяц",
-    statReviewDays: "— столько идёт проверка",
+    statReviewDays: "активной проверки",
 
     casesTitle: "Проверенные случаи",
     casesLead: "Что мы подтвердили после проверки.",

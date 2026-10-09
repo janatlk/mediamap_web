@@ -27,6 +27,8 @@ export type VideoRow = {
   title: string;
   seconds: number | null;
   hasPoster: boolean;
+  /** Широкий ролик (YouTube) показываем не так, как вертикальный. */
+  wide: boolean;
 };
 
 /*
@@ -39,15 +41,25 @@ export type VideoRow = {
 */
 export async function loadVideos(lang: Lang, limit = 12): Promise<VideoRow[]> {
   const rows = await db.video.findMany({
-    where: { published: true, lang },
+    where: { published: true, draft: false, lang },
     orderBy: [{ position: "asc" }, { createdAt: "desc" }],
     take: limit,
-    select: { id: true, title: true, seconds: true, posterKey: true },
+    select: {
+      id: true,
+      title: true,
+      seconds: true,
+      posterKey: true,
+      width: true,
+      height: true,
+    },
   });
 
-  return rows.map(({ posterKey, ...rest }) => ({
+  return rows.map(({ posterKey, width, height, ...rest }) => ({
     ...rest,
     hasPoster: posterKey !== null,
+    // Размеров нет у роликов, снятых без ffprobe: считаем их вертикальными,
+    // такими их и загружали.
+    wide: width !== null && height !== null && width > height,
   }));
 }
 
@@ -67,17 +79,47 @@ export async function saveVideo(
   lang: string,
   file: File,
 ): Promise<SavedVideo> {
-  const clean = title.trim();
-  if (!clean) return { error: "Нужно название ролика" };
-  if (!isReadyLanguage(lang)) return { error: "Неизвестный язык ролика" };
-
   const ext = VIDEO_TYPES[file.type];
   if (!ext) return { error: `Такой тип файла не принимаем: ${file.type || "неизвестно"}` };
   if (file.size > VIDEO_MAX_BYTES) {
     return { error: `Файл больше ${Math.round(VIDEO_MAX_BYTES / 1024 / 1024)} МБ` };
   }
 
-  const data = Buffer.from(await file.arrayBuffer());
+  return storeVideo({
+    title,
+    lang,
+    data: Buffer.from(await file.arrayBuffer()),
+    mime: file.type,
+  });
+}
+
+/**
+ * Кладёт ролик в хранилище и заводит запись.
+ *
+ * Общее для двух путей: файл с компьютера и файл, скачанный по ссылке.
+ * Черновик (draft) показывается только в панели — редактор сначала смотрит,
+ * что скачалось, и только потом подтверждает.
+ */
+export async function storeVideo({
+  title,
+  lang,
+  data,
+  mime,
+  sourceUrl,
+  draft = false,
+}: {
+  title: string;
+  lang: string;
+  data: Buffer;
+  mime: string;
+  sourceUrl?: string;
+  draft?: boolean;
+}): Promise<SavedVideo> {
+  const clean = title.trim();
+  if (!clean) return { error: "Нужно название ролика" };
+  if (!isReadyLanguage(lang)) return { error: "Неизвестный язык ролика" };
+
+  const ext = VIDEO_TYPES[mime] ?? "mp4";
   const key = await put(data, ext);
 
   const probed = await describe(data, ext);
@@ -94,10 +136,14 @@ export async function saveVideo(
       title: clean,
       lang,
       key,
-      mime: file.type,
+      mime,
       size: data.length,
       posterKey,
       seconds: probed.seconds,
+      width: probed.width,
+      height: probed.height,
+      sourceUrl: sourceUrl ?? null,
+      draft,
       position: (first?.position ?? 0) - 1,
     },
   });
@@ -141,11 +187,16 @@ export async function moveVideo(id: number, up: boolean): Promise<void> {
   );
 }
 
-/** Длительность и кадр для обложки. Оба могут не получиться — это не беда. */
+/** Длительность, размер кадра и обложка. Любое может не получиться. */
 async function describe(
   data: Buffer,
   ext: string,
-): Promise<{ seconds: number | null; poster: Buffer | null }> {
+): Promise<{
+  seconds: number | null;
+  width: number | null;
+  height: number | null;
+  poster: Buffer | null;
+}> {
   const dir = await mkdtemp(path.join(tmpdir(), "mm-video-"));
   const source = path.join(dir, `in.${ext}`);
   const shot = path.join(dir, "poster.jpg");
@@ -161,6 +212,19 @@ async function describe(
     ]);
     const seconds = length ? Math.round(Number.parseFloat(length)) || null : null;
 
+    // Размер кадра решает, какой карточкой показывать ролик: вертикальной,
+    // как рилс, или широкой, как с YouTube.
+    const frame = await run("ffprobe", [
+      "-v", "error",
+      "-select_streams", "v:0",
+      "-show_entries", "stream=width,height",
+      "-of", "csv=p=0",
+      source,
+    ]);
+    const [width, height] = (frame ?? "")
+      .split(",")
+      .map((value) => Number.parseInt(value, 10) || null);
+
     // Кадр берём с первой секунды, а не с нулевой: в самом начале у роликов
     // часто чёрный кадр перехода.
     const made = await run("ffmpeg", [
@@ -174,9 +238,9 @@ async function describe(
     ]);
 
     const poster = made === null ? null : await readFile(shot).catch(() => null);
-    return { seconds, poster };
+    return { seconds, width: width ?? null, height: height ?? null, poster };
   } catch {
-    return { seconds: null, poster: null };
+    return { seconds: null, width: null, height: null, poster: null };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

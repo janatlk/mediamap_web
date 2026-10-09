@@ -1,8 +1,14 @@
 import VideoForm from "@/components/admin/VideoForm";
+import VideoLinkForm from "@/components/admin/VideoLinkForm";
 import { requireEditor } from "@/lib/guard";
 import { LANGUAGES } from "@/lib/i18n/languages";
 import { loadAllVideos } from "@/server/videos";
-import { removeVideo, shiftVideo, toggleVideo } from "@/server/video-actions";
+import {
+  confirmVideo,
+  removeVideo,
+  shiftVideo,
+  toggleVideo,
+} from "@/server/video-actions";
 
 export const metadata = { title: "Видео" };
 
@@ -30,7 +36,11 @@ const язык = (code: string) =>
 
 export default async function AdminVideosPage() {
   await requireEditor();
-  const videos = await loadAllVideos();
+  const all = await loadAllVideos();
+
+  // Черновики — отдельно и сверху: это работа, которую надо доделать.
+  const drafts = all.filter((video) => video.draft);
+  const videos = all.filter((video) => !video.draft);
 
   /*
     Стрелки двигают ролик среди роликов его языка, поэтому «выше» и «ниже»
@@ -48,8 +58,67 @@ export default async function AdminVideosPage() {
         свои ролики: на кыргызской главной показываются кыргызские.
       </p>
 
+      {drafts.length > 0 ? (
+        <section>
+          <h2>Скачано по ссылке, ждёт подтверждения</h2>
+          <p className="note">
+            Посмотрите, тот ли это ролик: по ссылке иногда приходит другая
+            запись из карусели или кусок с рекламой. На сайте его пока нет.
+          </p>
+
+          {drafts.map((video) => (
+            <article key={video.id}>
+              <header>
+                <b>{video.title}</b>
+                <br />
+                <span className="note">
+                  {язык(video.lang)} · {длительность(video.seconds)} ·{" "}
+                  {мегабайты(video.size)}
+                  {video.width && video.height
+                    ? ` · ${video.width}×${video.height}`
+                    : ""}
+                </span>
+                {video.sourceUrl ? (
+                  <>
+                    <br />
+                    <a className="url note" href={video.sourceUrl} target="_blank" rel="noreferrer">
+                      {video.sourceUrl}
+                    </a>
+                  </>
+                ) : null}
+              </header>
+
+              {/* Проигрывается прямо здесь: решение «ставить или нет»
+                  принимают, посмотрев ролик, а не прочитав его размер. */}
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video src={`/api/videos/${video.id}`} controls preload="metadata" />
+
+              <footer className="actions">
+                <form action={confirmVideo}>
+                  <input type="hidden" name="id" value={video.id} />
+                  <button type="submit" className="primary">
+                    Подтвердить
+                  </button>
+                </form>
+                <form action={removeVideo}>
+                  <input type="hidden" name="id" value={video.id} />
+                  <button type="submit" className="danger">
+                    Отменить и удалить
+                  </button>
+                </form>
+              </footer>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
       <section>
-        <h2>Добавить ролик</h2>
+        <h2>Загрузить по ссылке</h2>
+        <VideoLinkForm />
+      </section>
+
+      <section>
+        <h2>Загрузить файлом</h2>
         <VideoForm />
       </section>
 

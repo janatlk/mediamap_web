@@ -56,30 +56,42 @@ const countRecent = () =>
   });
 
 /**
- * Сколько дней в среднем проходит от подачи до решения.
+ * Сколько дней занимает проверка.
  *
- * Это обещание, которое мы и так даём словами: на форме написано «обычно
- * несколько дней». Здесь то же самое числом — то есть проверяемо.
+ * Считаем по последним десяти рассмотренным, а не по всем за всё время, и
+ * берём середину ряда, а не среднее. Причина простая: среднее по всем
+ * случаям перестаёт меняться почти сразу — одна быстрая проверка сдвигает
+ * его на сотые доли, и число на главной выглядит застрявшим. Середина
+ * последних десяти отвечает на вопрос, который человек и задаёт: сколько
+ * ждать, если написать сейчас.
  *
- * null, пока рассмотренных меньше трёх: среднее по двум — не среднее, а
- * пересказ двух случаев, и первая же долгая проверка удвоит его.
+ * Одиночный долгий случай ряд не перекашивает: середина устойчивее
+ * среднего. null, пока рассмотренных меньше трёх: по двум говорить о сроке
+ * нельзя.
  */
-async function averageReviewDays(): Promise<number | null> {
+const RECENT_REVIEWS = 10;
+
+async function reviewDaysMedian(): Promise<number | null> {
   const rows = await db.report.findMany({
     where: { ...CONFIRMED, reviewedAt: { not: null } },
+    orderBy: { reviewedAt: "desc" },
+    take: RECENT_REVIEWS,
     select: { createdAt: true, reviewedAt: true },
   });
 
   if (rows.length < 3) return null;
 
-  const days = rows.map(
-    (row) => (row.reviewedAt!.getTime() - row.createdAt.getTime()) / 86_400_000,
-  );
-  const average = days.reduce((sum, value) => sum + value, 0) / days.length;
+  const days = rows
+    .map((row) => (row.reviewedAt!.getTime() - row.createdAt.getTime()) / 86_400_000)
+    .sort((first, second) => first - second);
+
+  const middle = Math.floor(days.length / 2);
+  const median =
+    days.length % 2 === 1 ? days[middle] : (days[middle - 1] + days[middle]) / 2;
 
   // Меньше суток округлилось бы в ноль, а «проверяем за 0 дней» — неправда
   // даже когда приятная.
-  return Math.max(1, Math.round(average));
+  return Math.max(1, Math.round(median));
 }
 
 /** Последние подтверждённые случаи. */
@@ -179,7 +191,7 @@ export async function getHomeData(): Promise<HomeData> {
       countCases(),
       countReceived(),
       countRecent(),
-      averageReviewDays(),
+      reviewDaysMedian(),
       countNews(),
       countSources(),
       loadViolationTypes(),
