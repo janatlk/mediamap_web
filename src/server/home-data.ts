@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
-import { newsKey, samePublisher, splitPublisher } from "./news-data";
+import { isRussian, newsKey, samePublisher, splitPublisher } from "./news-data";
 import { loadViolationTypes, type ViolationType } from "./violations";
 import { decodeEntities, hostFromUrl } from "@/lib/format";
 
@@ -109,11 +109,8 @@ async function countSources(): Promise<number> {
   return hosts.size;
 }
 
-/** Есть ли в строке кириллица. */
-const isCyrillic = (text: string) => /[Ѐ-ӿ]/.test(text);
-
 // Англоязычные ленты обновляются чаще и по дате вылезали наверх — на
-// русскоязычном сайте выходила стена нечитаемого. Сначала свои, потом
+// русскоязычном сайте выходила стена нечитаемого. Сначала русские, потом
 // добираем остальными: пустой раздел хуже чужого языка.
 //
 // Повторы ловим по заголовку: у перепечаток разные ссылки и guid.
@@ -125,8 +122,8 @@ async function loadNews(limit: number): Promise<NewsRow[]> {
 
   const seen = new Set<string>();
   return [
-    ...pool.filter((item) => isCyrillic(item.title)),
-    ...pool.filter((item) => !isCyrillic(item.title)),
+    ...pool.filter(isRussian),
+    ...pool.filter((item) => !isRussian(item)),
   ]
     .filter((item) => {
       const key = newsKey(item.title);

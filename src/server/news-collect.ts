@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 
 import { db } from "@/lib/db";
 import { decodeEntities } from "@/lib/format";
+import { imageFromFeed, imageFromHtml, imageFromPage } from "./news-image";
 
 /*
   Сборщик дайджеста: обходит ленты источников и складывает подходящие
@@ -88,6 +89,8 @@ export type FeedItem = {
   link: string;
   snippet: string | null;
   publishedAt: Date;
+  /** Картинка публикации из полей ленты. Пусто — поищем на странице. */
+  image: string | null;
 };
 
 /** Первое непустое строковое значение из возможных форм узла. */
@@ -164,6 +167,7 @@ export function parseFeed(xml: string): FeedItem[] {
     if (!title || !href) continue;
 
     const описание = text(node.description) ?? text(node.summary);
+    const полный = text(node["content:encoded"]) ?? text(node.content);
 
     items.push({
       // guid — то, по чему узнаём уже собранное. Свой у ленты бывает не
@@ -173,6 +177,8 @@ export function parseFeed(xml: string): FeedItem[] {
       link: href,
       snippet: описание ? plain(описание) : null,
       publishedAt: when(node.pubDate, node.published, node.updated, node["dc:date"]),
+      image:
+        imageFromFeed(node) ?? imageFromHtml(полный) ?? imageFromHtml(описание),
     });
   }
 
@@ -283,6 +289,20 @@ export async function collectNews(): Promise<CollectReport> {
         if (!matched) continue;
         kept += 1;
 
+        // Уже собранное обновляем, а не плодим: издания правят заголовки.
+        const before = await db.newsItem.findUnique({
+          where: { guid: item.guid },
+          select: { id: true, image: true },
+        });
+
+        /*
+          За картинкой на страницу материала идём только тогда, когда её не
+          дала лента и когда её ещё нет у записи. Иначе каждый обход тянул бы
+          по лишнему запросу на каждую заметку дайджеста.
+        */
+        const image =
+          item.image ?? before?.image ?? (await imageFromPage(item.link));
+
         const fields = {
           title: item.title,
           link: item.link,
@@ -292,13 +312,8 @@ export async function collectNews(): Promise<CollectReport> {
           sourceId: source.id,
           lang: source.lang,
           matched,
+          image,
         };
-
-        // Уже собранное обновляем, а не плодим: издания правят заголовки.
-        const before = await db.newsItem.findUnique({
-          where: { guid: item.guid },
-          select: { id: true },
-        });
         await db.newsItem.upsert({
           where: { guid: item.guid },
           create: { guid: item.guid, ...fields },

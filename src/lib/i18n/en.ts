@@ -502,7 +502,7 @@ const en = {
 
     empty: "The feed is empty for now.",
 
-    onlyReadable: "In a language I read",
+    onlyReadable: "Russian only",
     showAll: "Show all",
     hiddenNote: "{n} in other languages hidden",
     found: "{n} in total",

@@ -544,7 +544,7 @@ const ru = {
 
     empty: "Лента пока пуста.",
 
-    onlyReadable: "На понятном языке",
+    onlyReadable: "Только на русском языке",
     showAll: "Показать все",
     hiddenNote: "{n} на других языках скрыто",
     found: "{n} всего",

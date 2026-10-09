@@ -31,6 +31,8 @@ type Item = {
   source: string;
   /** Дата уже в нужном виде: форматирование осталось на сервере. */
   date: string;
+  /** Есть ли картинка публикации. */
+  hasImage: boolean;
 };
 
 type Props = {
@@ -46,6 +48,7 @@ export default function NewsCard({ dict, item, to }: Props) {
   const [failed, setFailed] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
   const [pending, setPending] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const shown = translated && !showOriginal ? translated : item;
 
@@ -78,8 +81,7 @@ export default function NewsCard({ dict, item, to }: Props) {
         body: JSON.stringify({ id: item.id, lang: to }),
       });
       const result = (await response.json()) as
-        | { status: "ok"; text: Translated }
-        | { status: "error" };
+        { status: "ok"; text: Translated } | { status: "error" };
 
       if (response.ok && result.status === "ok") setTranslated(result.text);
       else setFailed(true);
@@ -106,32 +108,56 @@ export default function NewsCard({ dict, item, to }: Props) {
         href={item.link}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="group block"
+        className="group flex gap-4"
       >
-        <span className="text-lg group-hover:text-signal">
-          {shown.title}
-          {/* Уводит на чужой сайт — предупреждаем стрелкой. */}
-          <ArrowUpRight
-            className="ml-1 inline h-4 w-4 align-baseline text-muted"
-            aria-hidden="true"
-          />
-          <span className="sr-only">{dict.a11y.externalLink}</span>
-        </span>
+        {/* Картинка публикации — слева, узкой колонкой.
 
-        {/* Две строки и не больше. Подзаголовки приезжают из чужих лент любой
+            Обычный <img>, а не next/image: адреса чужие и заранее
+            неизвестные, а размеры задаёт рамка, не файл.
+
+            Пустое место под картинку не держим: отдаёт её меньшая часть
+            изданий, и ряд пустых рамок выглядел бы поломкой. alt пустой —
+            это иллюстрация к соседнему заголовку, читать её вслух незачем.
+
+            onError убирает рамку, если издание всё же не отдало файл:
+            сломанный значок хуже, чем его отсутствие. */}
+        {item.hasImage && !imageFailed ? (
+          <img
+            src={`/api/news/${item.id}/image`}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onError={() => setImageFailed(true)}
+            className="h-20 w-28 shrink-0 rounded-xs border border-line bg-surface object-cover sm:h-24 sm:w-36"
+          />
+        ) : null}
+
+        <span className="block min-w-0">
+          <span className="text-lg group-hover:text-signal">
+            {shown.title}
+            {/* Уводит на чужой сайт — предупреждаем стрелкой. */}
+            <ArrowUpRight
+              className="ml-1 inline h-4 w-4 align-baseline text-muted"
+              aria-hidden="true"
+            />
+            <span className="sr-only">{dict.a11y.externalLink}</span>
+          </span>
+
+          {/* Две строки и не больше. Подзаголовки приезжают из чужих лент любой
             длины, и на пяти абзацах подряд лента превращалась в стену, по
             которой не пробежаться глазами.
 
             Без block: line-clamp держится на display:-webkit-box, и block его
             перебивает — обрезка молча перестаёт работать. */}
-        {shown.snippet ? (
-          <span className="mt-2 line-clamp-2 max-w-prose text-sm text-muted">
-            {shown.snippet}
-          </span>
-        ) : null}
+          {shown.snippet ? (
+            <span className="mt-2 line-clamp-2 max-w-prose text-sm text-muted">
+              {shown.snippet}
+            </span>
+          ) : null}
 
-        <span className="mt-2 block text-xs text-muted">
-          {item.source} · {item.date}
+          <span className="mt-2 block text-xs text-muted">
+            {item.source} · {item.date}
+          </span>
         </span>
       </a>
 

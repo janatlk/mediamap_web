@@ -80,12 +80,28 @@ export type NewsRow = {
   snippet: string | null;
   source: string;
   publishedAt: Date;
+  /** Есть ли картинка. Сам адрес наружу не отдаём — см. обработчик. */
+  hasImage: boolean;
 };
 
 export const PER_PAGE = 20;
 
 /** Есть ли в строке кириллица. */
 const isCyrillic = (text: string) => /[Ѐ-ӿ]/.test(text);
+
+/*
+  Основной вид дайджеста — только русскоязычные публикации.
+
+  Раньше отбор шёл по кириллице, и вместе с русскими в него попадали
+  кыргызские заметки: алфавит у них один. Решение проекта — на первой
+  вкладке держать один язык, остальное прячется за «Показать все».
+
+  Язык берём у источника: он известен точно, в отличие от догадки по
+  трём словам заголовка. У записей, собранных до появления этого поля,
+  языка нет — для них остаётся прежняя проверка по алфавиту.
+*/
+export const isRussian = (item: { lang: string | null; title: string }) =>
+  item.lang ? item.lang === "ru" : isCyrillic(item.title);
 
 export type NewsPage = {
   items: NewsRow[];
@@ -120,7 +136,7 @@ export async function loadNewsPage(
     return true;
   });
 
-  const readable = unique.filter((item) => isCyrillic(item.title));
+  const readable = unique.filter(isRussian);
   const shown = showAllLanguages ? unique : readable;
 
   const total = shown.length;
@@ -140,6 +156,7 @@ export async function loadNewsPage(
         // Издание точнее агрегатора: RTVI полезнее, чем «Google News (KG/RU)».
         source: parsed.publisher ?? samePublisher(item.source),
         publishedAt: item.publishedAt,
+        hasImage: Boolean(item.image),
       };
     }),
     total,

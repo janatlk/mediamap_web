@@ -486,7 +486,7 @@ const ky: typeof ru = {
 
     empty: "Тасма азырынча бош.",
 
-    onlyReadable: "Түшүнүктүү тилде",
+    onlyReadable: "Орусча гана",
     showAll: "Баарын көрсөтүү",
     hiddenNote: "{n} башка тилде жашырылган",
     found: "баары {n}",

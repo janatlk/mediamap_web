@@ -126,6 +126,7 @@ export default async function NewsPage({
                   link: item.link,
                   source: item.source,
                   date: formatDate(item.publishedAt, lang),
+                  hasImage: item.hasImage,
                 }}
                 /* Предлагаем перевод, только если есть во что переводить:
                    язык выбран и он не тот, на котором заметка написана. */
