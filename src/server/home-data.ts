@@ -56,42 +56,24 @@ const countRecent = () =>
   });
 
 /**
- * Сколько дней занимает проверка.
+ * Сколько дней идёт активная проверка.
  *
- * Считаем по последним десяти рассмотренным, а не по всем за всё время, и
- * берём середину ряда, а не среднее. Причина простая: среднее по всем
- * случаям перестаёт меняться почти сразу — одна быстрая проверка сдвигает
- * его на сотые доли, и число на главной выглядит застрявшим. Середина
- * последних десяти отвечает на вопрос, который человек и задаёт: сколько
- * ждать, если написать сейчас.
+ * Это счётчик работы проекта, а не средний срок рассмотрения: число растёт
+ * на единицу каждый день. Так решено проектом — показывать, что проверка
+ * идёт непрерывно, а не сколько ждать ответа.
  *
- * Одиночный долгий случай ряд не перекашивает: середина устойчивее
- * среднего. null, пока рассмотренных меньше трёх: по двум говорить о сроке
- * нельзя.
+ * Дата начала задана здесь и правится здесь же. Считаем по календарным
+ * суткам, часовой пояс Бишкека: иначе счётчик прибавлялся бы ночью не
+ * тогда, когда у читателя наступает новый день.
  */
-const RECENT_REVIEWS = 10;
+const ACTIVE_SINCE = Date.UTC(2026, 8, 24); // 24 сентября 2026 года
 
-async function reviewDaysMedian(): Promise<number | null> {
-  const rows = await db.report.findMany({
-    where: { ...CONFIRMED, reviewedAt: { not: null } },
-    orderBy: { reviewedAt: "desc" },
-    take: RECENT_REVIEWS,
-    select: { createdAt: true, reviewedAt: true },
-  });
+const BISHKEK_OFFSET_MS = 6 * 60 * 60 * 1000;
 
-  if (rows.length < 3) return null;
-
-  const days = rows
-    .map((row) => (row.reviewedAt!.getTime() - row.createdAt.getTime()) / 86_400_000)
-    .sort((first, second) => first - second);
-
-  const middle = Math.floor(days.length / 2);
-  const median =
-    days.length % 2 === 1 ? days[middle] : (days[middle - 1] + days[middle]) / 2;
-
-  // Меньше суток округлилось бы в ноль, а «проверяем за 0 дней» — неправда
-  // даже когда приятная.
-  return Math.max(1, Math.round(median));
+function activeReviewDays(): number {
+  const today = Date.now() + BISHKEK_OFFSET_MS;
+  const days = Math.floor((today - ACTIVE_SINCE) / 86_400_000);
+  return Math.max(1, days);
 }
 
 /** Последние подтверждённые случаи. */
@@ -191,7 +173,7 @@ export async function getHomeData(): Promise<HomeData> {
       countCases(),
       countReceived(),
       countRecent(),
-      reviewDaysMedian(),
+      activeReviewDays(),
       countNews(),
       countSources(),
       loadViolationTypes(),
