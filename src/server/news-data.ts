@@ -86,6 +86,26 @@ export type NewsRow = {
 
 export const PER_PAGE = 20;
 
+/*
+  Издания, которых в дайджесте быть не должно.
+
+  Решение проекта, а не свойство ленты: дайджест — это то, что мы читаем и
+  показываем как чтение, и издание, вызывающее вопросы о достоверности, в
+  нём не стоит. Отбор здесь, а не только в списке источников: источник из
+  панели можно выключить, но уже собранные заметки остались бы на странице.
+*/
+const EXCLUDED_HOSTS = ["kloop.kg"];
+
+const excluded = (item: { link: string; source: string }) => {
+  const haystack = `${item.link} ${item.source}`.toLowerCase();
+  return EXCLUDED_HOSTS.some((host) => haystack.includes(host.split(".")[0]));
+};
+
+export const inDigest = (item: {
+  link: string;
+  source: string;
+}): boolean => !excluded(item);
+
 /** Есть ли в строке кириллица. */
 const isCyrillic = (text: string) => /[Ѐ-ӿ]/.test(text);
 
@@ -126,7 +146,9 @@ export async function loadNewsPage(
   requestedPage: number,
   showAllLanguages: boolean,
 ): Promise<NewsPage> {
-  const all = await db.newsItem.findMany({ orderBy: { publishedAt: "desc" } });
+  const all = (
+    await db.newsItem.findMany({ orderBy: { publishedAt: "desc" } })
+  ).filter(inDigest);
 
   const seen = new Set<string>();
   const unique = all.filter((item) => {

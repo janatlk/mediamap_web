@@ -1,6 +1,12 @@
 import { db } from "@/lib/db";
 import { REPORT_STATUS } from "@/lib/enums";
-import { isRussian, newsKey, samePublisher, splitPublisher } from "./news-data";
+import {
+  inDigest,
+  isRussian,
+  newsKey,
+  samePublisher,
+  splitPublisher,
+} from "./news-data";
 import { loadViolationTypes, type ViolationType } from "./violations";
 import { decodeEntities, hostFromUrl } from "@/lib/format";
 
@@ -115,10 +121,12 @@ async function countSources(): Promise<number> {
 //
 // Повторы ловим по заголовку: у перепечаток разные ссылки и guid.
 async function loadNews(limit: number): Promise<NewsRow[]> {
-  const pool = await db.newsItem.findMany({
-    orderBy: { publishedAt: "desc" },
-    take: 200,
-  });
+  const pool = (
+    await db.newsItem.findMany({
+      orderBy: { publishedAt: "desc" },
+      take: 200,
+    })
+  ).filter(inDigest);
 
   const seen = new Set<string>();
   return [
